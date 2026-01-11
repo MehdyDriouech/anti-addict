@@ -1868,19 +1868,37 @@ function renderSettings() {
         <!-- Section À propos -->
         <div class="settings-section">
             <div class="settings-title">${I18n.t('about')}</div>
-            <div class="settings-list">
-                <div class="settings-item">
+            <div class="about-content">
+                <p class="about-description">
+                    Revenir est une application web progressive (PWA) pour le suivi et la gestion des addictions, 
+                    avec un focus sur la confidentialité et le fonctionnement hors-ligne. 
+                    100% privée, toutes les données restent sur votre appareil.
+                </p>
+                <div class="about-links">
+                    <a href="https://github.com/MehdyDriouech/anti-addict" target="_blank" rel="noopener noreferrer" class="about-link">
+                        <span class="about-link-icon">📦</span>
+                        <span>Code source (GitHub)</span>
+                    </a>
+                    <a href="https://paypal.me/MDRIOUECH" target="_blank" rel="noopener noreferrer" class="about-link">
+                        <span class="about-link-icon">💝</span>
+                        <span>Soutenir le projet</span>
+                    </a>
+                </div>
+                <div class="settings-item" style="margin-top: var(--space-md);">
                     <div class="settings-item-left">
                         <div class="settings-item-icon">ℹ️</div>
                         <div class="settings-item-text">
                             <span class="settings-item-title">${I18n.t('version')}</span>
-                            <span class="settings-item-value">2.0.0</span>
+                            <span class="settings-item-value">3.0.0</span>
                         </div>
                     </div>
                 </div>
             </div>
             <p class="text-secondary mt-md" style="font-size: 0.875rem; text-align: center;">
                 ${I18n.t('privacy_note')}
+            </p>
+            <p class="text-secondary mt-sm" style="font-size: 0.75rem; text-align: center; font-style: italic;">
+                Cette application ne remplace pas un suivi médical ou thérapeutique professionnel.
             </p>
         </div>
     `;

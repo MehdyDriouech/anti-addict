@@ -34,8 +34,8 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Craving maintenant",
-      "short_name": "Craving",
+      "name": "Urgence tentation",
+      "short_name": "Urgence",
       "description": "Accéder à l'aide d'urgence",
       "url": "./index.html#craving",
       "icons": [

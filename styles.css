@@ -4671,6 +4671,56 @@ body.crisis-mode .bottom-nav .nav-link[data-route="craving"]::before {
     gap: var(--space-lg);
 }
 
+/* ============================================
+   SETTINGS - ABOUT SECTION
+   ============================================ */
+.about-content {
+    padding: var(--space-md) 0;
+}
+
+.about-description {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: var(--space-lg);
+    text-align: center;
+}
+
+.about-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.about-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    font-size: 0.9375rem;
+}
+
+.about-link:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+}
+
+.about-link:active {
+    transform: translateY(0);
+}
+
+.about-link-icon {
+    font-size: 1.25rem;
+}
+
 .tools-drawer .tool-card.priority-urgent .tool-label {
     color: var(--danger);
 }
