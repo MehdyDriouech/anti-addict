@@ -117,6 +117,15 @@ html.theme-light {
     --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
+/* Header et footer en thème clair */
+html.theme-light .header {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+html.theme-light .nav {
+    background: rgba(255, 255, 255, 0.95);
+}
+
 /* ============================================
    RESET & BASE
    ============================================ */
@@ -206,7 +215,7 @@ a:hover {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    padding-top: var(--safe-top);
+    padding-top: calc(var(--safe-top) + 60px);
     padding-bottom: calc(var(--safe-bottom) + 80px);
 }
 
@@ -214,20 +223,25 @@ a:hover {
    HEADER
    ============================================ */
 .header {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
     background: rgba(10, 10, 15, 0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
     padding: var(--space-md) var(--space-lg);
+    padding-top: calc(var(--safe-top) + var(--space-md));
 }
 
 .header-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    max-width: 480px;
+    margin: 0 auto;
 }
 
 .logo {
@@ -3004,6 +3018,49 @@ html[dir="rtl"] .text-right { text-align: left; }
     border-radius: var(--radius-lg);
     padding: var(--space-md);
     margin-bottom: var(--space-md);
+}
+
+.program-widget.active {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.program-widget.active:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.program-widget.active:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.program-widget.active .widget-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.program-widget.active .widget-text {
+    flex: 1;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+}
+
+.program-widget.active .widget-action {
+    font-weight: 500;
+    color: var(--accent-primary);
+    font-size: 0.9375rem;
+    flex-shrink: 0;
 }
 
 .program-widget-header {
