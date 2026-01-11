@@ -150,6 +150,12 @@ function setTodayIntention(state, force = false) {
         return getTodayIntention(state);
     }
     
+    // Si force=true, supprimer l'intention existante d'aujourd'hui
+    if (force) {
+        const today = Utils.todayISO();
+        state.intentions.history = state.intentions.history.filter(i => i.date !== today);
+    }
+    
     // Générer et sauvegarder
     const intention = generateNewIntention(state);
     Storage.addIntention(state, intention);
@@ -243,26 +249,31 @@ function renderIntentionBlock(state) {
  * UX #5: Toggle l'engagement sur l'intention du jour
  */
 function toggleEngagement() {
+    if (!window.state) {
+        console.error('State not available in toggleEngagement');
+        return;
+    }
+    
     const today = Utils.todayISO();
-    const intention = state.intentions.history.find(i => i.date === today);
+    const intention = window.state.intentions.history.find(i => i.date === today);
     
     if (intention) {
         intention.engaged = true;
-        Storage.saveState(state);
+        Storage.saveState(window.state);
         
         // Feedback positif
-        if (typeof showToast === 'function') {
+        if (window.showToast && typeof window.showToast === 'function') {
             const messages = {
                 fr: 'Bravo ! Tu as pris un engagement 💪',
                 en: 'Great! You made a commitment 💪',
                 ar: 'رائع! لقد التزمت 💪'
             };
-            showToast(messages[state.profile.lang] || messages.fr, 'success');
+            window.showToast(messages[window.state.profile.lang] || messages.fr, 'success');
         }
         
         // Re-render
-        if (typeof renderHome === 'function') {
-            renderHome();
+        if (window.renderHome && typeof window.renderHome === 'function') {
+            window.renderHome();
         }
     }
 }
@@ -271,7 +282,13 @@ function toggleEngagement() {
  * Handler pour le bouton "Nouvelle intention"
  */
 function onNewIntention() {
-    const lang = state?.profile?.lang || 'fr';
+    // Récupérer state depuis window.state (exposé par app.js)
+    if (!window.state) {
+        console.error('State not available in onNewIntention');
+        return;
+    }
+    
+    const lang = window.state.profile.lang || 'fr';
     
     const messages = {
         fr: 'Tu as déjà une intention pour aujourd\'hui. En générer une nouvelle ?',
@@ -279,17 +296,17 @@ function onNewIntention() {
         ar: 'لديك نية لهذا اليوم. هل تريد إنشاء واحدة جديدة؟'
     };
     
-    if (hasIntentionToday(state)) {
+    if (hasIntentionToday(window.state)) {
         if (!confirm(messages[lang] || messages.fr)) {
             return;
         }
     }
     
-    setTodayIntention(state, true);
+    setTodayIntention(window.state, true);
     
-    // Re-render Home (appel via app.js global)
-    if (typeof renderHome === 'function') {
-        renderHome();
+    // Re-render Home
+    if (window.renderHome && typeof window.renderHome === 'function') {
+        window.renderHome();
     }
 }
 

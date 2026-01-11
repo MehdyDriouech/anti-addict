@@ -2242,6 +2242,13 @@ window.openRelapseFromCraving = openRelapseFromCraving;
 // Exposer renderHome pour les features qui en ont besoin
 window.renderHome = renderHome;
 
+// Exposer state pour les features qui en ont besoin
+Object.defineProperty(window, 'state', {
+    get: function() { return state; },
+    set: function(value) { state = value; },
+    configurable: true
+});
+
 // V3: Quick check-in
 window.submitQuickCheckin = submitQuickCheckin;
 
