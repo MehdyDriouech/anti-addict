@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "id": "program_30",
+    "name": "برنامج 30 يوم",
+    "description": "برنامج كامل لترسيخ عادات جديدة وتعزيز حريتك.",
+    "duration": 30
+  },
+  "days": {
+    "1": { "title": "بداية جديدة", "lesson": "كل يوم فرصة جديدة. أنت تبدأ هذا البرنامج باختيارك، ليس بالإجبار. إنه فعل شجاع.", "exercise": { "type": "reflection", "prompt": "لماذا تبدأ هذا البرنامج اليوم؟ ما هو 'لماذا' العميق لديك؟", "fields": ["why"] }, "duration": 5 },
+    "2": { "title": "رسم الدورة", "lesson": "ارسم ذهنياً دورتك: محفز ← فكرة ← عاطفة ← سلوك ← نتيجة. كل حلقة هي فرصة للتدخل.", "exercise": { "type": "reflection", "prompt": "صف دورتك النموذجية من المحفز إلى النتيجة.", "fields": ["trigger", "thought", "emotion", "behavior", "consequence"] }, "duration": 5 },
+    "3": { "title": "ركوب الموجة العميق", "lesson": "مارس المراقبة بدون حكم. الرغبة ليست أنت. يمكنك مشاهدتها تمر مثل سحابة.", "exercise": { "type": "urge_surfing", "prompt": "مارس دقيقتين من مراقبة أحاسيسك الجسدية دون رد فعل.", "timer": 120 }, "duration": 5 },
+    "4": { "title": "قيمي - الجزء 1", "lesson": "القيم هي ما يهم حقاً لك. ليس ما 'يجب' أن تريده، بل ما يجعلك تنبض بالحياة.", "exercise": { "type": "values", "prompt": "في عالم مثالي، أي نوع من الأشخاص تريد أن تكون؟", "fields": ["ideal_self"] }, "duration": 5 },
+    "5": { "title": "قيمي - الجزء 2", "lesson": "عندما تتوافق أفعالك مع قيمك، تشعر بالسلام. عندما تتعارض، التنافر يخلق معاناة.", "exercise": { "type": "values", "prompt": "أهم 3 قيم لديك وكيف تكرمها هذا الأسبوع.", "fields": ["value1", "action1", "value2", "action2", "value3", "action3"] }, "duration": 5 },
+    "6": { "title": "قاعدة إذا-إذن #1", "lesson": "أول تلقائية إيجابية لك: قاعدة بسيطة تنطلق تلقائياً.", "exercise": { "type": "if_then", "prompt": "أنشئ أول قاعدة إذا-إذن لموقفك الأكثر تكراراً.", "fields": ["if_condition", "then_action"] }, "duration": 5 },
+    "7": { "title": "مراجعة الأسبوع 1", "lesson": "أسبوع مكتمل. خذ وقتاً للاعتراف بما نجح وما كان صعباً.", "exercise": { "type": "gratitude", "prompt": "3 أشياء إيجابية من هذا الأسبوع + تحدٍ واحد تغلبت عليه.", "fields": ["positive1", "positive2", "positive3", "challenge"] }, "duration": 5 },
+    "8": { "title": "إعادة الهيكلة المعرفية", "lesson": "أفكارنا التلقائية تحاصرنا. 'مرة واحدة فقط' هي كذبة يقولها الدماغ المدمن.", "exercise": { "type": "cognitive", "prompt": "حدد فكرة تلقائية سامة وأعد صياغتها.", "fields": ["toxic_thought", "truth"] }, "duration": 5 },
+    "9": { "title": "البيئة كحليف", "lesson": "كل احتكاك يضاف للسلوك غير المرغوب يساعد. كل تسهيل للسلوك الصحي يساعد أيضاً.", "exercise": { "type": "environment", "prompt": "تغييران بيئيان ملموسان لهذا الأسبوع.", "fields": ["change1", "change2"] }, "duration": 5 },
+    "10": { "title": "تحديد العواطف", "lesson": "وراء كل رغبة غالباً ما تختبئ عاطفة غير معترف بها. تسمية العاطفة يقلل من قوتها.", "exercise": { "type": "emotions", "prompt": "أي عاطفة تدفعك في أغلب الأحيان نحو السلوك غير المرغوب؟", "fields": ["emotion", "trigger_situation"] }, "duration": 5 },
+    "11": { "title": "تلبية الاحتياجات الحقيقية", "lesson": "إذا كانت العاطفة تخفي حاجة، ابحث عن طرق صحية لتلبية تلك الحاجة.", "exercise": { "type": "alternatives", "prompt": "للعاطفة المحددة أمس، 3 طرق صحية للاستجابة.", "fields": ["response1", "response2", "response3"] }, "duration": 5 },
+    "12": { "title": "قوة الحركة", "lesson": "النشاط البدني يفرز الإندورفين، يقلل التوتر، ويشغل الجسم والعقل.", "exercise": { "type": "reflection", "prompt": "أي حركة يمكنك إدماجها يومياً؟ (حتى 5 دقائق)", "fields": ["movement"] }, "duration": 5 },
+    "13": { "title": "قاعدة إذا-إذن #2", "lesson": "قاعدة ثانية لموقف خطر آخر.", "exercise": { "type": "if_then", "prompt": "أنشئ قاعدة لمحفز آخر متكرر.", "fields": ["if_condition", "then_action"] }, "duration": 5 },
+    "14": { "title": "مراجعة منتصف المسار", "lesson": "أسبوعان! بنيت أساساً متيناً. الدماغ يبدأ بإنشاء روابط جديدة.", "exercise": { "type": "reflection", "prompt": "ما الذي تغير أكثر منذ البداية؟ ما الذي لا يزال صعباً؟", "fields": ["changed", "still_hard"] }, "duration": 5 },
+    "15": { "title": "التواصل الاجتماعي", "lesson": "العزلة تغذي الإدمان. التواصل الحقيقي يقاومه.", "exercise": { "type": "social", "prompt": "من يمكنك الاتصال به هذا الأسبوع لتقوية رابط؟", "fields": ["person", "how"] }, "duration": 5 },
+    "16": { "title": "خطة طوارئ 5-5-60", "lesson": "في أول 5 ثوان، أول 5 دقائق، الساعة الأولى: خطة دقيقة.", "exercise": { "type": "plan", "prompt": "خطة طوارئك الكاملة.", "fields": ["sec5", "min5", "hour1"] }, "duration": 5 },
+    "17": { "title": "امتنان يومي", "lesson": "الامتنان يعيد توصيل الدماغ نحو الإيجابي. ممارسة يومية = تغيير دائم.", "exercise": { "type": "gratitude", "prompt": "3 امتنانات من اليوم، حتى الأصغر.", "fields": ["g1", "g2", "g3"] }, "duration": 3 },
+    "18": { "title": "إدارة الانتكاسات", "lesson": "إذا انتكست، لا دوامة عار. حلل، تعلم، أعد البدء. العار يطيل الدورة.", "exercise": { "type": "reflection", "prompt": "إذا حدثت انتكاسة، ما سيكون حديثك اللطيف مع نفسك؟", "fields": ["self_compassion"] }, "duration": 5 },
+    "19": { "title": "ساعات الخطر", "lesson": "حدد لحظاتك الهشة وحضر استجابات محددة.", "exercise": { "type": "reflection", "prompt": "ما هي ساعاتك الأكثر خطورة؟ أي نشاط بديل لتلك اللحظات؟", "fields": ["risk_hours", "alternative"] }, "duration": 5 },
+    "20": { "title": "قاعدة إذا-إذن #3", "lesson": "قاعدة ثالثة، ربما لساعات الخطر المحددة.", "exercise": { "type": "if_then", "prompt": "قاعدة لساعات الخطر لديك.", "fields": ["if_condition", "then_action"] }, "duration": 5 },
+    "21": { "title": "مراجعة الأسبوع 3", "lesson": "ثلاثة أسابيع. السلوك الجديد يصبح أكثر طبيعية. العادات القديمة تضعف.", "exercise": { "type": "reflection", "prompt": "كيف تشعر مقارنة باليوم 1؟", "fields": ["comparison"] }, "duration": 5 },
+    "22": { "title": "رؤية سنة واحدة", "lesson": "تخيل حياتك بعد سنة، حراً. ماذا تفعل بشكل مختلف؟ كيف تشعر؟", "exercise": { "type": "vision", "prompt": "صف يوماً نموذجياً في حياتك بعد سنة، حراً.", "fields": ["vision"] }, "duration": 5 },
+    "23": { "title": "رسالة لنفسي", "lesson": "اكتب رسالة لنفسك المستقبلية التي تمر بلحظة صعبة.", "exercise": { "type": "reflection", "prompt": "عزيزي أنا المستقبلي، عندما تمر بلحظة صعبة...", "fields": ["letter"] }, "duration": 7 },
+    "24": { "title": "تعزيز الانتصارات", "lesson": "الاحتفال بالانتصارات الصغيرة يعزز دوائر المكافأة الصحية.", "exercise": { "type": "reflection", "prompt": "اذكر 5 انتصارات (حتى الصغيرة) منذ بداية البرنامج.", "fields": ["v1", "v2", "v3", "v4", "v5"] }, "duration": 5 },
+    "25": { "title": "الفخاخ الذهنية", "lesson": "تعرف على الفخاخ: التقليل، التبرير، 'أستحق'، 'مرة واحدة فقط'.", "exercise": { "type": "cognitive", "prompt": "أي فخ ذهني يصيدك في أغلب الأحيان؟ كيف تواجهه؟", "fields": ["trap", "counter"] }, "duration": 5 },
+    "26": { "title": "منع الانتكاسة", "lesson": "حدد علامات الإنذار المبكر ولديك خطة قبل الوصول لنقطة اللاعودة.", "exercise": { "type": "reflection", "prompt": "ما هي علامات الإنذار المبكر لديك؟ (مزاج، سلوكيات، أفكار)", "fields": ["signal1", "signal2", "signal3"] }, "duration": 5 },
+    "27": { "title": "تعزيز الهوية", "lesson": "أنت لست شخصاً 'يحاول التوقف'. أنت شخص يعيش بطريقة مختلفة.", "exercise": { "type": "reflection", "prompt": "أكمل: 'أنا شخص...' (هوية جديدة)", "fields": ["identity"] }, "duration": 5 },
+    "28": { "title": "مراجعة الأسبوع 4", "lesson": "أربعة أسابيع! تشكلت مسارات عصبية جديدة. أثبت أنه ممكن.", "exercise": { "type": "gratitude", "prompt": "3 امتنانات لنفسك ورحلتك.", "fields": ["g1", "g2", "g3"] }, "duration": 5 },
+    "29": { "title": "خطة للبعد", "lesson": "البرنامج ينتهي، لكن الطريق يستمر. أي ممارسات تحتفظ بها؟", "exercise": { "type": "reflection", "prompt": "3 ممارسات من البرنامج تستمر بها + قاعدتك الأهم.", "fields": ["practice1", "practice2", "practice3", "main_rule"] }, "duration": 5 },
+    "30": { "title": "احتفال والتزام", "lesson": "30 يوماً. فعلت شيئاً صعباً. احتفل، ثم التزم بما يأتي.", "exercise": { "type": "commitment", "prompt": "كيف تحتفل؟ ما التزامك للـ30 يوماً القادمة؟", "fields": ["celebration", "commitment"] }, "duration": 5 }
+  }
+}

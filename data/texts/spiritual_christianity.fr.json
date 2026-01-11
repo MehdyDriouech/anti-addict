@@ -1,0 +1,244 @@
+{
+  "cards": [
+    {
+      "id": "christ_fr_001",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "Garde ton cœur plus que tout, car de lui jaillissent les sources de la vie.",
+      "ref": "Proverbes 4:23",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_002",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "Si ton œil te fait tomber, détourne-le. Mieux vaut entrer dans la vie avec un œil qu'être jeté dans la géhenne.",
+      "ref": "Matthieu 5:29",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_003",
+      "theme": "avoid_paths",
+      "addiction": "porn",
+      "text": "Fuyez l'immoralité. Votre corps est le temple du Saint-Esprit.",
+      "ref": "1 Corinthiens 6:18-19",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_004",
+      "theme": "avoid_paths",
+      "addiction": "porn",
+      "text": "Ne vous conformez pas au monde présent, mais transformez-vous par le renouvellement de votre intelligence.",
+      "ref": "Romains 12:2",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_005",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Si nous confessons nos péchés, Il est fidèle et juste pour nous les pardonner.",
+      "ref": "1 Jean 1:9",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_006",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Il y a plus de joie dans le ciel pour un seul pécheur qui se repent.",
+      "ref": "Luc 15:7",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_007",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Ceux qui espèrent en l'Éternel renouvellent leur force. Ils prennent leur envol comme les aigles.",
+      "ref": "Ésaïe 40:31",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_008",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Je puis tout par celui qui me fortifie.",
+      "ref": "Philippiens 4:13",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_009",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Dieu n'a pas donné un esprit de timidité, mais de force, d'amour et de sagesse.",
+      "ref": "2 Timothée 1:7",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_010",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Veillez et priez, afin de ne pas entrer en tentation. L'esprit est prompt, mais la chair est faible.",
+      "ref": "Matthieu 26:41",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_011",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Que chacun maîtrise son propre corps dans la sainteté et l'honneur.",
+      "ref": "1 Thessaloniciens 4:4",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_012",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "Soyez patients dans l'épreuve, persévérants dans la prière.",
+      "ref": "Romains 12:12",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_013",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "Heureux l'homme qui supporte patiemment l'épreuve. Après l'avoir surmontée, il recevra la couronne de vie.",
+      "ref": "Jacques 1:12",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_014",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Quand le péché abonde, la grâce surabonde.",
+      "ref": "Romains 5:20",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_015",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos.",
+      "ref": "Matthieu 11:28",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_016",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Revêtez-vous de toutes les armes de Dieu pour pouvoir tenir ferme contre les ruses du diable.",
+      "ref": "Éphésiens 6:11",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_017",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "J'avais fait un pacte avec mes yeux : comment aurais-je pu fixer mes regards sur une vierge ?",
+      "ref": "Job 31:1",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_018",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "Résistez au diable, et il fuira loin de vous.",
+      "ref": "Jacques 4:7",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_019",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Aucune tentation ne vous est survenue qui n'ait été humaine. Dieu fournira le moyen d'en sortir.",
+      "ref": "1 Corinthiens 10:13",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_020",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Le Fils de l'homme est venu chercher et sauver ce qui était perdu.",
+      "ref": "Luc 19:10",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_021",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Marchez par l'Esprit, et vous n'accomplirez pas les désirs de la chair.",
+      "ref": "Galates 5:16",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_022",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "C'est dans votre persévérance que vous sauverez vos âmes.",
+      "ref": "Luc 21:19",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_023",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Si quelqu'un est en Christ, il est une nouvelle création. Les choses anciennes sont passées.",
+      "ref": "2 Corinthiens 5:17",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_024",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Je ne suis pas venu appeler les justes, mais les pécheurs à la repentance.",
+      "ref": "Luc 5:32",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_025",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Tout ce que vous faites, faites-le de bon cœur, comme pour le Seigneur et non pour les hommes.",
+      "ref": "Colossiens 3:23",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_026",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "Bienheureux les cœurs purs, car ils verront Dieu.",
+      "ref": "Matthieu 5:8",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_027",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Ma grâce te suffit, car ma puissance s'accomplit dans la faiblesse.",
+      "ref": "2 Corinthiens 12:9",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_028",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "Courons avec persévérance l'épreuve qui nous est proposée, les yeux fixés sur Jésus.",
+      "ref": "Hébreux 12:1-2",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_029",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "Faites mourir ce qui est terrestre en vous : l'impudicité, l'impureté, les mauvais désirs.",
+      "ref": "Colossiens 3:5",
+      "lang": "fr"
+    },
+    {
+      "id": "christ_fr_030",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "N'aie pas peur, car je suis avec toi. Je te fortifie et je t'aide.",
+      "ref": "Ésaïe 41:10",
+      "lang": "fr"
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "cards": [
+    {
+      "id": "buddh_fr_001",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "Les sens sont comme des chevaux sauvages. Un sage les maîtrise par la pleine conscience.",
+      "ref": "Dhammapada 94",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_002",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "Garde les portes de tes sens. Ne laisse pas l'avidité entrer par les yeux.",
+      "ref": "Majjhima Nikaya 38",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_003",
+      "theme": "avoid_paths",
+      "addiction": "porn",
+      "text": "Évite les chemins qui mènent à la souffrance. La liberté se trouve dans le détachement.",
+      "ref": "Noble Sentier Octuple",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_004",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "Les habitudes malsaines sont des chaînes. Chaque jour, tu peux choisir de les briser.",
+      "ref": "Enseignements du Bouddha",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_005",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Celui qui a commis une erreur et ne la corrige pas, commet une deuxième erreur.",
+      "ref": "Confucius, Analectes",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_006",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "La chute n'est pas l'échec. L'échec est de rester à terre.",
+      "ref": "Sagesse bouddhiste",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_007",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Aussi sombre que soit la nuit, l'aube viendra. Rien n'est permanent.",
+      "ref": "Anicca - Impermanence",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_008",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Il n'y a pas de chemin vers le bonheur. Le bonheur est le chemin.",
+      "ref": "Thich Nhat Hanh",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_009",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Chaque moment est une nouvelle naissance. Tu peux toujours recommencer.",
+      "ref": "Enseignements du Zen",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_010",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "L'esprit est tout. Ce que tu penses, tu le deviens.",
+      "ref": "Dhammapada 1",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_011",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Domine-toi toi-même, comme un conducteur dompte un cheval sauvage.",
+      "ref": "Dhammapada 380",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_012",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Goutte à goutte, l'eau remplit la jarre. Ainsi le sage s'enrichit de petits efforts.",
+      "ref": "Dhammapada 122",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_013",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "La patience est la plus haute des ascèses. La patience est le nirvana suprême.",
+      "ref": "Dhammapada 184",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_014",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "Ne regarde pas en arrière dans la colère, ni en avant dans la peur, mais autour de toi avec attention.",
+      "ref": "Sagesse bouddhiste",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_015",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "La rivière ne résiste pas aux rochers. Elle les contourne avec patience.",
+      "ref": "Enseignements du Tao",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_016",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Le lotus pousse dans la boue et fleurit au-dessus de l'eau. Ta beauté naît de tes difficultés.",
+      "ref": "Symbolisme bouddhiste",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_017",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Sois une lampe pour toi-même. Ne cherche pas de refuge à l'extérieur.",
+      "ref": "Dernières paroles du Bouddha",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_018",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "L'attachement aux sens est la racine de la souffrance. Cultive le détachement.",
+      "ref": "Quatre Nobles Vérités",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_019",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "L'homme qui ne réfléchit pas et mange trop sera submergé par la paresse.",
+      "ref": "Dhammapada 325",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_020",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Celui qui est le maître de lui-même est plus grand que celui qui conquiert mille hommes.",
+      "ref": "Dhammapada 103",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_021",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "N'attends pas d'être parfait pour commencer quelque chose de bien.",
+      "ref": "Sagesse bouddhiste",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_022",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "Les pensées sont comme l'eau. Sans contrôle, elles inondent. Avec attention, elles nourrissent.",
+      "ref": "Enseignements du Bouddha",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_023",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "Respire. Laisse aller. Et rappelle-toi que ce moment passera.",
+      "ref": "Pleine Conscience",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_024",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Nous sommes ce que nous pensons. Avec nos pensées, nous créons notre monde.",
+      "ref": "Dhammapada 1-2",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_025",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "Le désir est un feu qui consume. La modération est l'eau qui apaise.",
+      "ref": "Enseignements du Bouddha",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_026",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "L'œil voit, mais c'est l'esprit qui interprète. Entraîne ton esprit à choisir la paix.",
+      "ref": "Sagesse Zen",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_027",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "Trois choses ne peuvent être cachées : le soleil, la lune et la vérité.",
+      "ref": "Bouddha",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_028",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "La discipline est le pont entre les objectifs et l'accomplissement.",
+      "ref": "Sagesse bouddhiste",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_029",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "Assieds-toi tranquillement, ne fais rien. Le printemps vient et l'herbe pousse d'elle-même.",
+      "ref": "Proverbe Zen",
+      "lang": "fr"
+    },
+    {
+      "id": "buddh_fr_030",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "Même si tu as fait mille erreurs hier, aujourd'hui est un nouveau jour.",
+      "ref": "Dalaï Lama",
+      "lang": "fr"
+    }
+  ]
+}

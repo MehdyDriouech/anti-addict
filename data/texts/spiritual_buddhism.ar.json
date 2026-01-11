@@ -1,0 +1,244 @@
+{
+  "cards": [
+    {
+      "id": "buddh_ar_001",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "الحواس كالخيول الجامحة. الحكيم يسيطر عليها باليقظة الذهنية.",
+      "ref": "دهاماپادا 94",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_002",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "احرس بوابات حواسك. لا تدع الطمع يدخل من العينين.",
+      "ref": "ماجهيما نيكايا 38",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_003",
+      "theme": "avoid_paths",
+      "addiction": "porn",
+      "text": "تجنب الطرق التي تقود إلى المعاناة. الحرية توجد في التحرر.",
+      "ref": "الطريق الثماني النبيل",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_004",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "العادات السيئة قيود. كل يوم يمكنك اختيار كسرها.",
+      "ref": "تعاليم بوذا",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_005",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "من ارتكب خطأً ولم يصححه، فقد ارتكب خطأً آخر.",
+      "ref": "كونفوشيوس، الأناليكتس",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_006",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "السقوط ليس فشلاً. الفشل هو البقاء على الأرض.",
+      "ref": "حكمة بوذية",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_007",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "مهما كان الليل مظلماً، سيأتي الفجر. لا شيء دائم.",
+      "ref": "أنيكا - عدم الدوام",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_008",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "لا يوجد طريق إلى السعادة. السعادة هي الطريق.",
+      "ref": "تيك نات هانه",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_009",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "كل لحظة ولادة جديدة. يمكنك دائماً البدء من جديد.",
+      "ref": "تعاليم الزن",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_010",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "العقل هو كل شيء. ما تفكر به، تصبحه.",
+      "ref": "دهاماپادا 1",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_011",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "سيطر على نفسك، كما يروض السائق حصاناً جامحاً.",
+      "ref": "دهاماپادا 380",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_012",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "قطرة بقطرة، يمتلئ الإناء. هكذا يغتني الحكيم بالجهود الصغيرة.",
+      "ref": "دهاماپادا 122",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_013",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "الصبر أعلى الزهد. الصبر هو النيرفانا الأسمى.",
+      "ref": "دهاماپادا 184",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_014",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "لا تنظر للخلف بغضب، ولا للأمام بخوف، بل حولك بوعي.",
+      "ref": "حكمة بوذية",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_015",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "النهر لا يقاوم الصخور. يتدفق حولها بصبر.",
+      "ref": "تعاليم الطاو",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_016",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "اللوتس ينمو في الوحل ويزهر فوق الماء. جمالك يولد من معاناتك.",
+      "ref": "الرمزية البوذية",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_017",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "كن مصباحاً لنفسك. لا تبحث عن ملجأ في الخارج.",
+      "ref": "كلمات بوذا الأخيرة",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_018",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "التعلق بالحواس أصل المعاناة. ازرع التحرر.",
+      "ref": "الحقائق النبيلة الأربع",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_019",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "من لا يتأمل ويأكل كثيراً سيغلبه الكسل.",
+      "ref": "دهاماپادا 325",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_020",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "من يسيطر على نفسه أعظم ممن يغزو ألف رجل.",
+      "ref": "دهاماپادا 103",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_021",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "لا تنتظر أن تكون مثالياً لتبدأ شيئاً جيداً.",
+      "ref": "حكمة بوذية",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_022",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "الأفكار كالماء. بدون سيطرة تغمر. مع الانتباه تُغذي.",
+      "ref": "تعاليم بوذا",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_023",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "تنفس. دع الأمور تمضي. وتذكر أن هذه اللحظة ستمر.",
+      "ref": "اليقظة الذهنية",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_024",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "نحن ما نفكر. بأفكارنا نخلق عالمنا.",
+      "ref": "دهاماپادا 1-2",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_025",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "الرغبة نار تلتهم. الاعتدال ماء يهدئ.",
+      "ref": "تعاليم بوذا",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_026",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "العين ترى، لكن العقل يفسر. درّب عقلك على اختيار السلام.",
+      "ref": "حكمة الزن",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_027",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "ثلاثة أشياء لا يمكن إخفاؤها: الشمس والقمر والحقيقة.",
+      "ref": "بوذا",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_028",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "الانضباط هو الجسر بين الأهداف والإنجاز.",
+      "ref": "حكمة بوذية",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_029",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "اجلس بهدوء، لا تفعل شيئاً. يأتي الربيع والعشب ينمو بنفسه.",
+      "ref": "مثل زن",
+      "lang": "ar"
+    },
+    {
+      "id": "buddh_ar_030",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "حتى لو ارتكبت ألف خطأ بالأمس، اليوم يوم جديد.",
+      "ref": "الدالاي لاما",
+      "lang": "ar"
+    }
+  ]
+}
