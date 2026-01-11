@@ -17,27 +17,24 @@
 const EMERGENCY_MESSAGES = {
     fr: [
         'Ce moment va passer.',
-        'Tu es plus fort que cette envie.',
-        'Respire. Tu peux y arriver.',
-        'Une action maintenant peut tout changer.',
-        'Chaque seconde de résistance compte.',
-        'Tu n\'es pas seul dans ce combat.'
+        'Respire. Tu es là, c\'est déjà beaucoup.',
+        'Une petite action maintenant peut t\'aider.',
+        'Chaque instant où tu prends soin de toi compte.',
+        'Tu n\'es pas seul. Prends soin de toi.'
     ],
     en: [
         'This moment will pass.',
-        'You are stronger than this urge.',
-        'Breathe. You can do this.',
-        'One action now can change everything.',
-        'Every second of resistance counts.',
-        'You are not alone in this fight.'
+        'Breathe. You\'re here, and that\'s already a lot.',
+        'One small action now can help you.',
+        'Every moment you take care of yourself counts.',
+        'You\'re not alone. Take care of yourself.'
     ],
     ar: [
         'هذه اللحظة ستمر.',
-        'أنت أقوى من هذه الرغبة.',
-        'تنفس. يمكنك فعل ذلك.',
-        'فعل واحد الآن يمكن أن يغير كل شيء.',
-        'كل ثانية من المقاومة تحسب.',
-        'أنت لست وحدك في هذه المعركة.'
+        'تنفس. أنت هنا، وهذا كثير.',
+        'فعل صغير الآن يمكن أن يساعدك.',
+        'كل لحظة تعتني فيها بنفسك مهمة.',
+        'لست وحدك. اعتن بنفسك.'
     ]
 };
 

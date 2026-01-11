@@ -15,6 +15,15 @@
 
 let programData = null;
 let programModalEl = null;
+let currentState = null;
+
+/**
+ * Initialise le state pour le module Programs
+ * @param {Object} state - State de l'application
+ */
+function setState(state) {
+    currentState = state;
+}
 
 // ============================================
 // CHARGEMENT DES PROGRAMMES
@@ -50,12 +59,34 @@ async function loadProgram(programId, lang = 'fr') {
 
 /**
  * Démarre un nouveau programme
- * @param {Object} state - State de l'application
+ * @param {Object} state - State de l'application (optionnel, utilise currentState si non fourni)
  * @param {string} programId - ID du programme
  */
-async function startProgram(state, programId) {
+async function startProgram(programIdOrState, programId) {
+    // Gérer les deux signatures : startProgram(state, programId) ou startProgram(programId)
+    let state = currentState;
+    let actualProgramId = programId;
+    
+    if (typeof programIdOrState === 'string') {
+        // Signature: startProgram(programId)
+        actualProgramId = programIdOrState;
+        state = currentState;
+    } else {
+        // Signature: startProgram(state, programId)
+        state = programIdOrState;
+        actualProgramId = programId;
+    }
+    
+    if (!state) {
+        console.error('[Programs] State non initialisé');
+        return;
+    }
+    
+    // Mettre à jour currentState
+    currentState = state;
+    
     const lang = state.profile.lang;
-    programData = await loadProgram(programId, lang);
+    programData = await loadProgram(actualProgramId, lang);
     
     if (!programData) {
         console.error('[Programs] Impossible de charger le programme');
@@ -64,7 +95,7 @@ async function startProgram(state, programId) {
     
     // Enregistrer le programme actif
     state.programs.active = {
-        id: programId,
+        id: actualProgramId,
         startDate: Storage.getDateISO(),
         currentDay: 1
     };
@@ -77,10 +108,17 @@ async function startProgram(state, programId) {
 
 /**
  * Reprend un programme en cours
- * @param {Object} state - State de l'application
+ * @param {Object} state - State de l'application (optionnel, utilise currentState si non fourni)
  */
 async function resumeProgram(state) {
-    if (!state.programs.active) return;
+    // Si state n'est pas fourni, utiliser currentState
+    if (!state) {
+        state = currentState;
+    } else {
+        currentState = state;
+    }
+    
+    if (!state || !state.programs.active) return;
     
     const lang = state.profile.lang;
     programData = await loadProgram(state.programs.active.id, lang);
@@ -464,7 +502,7 @@ function startUrgeSurfing(duration) {
             timerEl.textContent = '✓';
             btnEl.disabled = false;
             
-            const lang = state?.profile?.lang || 'fr';
+            const lang = currentState?.profile?.lang || 'fr';
             const messages = {
                 fr: 'Exercice terminé !',
                 en: 'Exercise completed!',
@@ -473,7 +511,9 @@ function startUrgeSurfing(duration) {
             btnEl.textContent = messages[lang];
             
             // Enregistrer comme action positive
-            Storage.incrementWins(state, { positiveActions: 1 });
+            if (currentState) {
+                Storage.incrementWins(currentState, { positiveActions: 1 });
+            }
         }
     }, 1000);
 }
@@ -482,7 +522,9 @@ function startUrgeSurfing(duration) {
  * Complète un jour et sauvegarde les réponses
  */
 function completeDay(day) {
-    const programId = state.programs.active.id;
+    if (!currentState || !currentState.programs.active) return;
+    
+    const programId = currentState.programs.active.id;
     
     // Récupérer les réponses
     const exerciseData = {};
@@ -491,14 +533,14 @@ function completeDay(day) {
     });
     
     // Sauvegarder
-    Storage.saveProgramDayProgress(state, programId, day, {
+    Storage.saveProgramDayProgress(currentState, programId, day, {
         completed: true,
         exerciseData
     });
     
     // Feedback
     if (typeof showToast === 'function') {
-        const lang = state?.profile?.lang || 'fr';
+        const lang = currentState?.profile?.lang || 'fr';
         const messages = {
             fr: 'Jour complété ✓',
             en: 'Day completed ✓',
@@ -508,21 +550,23 @@ function completeDay(day) {
     }
     
     // Rafraîchir l'affichage
-    renderDayContent(state, day);
+    renderDayContent(currentState, day);
 }
 
 /**
  * Navigue vers un jour spécifique
  */
 function goToDay(day) {
-    renderDayContent(state, day);
+    if (!currentState) return;
+    renderDayContent(currentState, day);
 }
 
 /**
  * Termine le programme
  */
 function finish() {
-    completeProgram(state);
+    if (!currentState) return;
+    completeProgram(currentState);
 }
 
 // ============================================
@@ -535,6 +579,13 @@ let selectModalEl = null;
  * Ouvre le modal de sélection de programme
  */
 function openSelectModal(state) {
+    // Si state n'est pas fourni, utiliser currentState
+    if (!state) {
+        state = currentState;
+    } else {
+        currentState = state;
+    }
+    
     if (!selectModalEl) {
         selectModalEl = document.createElement('div');
         selectModalEl.className = 'modal-overlay';
@@ -615,7 +666,7 @@ function renderSelectModal(state) {
                     <span class="badge">${l.activeProgram}</span>
                     <h4>${state.programs.active.id === 'program_14' ? l.program14 : l.program30}</h4>
                     <p>${l.day} ${state.programs.active.currentDay}</p>
-                    <button class="btn btn-primary" onclick="Programs.closeSelect(); Programs.resume(state);">
+                    <button class="btn btn-primary" onclick="Programs.closeSelect(); Programs.resume();">
                         ${l.resume} →
                     </button>
                 </div>
@@ -623,7 +674,7 @@ function renderSelectModal(state) {
             
             <div class="program-cards">
                 <div class="program-card ${hasActive ? 'disabled' : ''}" 
-                     onclick="${hasActive ? '' : 'Programs.closeSelect(); Programs.start(state, \"program_14\");'}">
+                     ${hasActive ? '' : `onclick="Programs.closeSelect(); Programs.start('program_14');"`}>
                     <div class="program-icon">📖</div>
                     <h3>${l.program14}</h3>
                     <p>${l.program14Desc}</p>
@@ -631,7 +682,7 @@ function renderSelectModal(state) {
                 </div>
                 
                 <div class="program-card ${hasActive ? 'disabled' : ''}"
-                     onclick="${hasActive ? '' : 'Programs.closeSelect(); Programs.start(state, \"program_30\");'}">
+                     ${hasActive ? '' : `onclick="Programs.closeSelect(); Programs.start('program_30');"`}>
                     <div class="program-icon">📚</div>
                     <h3>${l.program30}</h3>
                     <p>${l.program30Desc}</p>
@@ -659,7 +710,7 @@ function renderProgramWidget(state) {
     
     if (hasActive) {
         return `
-            <div class="program-widget active" onclick="Programs.resume(state)">
+            <div class="program-widget active" onclick="Programs.resume()">
                 <span class="widget-icon">📖</span>
                 <span class="widget-text">${l.day} ${state.programs.active.currentDay}</span>
                 <span class="widget-action">${l.continue} →</span>
@@ -668,7 +719,7 @@ function renderProgramWidget(state) {
     }
     
     return `
-        <button class="btn btn-secondary program-widget-btn" onclick="Programs.openSelect(state)">
+        <button class="btn btn-secondary program-widget-btn" onclick="Programs.openSelect()">
             📚 ${l.programs}
         </button>
     `;
@@ -679,6 +730,9 @@ function renderProgramWidget(state) {
 // ============================================
 
 window.Programs = {
+    // State management
+    setState,
+    
     // Chargement
     loadProgram,
     

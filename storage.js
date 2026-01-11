@@ -13,10 +13,10 @@
 const STORAGE_KEY = 'revenir_state_v1';
 
 // Version actuelle du schéma
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 /**
- * State par défaut de l'application (schemaVersion 3)
+ * State par défaut de l'application (schemaVersion 4)
  */
 function getDefaultState() {
     return {
@@ -135,6 +135,11 @@ function getDefaultState() {
         calendar: {
             sobrietyDays: [],
             milestones: []
+        },
+        
+        // V4: Configuration des addictions (catalogue étendu)
+        addictionsConfig: {
+            catalog: null  // Sera initialisé depuis AddictionsConfig.CATALOG si nécessaire
         }
     };
 }
@@ -202,6 +207,9 @@ function migrateState(state) {
             case 2:
                 currentState = migrateV2ToV3(currentState);
                 break;
+            case 3:
+                currentState = migrateV3ToV4(currentState);
+                break;
             default:
                 // Version inconnue, on incrémente
                 currentState.schemaVersion++;
@@ -263,6 +271,44 @@ function migrateV1ToV2(state) {
         wins: state.wins || defaultState.wins,
         experiments: state.experiments || defaultState.experiments,
         antiporn: state.antiporn || defaultState.antiporn
+    };
+}
+
+/**
+ * Migration de la version 3 vers la version 4
+ * Ajout: addictionsConfig (catalogue des addictions étendu)
+ * @param {Object} state - Le state v3
+ * @returns {Object} Le state v4
+ */
+function migrateV3ToV4(state) {
+    const defaultState = getDefaultState();
+    
+    return {
+        schemaVersion: 4,
+        
+        // Conserver toutes les données existantes
+        profile: state.profile || defaultState.profile,
+        addictions: state.addictions || defaultState.addictions,
+        settings: state.settings || defaultState.settings,
+        checkins: state.checkins || defaultState.checkins,
+        events: state.events || defaultState.events,
+        eveningRituals: state.eveningRituals || defaultState.eveningRituals,
+        ifThenRules: state.ifThenRules || defaultState.ifThenRules,
+        intentions: state.intentions || defaultState.intentions,
+        wins: state.wins || defaultState.wins,
+        experiments: state.experiments || defaultState.experiments,
+        antiporn: state.antiporn || defaultState.antiporn,
+        nightRoutine: state.nightRoutine || defaultState.nightRoutine,
+        customActions: state.customActions || defaultState.customActions,
+        programs: state.programs || defaultState.programs,
+        coaching: state.coaching || defaultState.coaching,
+        journal: state.journal || defaultState.journal,
+        spiritual: state.spiritual || defaultState.spiritual,
+        sos: state.sos || defaultState.sos,
+        calendar: state.calendar || defaultState.calendar,
+        
+        // Nouveau champ v4 (optionnel, backward compatible)
+        addictionsConfig: state.addictionsConfig || defaultState.addictionsConfig
     };
 }
 
@@ -352,7 +398,7 @@ function validateImportedState(data) {
     if (data.addictions && !Array.isArray(data.addictions)) {
         errors.push('Format addictions invalide');
     } else if (data.addictions) {
-        const validAddictions = ['porn', 'cigarette', 'alcohol', 'drugs'];
+        const validAddictions = ['porn', 'cigarette', 'alcohol', 'drugs', 'social_media', 'gaming', 'food', 'shopping'];
         const validGoals = ['abstinence', 'reduce', 'choice'];
         
         data.addictions.forEach((addiction, index) => {

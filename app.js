@@ -53,6 +53,11 @@ async function initApp() {
     // Charger le state depuis localStorage
     state = Storage.loadState();
     
+    // Initialiser le state pour les modules qui en ont besoin
+    if (typeof Programs !== 'undefined' && Programs.setState) {
+        Programs.setState(state);
+    }
+    
     // Initialiser i18n avec la langue du profil
     await I18n.initI18n(state.profile.lang, state.profile.religion);
     
@@ -203,22 +208,17 @@ function renderOnboardingContent() {
             <div class="form-group">
                 <label class="form-label">${I18n.t('select_addictions')}</label>
                 <div class="checkbox-group">
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="porn" id="onboard-addiction-porn">
-                        <span>${I18n.t('addiction_porn')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="cigarette" id="onboard-addiction-cigarette">
-                        <span>${I18n.t('addiction_cigarette')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="alcohol" id="onboard-addiction-alcohol">
-                        <span>${I18n.t('addiction_alcohol')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="drugs" id="onboard-addiction-drugs">
-                        <span>${I18n.t('addiction_drugs')}</span>
-                    </label>
+                    ${(typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAllAddictionIds ? AddictionsConfig.getAllAddictionIds() : ['porn', 'cigarette', 'alcohol', 'drugs']).map(id => {
+                        const config = typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAddictionConfig ? AddictionsConfig.getAddictionConfig(id) : null;
+                        const hasDisclaimer = config && config.disclaimerKey ? true : false;
+                        return `
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="${id}" id="onboard-addiction-${id}" 
+                                       ${hasDisclaimer ? 'data-disclaimer="' + config.disclaimerKey + '"' : ''}>
+                                <span>${I18n.t('addiction_' + id)}${hasDisclaimer ? ' ⚠️' : ''}</span>
+                            </label>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         </div>
@@ -251,16 +251,35 @@ function renderOnboardingContent() {
 async function completeOnboarding() {
     // Récupérer les addictions sélectionnées
     const addictions = [];
-    ['porn', 'cigarette', 'alcohol', 'drugs'].forEach(id => {
+    const addictionsWithDisclaimer = [];
+    
+    const allAddictionIds = typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAllAddictionIds ? AddictionsConfig.getAllAddictionIds() : ['porn', 'cigarette', 'alcohol', 'drugs'];
+    
+    allAddictionIds.forEach(id => {
         const checkbox = document.getElementById(`onboard-addiction-${id}`);
         if (checkbox && checkbox.checked) {
-            addictions.push({ id, goal: 'abstinence' });
+            const config = typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAddictionConfig ? AddictionsConfig.getAddictionConfig(id) : null;
+            const goal = config && config.defaultGoal ? config.defaultGoal : 'abstinence';
+            addictions.push({ id, goal });
+            
+            // Vérifier si un disclaimer est nécessaire
+            if (config && config.disclaimerKey) {
+                addictionsWithDisclaimer.push({ id, disclaimerKey: config.disclaimerKey });
+            }
         }
     });
     
     if (addictions.length === 0) {
         showToast(I18n.t('no_addiction_selected'), 'warning');
         return;
+    }
+    
+    // Si des addictions nécessitent un disclaimer, afficher le modal
+    if (addictionsWithDisclaimer.length > 0) {
+        const proceed = await showDisclaimerModal(addictionsWithDisclaimer);
+        if (!proceed) {
+            return; // L'utilisateur a annulé
+        }
     }
     
     // Mettre à jour le state
@@ -285,6 +304,46 @@ async function completeOnboarding() {
     renderHome();
     
     showToast(I18n.t('welcome_back'), 'success');
+}
+
+/**
+ * Affiche un modal de disclaimer pour les addictions nécessitant un avertissement
+ * @param {Array} addictionsWithDisclaimer - Liste des addictions avec disclaimer
+ * @returns {Promise<boolean>} true si l'utilisateur confirme, false s'il annule
+ */
+function showDisclaimerModal(addictionsWithDisclaimer) {
+    return new Promise((resolve) => {
+        const lang = state.profile.lang || 'fr';
+        const disclaimerTexts = addictionsWithDisclaimer.map(item => I18n.t(item.disclaimerKey)).join('\n\n');
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay active';
+        modal.id = 'disclaimer-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeDisclaimerModal(false)">×</button>
+                <h2>${I18n.t('important_notice') || 'Avis important'}</h2>
+                <div class="modal-body">
+                    <p style="color: var(--warning); margin-bottom: var(--space-lg);">⚠️ ${disclaimerTexts}</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeDisclaimerModal(false)">
+                        ${I18n.t('disclaimer_cancel')}
+                    </button>
+                    <button class="btn btn-primary" onclick="closeDisclaimerModal(true)">
+                        ${I18n.t('disclaimer_understand')} - ${I18n.t('disclaimer_continue')}
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        window.closeDisclaimerModal = function(confirmed) {
+            document.body.removeChild(modal);
+            delete window.closeDisclaimerModal;
+            resolve(confirmed);
+        };
+    });
 }
 
 // ============================================
@@ -376,10 +435,10 @@ function getHomeLabels(lang) {
             needHelp: '🆘 J\'ai besoin d\'aide',
             // UX #10: Validation émotionnelle
             validationMessages: [
-                'Venir ici est déjà une victoire.',
+                'Venir ici est déjà un pas.',
                 'Un pas à la fois.',
-                'Tu fais de ton mieux, et c\'est ce qui compte.',
-                'Chaque effort compte, même les plus petits.'
+                'Tu fais de ton mieux, et c\'est suffisant.',
+                'Chaque instant où tu prends soin de toi compte.'
             ],
             // UX #2: Micro-interaction après "Pas bien"
             helpSuggestionTitle: 'Besoin d\'un coup de main ?',
@@ -1806,12 +1865,13 @@ function renderSettings() {
         <div class="settings-section">
             <div class="settings-title">${I18n.t('addictions')}</div>
             <div class="settings-list">
-                ${['porn', 'cigarette', 'alcohol', 'drugs'].map(id => {
+                ${(typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAllAddictionIds ? AddictionsConfig.getAllAddictionIds() : ['porn', 'cigarette', 'alcohol', 'drugs']).map(id => {
                     const isTracked = state.addictions.some(a => a.id === id);
+                    const icon = typeof getAddictionIcon === 'function' ? getAddictionIcon(id) : '📋';
                     return `
                         <div class="settings-item">
                             <div class="settings-item-left">
-                                <div class="settings-item-icon">${getAddictionIcon(id)}</div>
+                                <div class="settings-item-icon">${icon}</div>
                                 <div class="settings-item-text">
                                     <span class="settings-item-title">${I18n.t('addiction_' + id)}</span>
                                 </div>
@@ -1902,19 +1962,6 @@ function renderSettings() {
             </p>
         </div>
     `;
-}
-
-/**
- * Retourne l'icône pour une addiction
- */
-function getAddictionIcon(id) {
-    const icons = {
-        porn: '🔞',
-        cigarette: '🚬',
-        alcohol: '🍺',
-        drugs: '💊'
-    };
-    return icons[id] || '⚠️';
 }
 
 /**
@@ -2028,6 +2075,53 @@ function openReligionModal() {
 }
 
 /**
+ * Toggle une addiction (ajoute ou retire)
+ * @param {string} addictionId - ID de l'addiction
+ * @param {boolean} enabled - true pour activer, false pour désactiver
+ */
+async function toggleAddiction(addictionId, enabled) {
+    // Vérifier si un disclaimer est nécessaire
+    if (enabled && typeof AddictionsConfig !== 'undefined' && AddictionsConfig.hasDisclaimer) {
+        const needsDisclaimer = AddictionsConfig.hasDisclaimer(addictionId);
+        if (needsDisclaimer) {
+            const config = AddictionsConfig.getAddictionConfig(addictionId);
+            const proceed = await showDisclaimerModal([{ id: addictionId, disclaimerKey: config.disclaimerKey }]);
+            if (!proceed) {
+                // L'utilisateur a annulé, remettre la checkbox à son état précédent
+                const checkbox = document.querySelector(`input[onchange*="toggleAddiction('${addictionId}'"]`);
+                if (checkbox) checkbox.checked = false;
+                return;
+            }
+        }
+    }
+    
+    // Ajouter ou retirer l'addiction
+    if (enabled) {
+        const config = typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAddictionConfig ? AddictionsConfig.getAddictionConfig(addictionId) : null;
+        const goal = config && config.defaultGoal ? config.defaultGoal : 'abstinence';
+        
+        // Vérifier si elle n'existe pas déjà
+        if (!state.addictions.some(a => a.id === addictionId)) {
+            state.addictions.push({ id: addictionId, goal });
+        }
+    } else {
+        state.addictions = state.addictions.filter(a => a.id !== addictionId);
+    }
+    
+    Storage.saveState(state);
+    renderSettings();
+    
+    const lang = state.profile.lang || 'fr';
+    const messages = {
+        fr: enabled ? 'Addiction activée' : 'Addiction désactivée',
+        en: enabled ? 'Addiction enabled' : 'Addiction disabled',
+        ar: enabled ? 'تم تفعيل الإدمان' : 'تم تعطيل الإدمان'
+    };
+    showToast(messages[lang] || messages.fr);
+}
+window.toggleAddiction = toggleAddiction;
+
+/**
  * Toggle les cartes spirituelles
  */
 async function toggleSpiritualCards(enabled) {
@@ -2037,20 +2131,6 @@ async function toggleSpiritualCards(enabled) {
     if (enabled && state.profile.religion !== 'none') {
         await I18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
     }
-}
-
-/**
- * Toggle une addiction
- */
-function toggleAddiction(id, enabled) {
-    if (enabled) {
-        if (!state.addictions.some(a => a.id === id)) {
-            state.addictions.push({ id, goal: 'abstinence' });
-        }
-    } else {
-        state.addictions = state.addictions.filter(a => a.id !== id);
-    }
-    Storage.saveState(state);
 }
 
 /**
@@ -2254,6 +2334,22 @@ window.submitQuickCheckin = submitQuickCheckin;
 
 // UX Improvements: Nouvelles fonctions
 window.handleMoodSelection = handleMoodSelection;
+
+// Helpers addictions
+function getAddictionIcon(addictionId) {
+    const icons = {
+        porn: '🔞',
+        cigarette: '🚬',
+        alcohol: '🍷',
+        drugs: '💊',
+        social_media: '📱',
+        gaming: '🎮',
+        food: '🍔',
+        shopping: '🛒'
+    };
+    return icons[addictionId] || '📋';
+}
+window.getAddictionIcon = getAddictionIcon;
 window.showHelpSuggestion = showHelpSuggestion;
 window.dismissHelpSuggestion = dismissHelpSuggestion;
 window.activateCrisisMode = activateCrisisMode;
