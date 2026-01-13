@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Fond -->
+  <rect width="512" height="512" fill="#4a90e2" rx="80"/>
+  
+  <!-- Icône shield/protection (symbole de protection) -->
+  <path d="M256 80 L160 120 L160 240 C160 320 200 380 256 400 C312 380 352 320 352 240 L352 120 Z" 
+        fill="white" 
+        stroke="#2c5aa0" 
+        stroke-width="12" 
+        stroke-linejoin="round"/>
+  
+  <!-- Symbole check mark à l'intérieur -->
+  <path d="M220 280 L240 300 L292 248" 
+        fill="none" 
+        stroke="#4a90e2" 
+        stroke-width="24" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Ligne ondulée (symbole de calme/respiration) -->
+  <path d="M180 340 Q200 320 220 340 T260 340" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="8" 
+        stroke-linecap="round"/>
+</svg>
+
