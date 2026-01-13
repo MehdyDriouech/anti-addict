@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Revenir - Application anti-addictions privacy-first">
+    
+    <!-- Titre neutre pour mode discret -->
+    <title>Revenir</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.webmanifest">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data/pictures/icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="data/pictures/icon-192.png">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="data/pictures/icon-192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="core/styles.css">
+    
+    <!-- Preconnect for fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <!-- ============================================
+         APPLICATION CONTAINER
+         ============================================ -->
+    <div class="app" id="app">
+        
+        <!-- ============================================
+             HEADER
+             ============================================ -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">🌟</div>
+                    <span class="logo-text" data-i18n="app_name">Revenir</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost btn-icon nav-link" data-route="settings" aria-label="Réglages">
+                        ⚙️
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- ============================================
+             SCREENS CONTAINER
+             ============================================ -->
+        <main class="screens-container">
+            
+            <!-- HOME SCREEN -->
+            <section class="screen active" id="screen-home">
+                <!-- Contenu généré dynamiquement par app.js -->
+                <div class="text-center">
+                    <p data-i18n="app_tagline">Chargement...</p>
+                </div>
+            </section>
+            
+            <!-- CRAVING SCREEN -->
+            <section class="screen" id="screen-craving">
+                <!-- Contenu généré dynamiquement par app.js -->
+            </section>
+            
+            <!-- CHECK-IN SCREEN -->
+            <section class="screen" id="screen-checkin">
+                <!-- Contenu généré dynamiquement par app.js -->
+            </section>
+            
+            <!-- HISTORY SCREEN -->
+            <section class="screen" id="screen-history">
+                <!-- Contenu généré dynamiquement par app.js -->
+            </section>
+            
+            <!-- SETTINGS SCREEN -->
+            <section class="screen" id="screen-settings">
+                <!-- Contenu généré dynamiquement par app.js -->
+            </section>
+            
+            <!-- DASHBOARD SCREEN -->
+            <section class="screen" id="screen-dashboard">
+                <!-- Contenu généré dynamiquement par app.js -->
+            </section>
+            
+        </main>
+        
+        <!-- ============================================
+             BOTTOM NAVIGATION
+             ============================================ -->
+        <nav class="nav">
+            <ul class="nav-list">
+                <li>
+                    <button class="nav-link active" data-route="home">
+                        <span class="icon">🏠</span>
+                        <span data-i18n="today">Accueil</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-link" data-route="craving">
+                        <span class="icon">🆘</span>
+                        <span data-i18n="craving_now">Craving</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-link" data-route="checkin">
+                        <span class="icon">📝</span>
+                        <span data-i18n="checkin">Check-in</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-link" data-route="settings">
+                        <span class="icon">⚙️</span>
+                        <span data-i18n="settings">Réglages</span>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    
+    <!-- ============================================
+         ONBOARDING OVERLAY
+         ============================================ -->
+    <div class="onboarding hidden" id="onboarding">
+        <div class="onboarding-content" id="onboarding-content">
+            <!-- Contenu généré dynamiquement par app.js -->
+        </div>
+    </div>
+    
+    <!-- ============================================
+         TOAST CONTAINER
+         ============================================ -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- ============================================
+         SCRIPTS
+         ============================================ -->
+    <!-- 
+         ORDRE IMPORTANT:
+         1. utils.js - Helpers (dates, stats, etc.)
+         2. storage.js - Gestion du localStorage
+         3. i18n.js - Internationalisation
+         4. router.js - Navigation
+         5. features/*.js - Modules V2 (dans l'ordre)
+         6. app.js - Logique principale (doit être chargé en dernier)
+    -->
+    <script src="core/utils.js"></script>
+    <script src="data/addictions-config.js"></script>
+    <script src="core/storage.js"></script>
+    <script src="core/i18n.js"></script>
+    <script src="core/router.js"></script>
+    
+    <!-- ============================================
+         PLUGINS (MVC Architecture)
+         ============================================ -->
+    
+    <!-- Plugins avec architecture MVC complète -->
+    <script type="module" src="plugins/Wins/wins.js"></script>
+    <script type="module" src="plugins/Intentions/intentions.js"></script>
+    <script type="module" src="plugins/SOS/sos.js"></script>
+    <script type="module" src="plugins/Heatmap/heatmap.js"></script>
+    <script type="module" src="plugins/Actions/actions.js"></script>
+    
+    <!-- Plugins MVC complets -->
+    <script type="module" src="plugins/IfThen/ifthen.js"></script>
+    <script type="module" src="plugins/Relapse/relapse.js"></script>
+    <script type="module" src="plugins/Evening/evening.js"></script>
+    <script type="module" src="plugins/AntiPorn/antiporn.js"></script>
+    <script type="module" src="plugins/Experiments/experiments.js"></script>
+    <script type="module" src="plugins/Coaching/coaching.js"></script>
+    <script type="module" src="plugins/Programs/programs.js"></script>
+    <script type="module" src="plugins/Calendar/calendar.js"></script>
+    <script type="module" src="plugins/Spiritual/spiritual.js"></script>
+    <script type="module" src="plugins/Journal/journal.js"></script>
+    
+    <!-- Plugins Anti-Addiction (V5 Multi-Addictions) -->
+    <script type="module" src="plugins/AddictionBase/addiction-base.js"></script>
+    <script type="module" src="plugins/AntiSmoke/antismoke.js"></script>
+    <script type="module" src="plugins/AntiAlcohol/antialcohol.js"></script>
+    <script type="module" src="plugins/AntiDrugs/antidrugs.js"></script>
+    <script type="module" src="plugins/AntiSocialMedia/antisocialmedia.js"></script>
+    <script type="module" src="plugins/AntiGaming/antigaming.js"></script>
+    <script type="module" src="plugins/AntiFood/antifood.js"></script>
+    <script type="module" src="plugins/AntiShopping/antishopping.js"></script>
+    
+    <!-- ============================================
+         CORE FEATURES (MVC Architecture)
+         ============================================ -->
+    <script type="module" src="core/features/UI/ui.js"></script>
+    <script type="module" src="core/features/Tools/tools.js"></script>
+    <script type="module" src="core/features/Checkin/checkin.js"></script>
+    <script type="module" src="core/features/History/history.js"></script>
+    <script type="module" src="core/features/Settings/settings.js"></script>
+    <script type="module" src="core/features/Craving/craving.js"></script>
+    <script type="module" src="core/features/Home/home.js"></script>
+    <script type="module" src="core/features/Onboarding/onboarding.js"></script>
+    <script type="module" src="core/features/Dashboard/dashboard.js"></script>
+    <script type="module" src="core/features/Init/init.js"></script>
+    
+    <!-- Main app (must be last) -->
+    <script type="module" src="core/app.js"></script>
+    
+    <!-- ============================================
+         SERVICE WORKER REGISTRATION
+         ============================================ -->
+    <script>
+        // Enregistrement du Service Worker pour le mode offline (PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('core/sw.js')
+                    .then(registration => {
+                        console.log('[SW] Service Worker enregistré:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('[SW] Échec de l\'enregistrement:', error);
+                    });
+            });
+        }
+    </script>
+    
+    <!-- ============================================
+         NO-SCRIPT FALLBACK
+         ============================================ -->
+    <noscript>
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0f;
+            color: #f0f0f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        ">
+            <div>
+                <h1 style="font-size: 3rem; margin-bottom: 1rem;">🌟</h1>
+                <h2 style="margin-bottom: 1rem;">Revenir</h2>
+                <p style="color: #a0a0b0;">
+                    Cette application nécessite JavaScript pour fonctionner.
+                    <br><br>
+                    This application requires JavaScript to work.
+                    <br><br>
+                    <span dir="rtl">هذا التطبيق يتطلب JavaScript للعمل.</span>
+                </p>
+            </div>
+        </div>
+    </noscript>
+</body>
+</html>

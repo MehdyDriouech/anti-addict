@@ -1,0 +1,244 @@
+{
+  "cards": [
+    {
+      "id": "juda_ar_001",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "لا تتبع قلبك وعينيك اللتين تضلانك وراءهما.",
+      "ref": "سفر العدد 15:39",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_002",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "عهداً قطعت لعيني، فكيف أتطلع إلى عذراء؟",
+      "ref": "أيوب 31:1",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_003",
+      "theme": "avoid_paths",
+      "addiction": "porn",
+      "text": "حِد عن الشر واصنع الخير. اطلب السلامة واسعَ وراءها.",
+      "ref": "مزمور 34:15",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_004",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "احفظ نفسك من كل شر. النقاء يقود إلى القداسة.",
+      "ref": "التلمود، عبودة زارا 20ب",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_005",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "حتى لو وُضع سيف حاد على رقبتك، لا تتخلَّ عن رجاء الرحمة الإلهية.",
+      "ref": "التلمود، براخوت 10أ",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_006",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "تُب يوماً قبل موتك. ولأنك لا تعرف ذلك اليوم، تُب كل يوم.",
+      "ref": "أبوت 2:10",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_007",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "عظيمة هي التشوفا (التوبة)، لأنها تصل إلى عرش المجد.",
+      "ref": "التلمود، يوما 86أ",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_008",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "الرب قريب من منكسري القلوب. يخلص المنسحقين بالروح.",
+      "ref": "مزمور 34:19",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_009",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "لأني عرفت الأفكار التي أنا مفتكر بها: أفكار سلام لا شر.",
+      "ref": "إرميا 29:11",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_010",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "الرب نوري وخلاصي، ممن أخاف؟",
+      "ref": "مزمور 27:1",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_011",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "من القوي؟ من يغلب ميوله.",
+      "ref": "أبوت 4:1",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_012",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "في جميع طرقك اعرفه وهو يقوّم سبلك.",
+      "ref": "أمثال 3:6",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_013",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "البطيء الغضب خير من الجبار، ومالك روحه خير ممن يأخذ مدينة.",
+      "ref": "أمثال 16:32",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_014",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "بالهدوء والطمأنينة تكون قوتكم.",
+      "ref": "إشعياء 30:15",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_015",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "في المكان الذي يقف فيه التائبون، لا يستطيع الأبرار الكاملون الوقوف.",
+      "ref": "التلمود، براخوت 34ب",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_016",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "إن جلست في الظلمة فالرب نور لي.",
+      "ref": "ميخا 7:8",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_017",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "قلباً نقياً اخلق فيّ يا الله، وروحاً مستقيماً جدد في داخلي.",
+      "ref": "مزمور 51:12",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_018",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "عينا الإنسان لا تشبعان. تعلّم أن تسيطر عليهما.",
+      "ref": "أمثال 27:20",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_019",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "أبعد عني طريق الكذب، وبشريعتك ارحمني.",
+      "ref": "مزمور 119:29",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_020",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "أرفع عيني إلى الجبال، من حيث يأتي عوني. عوني من عند الرب.",
+      "ref": "مزمور 121:1-2",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_021",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "ليس عليك إنهاء العمل، لكنك لست حراً في التخلي عنه.",
+      "ref": "أبوت 2:16",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_022",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "الرب يقاتل عنكم وأنتم تصمتون.",
+      "ref": "خروج 14:14",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_023",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "إن كانت خطاياكم كالقرمز تبيض كالثلج.",
+      "ref": "إشعياء 1:18",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_024",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "دعوتك باسمك، أنت لي. إذا عبرت في المياه فأنا معك.",
+      "ref": "إشعياء 43:1-2",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_025",
+      "theme": "discipline",
+      "addiction": "any",
+      "text": "قدّس نفسك بما هو مباح لك. الاعتدال يقود إلى القداسة.",
+      "ref": "التلمود، يبموت 20أ",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_026",
+      "theme": "lower_gaze",
+      "addiction": "porn",
+      "text": "احفظ قلبك أكثر من كل شيء، لأن منه مخارج الحياة.",
+      "ref": "أمثال 4:23",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_027",
+      "theme": "patience",
+      "addiction": "any",
+      "text": "انتظر الرب. تقوَّ وليتشجع قلبك. انتظر الرب!",
+      "ref": "مزمور 27:14",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_028",
+      "theme": "avoid_paths",
+      "addiction": "any",
+      "text": "الذكي يرى الشر فيستتر، والحمقى يعبرون ويُعاقَبون.",
+      "ref": "أمثال 22:3",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_029",
+      "theme": "hope",
+      "addiction": "any",
+      "text": "العالم كله جسر ضيق جداً. والأهم ألا تخاف.",
+      "ref": "الحاخام نحمان من براتسلاف",
+      "lang": "ar"
+    },
+    {
+      "id": "juda_ar_030",
+      "theme": "repentance",
+      "addiction": "any",
+      "text": "ارجع يا إسرائيل إلى الرب إلهك، لأنك قد عثرت بإثمك.",
+      "ref": "هوشع 14:2",
+      "lang": "ar"
+    }
+  ]
+}
