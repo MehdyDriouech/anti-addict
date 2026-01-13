@@ -2,7 +2,7 @@
 
 > Application web progressive (PWA) pour le suivi et la gestion des addictions, avec un focus sur la confidentialité et le fonctionnement hors-ligne.
 
-## 📋 Description
+## 📋 Description --- NOUVELLE ARCHITECTURE EN COURS
 
 **Revenir** est une application web progressive (PWA) conçue pour aider à gérer et surmonter les addictions, avec un focus particulier sur la dépendance à la pornographie. L'application fonctionne entièrement hors-ligne, stocke toutes les données localement sur votre appareil, et ne nécessite aucune connexion Internet ni compte utilisateur.
 
@@ -330,3 +330,4 @@ Application développée avec une approche bienveillante et respectueuse de la v
 ---
 
 **Note importante** : Cette application ne remplace pas un suivi médical ou thérapeutique professionnel. En cas de besoin, consultez un professionnel de santé.
+
