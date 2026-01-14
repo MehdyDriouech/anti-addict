@@ -13,12 +13,12 @@ const coachingController = new CoachingController(coachingModel, coachingView);
 
 const Coaching = {
     CORRELATION_THRESHOLDS, DAY_PERIODS,
-    computeWeeklyInsights: (state) => coachingController.computeWeeklyInsights(state),
+    computeWeeklyInsights: async (state) => await coachingController.computeWeeklyInsights(state),
     computeTopTriggers: (events, count) => coachingController.computeTopTriggers(events, count),
     computeRiskHours: (events) => coachingController.computeRiskHours(events),
     findCorrelations: (state, startDate) => coachingController.findCorrelations(state, startDate),
     suggestRules: (state, events) => coachingController.suggestRules(state, events),
-    openInsights: (state) => coachingController.openInsights(state),
+    openInsights: async (state) => await coachingController.openInsights(state),
     closeInsights: () => coachingController.closeInsights(),
     addSuggestedRule: (trigger) => coachingController.addSuggestedRule(trigger),
     isWeeklyInsightAvailable: (state) => coachingController.isWeeklyInsightAvailable(state),

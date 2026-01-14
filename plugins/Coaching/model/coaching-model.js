@@ -73,20 +73,66 @@ export class CoachingModel {
         return suggestions.slice(0, 3);
     }
 
-    computeWeeklyInsights(state) {
+    async computeWeeklyInsights(state) {
         const last7Days = Utils.daysAgoISO(6);
-        const weekEvents = state.events.filter(e => e.date >= last7Days);
         const weekCheckins = state.checkins.filter(c => c.date >= last7Days);
+        
+        // Utiliser analytics si disponible
+        let cravingsCount = 0;
+        let episodesCount = 0;
+        let winsCount = 0;
+        let slopesCount = 0;
+        
+        if (window.Analytics && window.Analytics.getAnalytics) {
+            try {
+                // Récupérer analytics de la semaine actuelle
+                const weekAnalytics = await window.Analytics.getAnalytics('weekly');
+                if (weekAnalytics) {
+                    cravingsCount = weekAnalytics.totalCravings || 0;
+                    episodesCount = weekAnalytics.totalEpisodes || 0;
+                    winsCount = weekAnalytics.totalWins || 0;
+                    // slopesCount n'est pas dans analytics pour l'instant, on le calcule depuis events si disponible
+                }
+            } catch (error) {
+                console.warn('[Coaching] Erreur récupération analytics, fallback vers events', error);
+            }
+        }
+        
+        // Fallback vers events si analytics non disponible
+        const weekEvents = (state.events || []).filter(e => e.date >= last7Days);
+        if (cravingsCount === 0 && weekEvents.length > 0) {
+            cravingsCount = weekEvents.filter(e => e.type === 'craving').length;
+            episodesCount = weekEvents.filter(e => e.type === 'episode').length;
+            winsCount = weekEvents.filter(e => e.type === 'win').length;
+            slopesCount = weekEvents.filter(e => e.type === 'slope').length;
+        }
+        
+        // Pour topTriggers et riskHours, on a encore besoin des events
+        // (ces données ne sont pas dans analytics pour l'instant)
+        // On essaie de charger events depuis domains si disponible
+        let eventsForDetails = weekEvents;
+        if (window.Security && window.Security.getDomain && weekEvents.length === 0) {
+            try {
+                const eventsDomain = await window.Security.getDomain('events', false);
+                if (eventsDomain && Array.isArray(eventsDomain)) {
+                    eventsForDetails = eventsDomain.filter(e => e.date >= last7Days);
+                }
+            } catch (error) {
+                // Events non disponibles (verrouillé ou non chiffré)
+                console.warn('[Coaching] Events non disponibles pour détails', error);
+            }
+        }
+        
         return {
             date: Storage.getDateISO(), period: '7d',
-            cravingsCount: weekEvents.filter(e => e.type === 'craving').length,
-            episodesCount: weekEvents.filter(e => e.type === 'episode').length,
-            winsCount: weekEvents.filter(e => e.type === 'win').length,
-            slopesCount: weekEvents.filter(e => e.type === 'slope').length,
-            topTriggers: this.computeTopTriggers(weekEvents, 3),
-            riskHours: this.computeRiskHours(weekEvents),
+            cravingsCount,
+            episodesCount,
+            winsCount,
+            slopesCount,
+            topTriggers: this.computeTopTriggers(eventsForDetails, 3),
+            riskHours: this.computeRiskHours(eventsForDetails),
             correlations: this.findCorrelations(state, last7Days),
-            suggestedRules: this.suggestRules(state, weekEvents)
+            suggestedRules: this.suggestRules(state, eventsForDetails)
         };
     }
 

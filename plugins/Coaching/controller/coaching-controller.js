@@ -9,13 +9,13 @@ import { LABELS } from '../data/coaching-data.js';
 export class CoachingController {
     constructor(model, view) { this.model = model; this.view = view; }
 
-    openInsights(state) {
+    async openInsights(state) {
         const modalEl = this.view.createModalElement();
         if (!modalEl._hasClickListener) {
             modalEl.addEventListener('click', (e) => { if (e.target === modalEl) this.closeInsights(); });
             modalEl._hasClickListener = true;
         }
-        const insights = this.model.computeWeeklyInsights(state);
+        const insights = await this.model.computeWeeklyInsights(state);
         this.view.renderModal(state.profile.lang, insights);
         this.view.show();
     }
@@ -40,7 +40,9 @@ export class CoachingController {
         return this.view.renderWidget(state.profile.lang);
     }
 
-    computeWeeklyInsights(state) { return this.model.computeWeeklyInsights(state); }
+    async computeWeeklyInsights(state) { 
+        return await this.model.computeWeeklyInsights(state); 
+    }
     computeTopTriggers(events, count) { return this.model.computeTopTriggers(events, count); }
     computeRiskHours(events) { return this.model.computeRiskHours(events); }
     findCorrelations(state, startDate) { return this.model.findCorrelations(state, startDate); }
