@@ -300,9 +300,9 @@
   "tag_goal": "Goal",
   "tag_mood": "Mood",
 
-  "calendar_title": "Sobriety Calendar",
-  "calendar_subtitle": "Visualize your sober days",
-  "sober_day": "Sober day",
+  "calendar_title": "Progress Calendar",
+  "calendar_subtitle": "Visualize your successful days",
+  "clean_day": "Successful day",
   "episode_day": "Episode day",
   "export_data_calendar": "Export data",
 

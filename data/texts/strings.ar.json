@@ -300,9 +300,9 @@
   "tag_goal": "هدف",
   "tag_mood": "مزاج",
 
-  "calendar_title": "تقويم الاستقامة",
-  "calendar_subtitle": "تصور أيام الاستقامة",
-  "sober_day": "يوم مستقيم",
+  "calendar_title": "تقويم التقدم",
+  "calendar_subtitle": "تصور الأيام الناجحة",
+  "clean_day": "يوم ناجح",
   "episode_day": "يوم انتكاس",
   "export_data_calendar": "تصدير البيانات",
 

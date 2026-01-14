@@ -300,9 +300,9 @@
   "tag_goal": "Objectif",
   "tag_mood": "Humeur",
 
-  "calendar_title": "Calendrier de sobriété",
-  "calendar_subtitle": "Visualise tes jours sobres",
-  "sober_day": "Jour sobre",
+  "calendar_title": "Calendrier de progression",
+  "calendar_subtitle": "Visualise tes jours réussis",
+  "clean_day": "Jour réussi",
   "episode_day": "Jour avec épisode",
   "export_data_calendar": "Exporter les données",
 
