@@ -87,10 +87,10 @@ export class InitController {
             }
         });
         
-        Router.onRoute('settings', () => {
+        Router.onRoute('settings', async () => {
             const state = typeof window !== 'undefined' ? window.state : null;
             if (state && typeof Settings !== 'undefined' && Settings.render) {
-                Settings.render(state);
+                await Settings.render(state);
             }
         });
     }
@@ -99,16 +99,88 @@ export class InitController {
      * Configure les écouteurs d'événements globaux
      */
     setupEventListeners() {
-        // Navigation - Utiliser les boutons avec data-route au lieu des IDs
-        document.querySelectorAll('.nav-link[data-route]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const route = link.getAttribute('data-route');
-                if (route) {
-                    Router.navigateTo(route);
+        // Navigation - Utiliser la délégation d'événements pour éviter les problèmes de réattachement
+        // Attacher l'event listener sur le conteneur parent (nav) plutôt que sur chaque lien
+        const navContainer = document.querySelector('nav.nav');
+        
+        if (navContainer) {
+            // Supprimer les anciens listeners si existent
+            if (this.handleNavClick) {
+                navContainer.removeEventListener('click', this.handleNavClick);
+            }
+            
+            // Créer une fonction liée pour pouvoir la supprimer plus tard
+            this.handleNavClick = (e) => {
+                const link = e.target.closest('.nav-link[data-route]');
+                if (link) {
+                    e.preventDefault();
+                    const route = link.getAttribute('data-route');
+                    if (route) {
+                        // Forcer le re-render même si on est déjà sur la route
+                        Router.navigateTo(route, true);
+                    }
                 }
+            };
+            
+            navContainer.addEventListener('click', this.handleNavClick);
+        } else {
+            // Fallback : attacher sur chaque lien si le conteneur n'existe pas encore
+            document.querySelectorAll('.nav-link[data-route]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const route = link.getAttribute('data-route');
+                    if (route) {
+                        // Forcer le re-render même si on est déjà sur la route
+                        Router.navigateTo(route, true);
+                    }
+                });
             });
-        });
+        }
+        
+        // Gérer aussi les boutons du header avec data-route et data-action
+        // Utiliser la délégation d'événements sur document.body pour capturer tous les clics
+        if (!this.handleHeaderClick) {
+            this.handleHeaderClick = (e) => {
+                // Vérifier si le clic est sur un nav-link dans le header
+                const link = e.target.closest('.header .nav-link[data-route]');
+                if (link) {
+                    e.preventDefault();
+                    const route = link.getAttribute('data-route');
+                    if (route && typeof Router !== 'undefined') {
+                        // Forcer le re-render même si on est déjà sur la route
+                        Router.navigateTo(route, true);
+                    }
+                    return;
+                }
+                
+                // Vérifier si le clic est sur un bouton avec data-action dans le header
+                const button = e.target.closest('.header button[data-action]');
+                if (button) {
+                    e.preventDefault();
+                    const action = button.getAttribute('data-action');
+                    
+                    if (action === 'toggle-lock') {
+                        // Gérer le verrouillage/déverrouillage
+                        if (typeof window.toggleAppLock === 'function') {
+                            window.toggleAppLock();
+                        } else {
+                            console.warn('[Init] toggleAppLock not available, lock.js may not be loaded');
+                        }
+                    } else if (action === 'navigate') {
+                        const route = button.getAttribute('data-route');
+                        if (route && typeof Router !== 'undefined') {
+                            Router.navigateTo(route, true);
+                        }
+                    }
+                }
+            };
+            
+            // Attacher sur document.body pour capturer tous les clics
+            document.body.addEventListener('click', this.handleHeaderClick);
+        }
+        
+        // Note: toggleAppLock est exposé dans lock.js et sera disponible une fois lock.js chargé
+        // La délégation d'événements permet de gérer les clics même si la fonction n'est pas encore disponible
     }
 
     /**

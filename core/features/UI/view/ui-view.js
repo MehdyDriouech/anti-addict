@@ -29,6 +29,10 @@ export class UIView {
      * Affiche un toast
      * @param {string} message - Message à afficher
      * @param {string} type - Type de toast (success, error, warning, info)
+     * 
+     * Note: Les manipulations DOM peuvent déclencher des erreurs dans les extensions
+     * de navigateur (content_script.js, background.js). Ces erreurs sont normales et
+     * ne sont pas critiques. Elles sont filtrées par le filtre console dans app.js.
      */
     showToast(message, type = 'info') {
         const container = this.getToastContainer();
@@ -58,9 +62,10 @@ export class UIView {
      * @param {Function} onConfirm - Callback de confirmation
      * @param {boolean} isDanger - Si c'est une action dangereuse
      * @param {string} modalId - ID du modal (optionnel)
+     * @param {string} confirmButtonText - Texte personnalisé pour le bouton de confirmation (optionnel)
      * @returns {string} ID du modal créé
      */
-    showModal(title, content, onConfirm, isDanger = false, modalId = 'dynamic-modal') {
+    showModal(title, content, onConfirm, isDanger = false, modalId = 'dynamic-modal', confirmButtonText = null) {
         // Supprimer l'ancien modal s'il existe
         const existing = document.getElementById(modalId);
         if (existing) existing.remove();
@@ -80,7 +85,7 @@ export class UIView {
                             ${typeof I18n !== 'undefined' ? I18n.t('cancel') : 'Annuler'}
                         </button>
                         <button class="btn ${isDanger ? 'btn-danger' : 'btn-primary'}" id="modal-confirm-btn-${modalId}">
-                            ${isDanger ? (typeof I18n !== 'undefined' ? I18n.t('yes') : 'Oui') : (typeof I18n !== 'undefined' ? I18n.t('save') : 'Enregistrer')}
+                            ${confirmButtonText || (isDanger ? (typeof I18n !== 'undefined' ? I18n.t('yes') : 'Oui') : (typeof I18n !== 'undefined' ? I18n.t('save') : 'Enregistrer'))}
                         </button>
                     </div>
                 </div>

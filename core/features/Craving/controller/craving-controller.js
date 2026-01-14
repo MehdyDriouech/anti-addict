@@ -124,7 +124,7 @@ export class CravingController {
      * Termine le protocole et retourne à l'accueil
      * @param {Object} state - State de l'application
      */
-    finish(state) {
+    async finish(state) {
         this.model.stopAllTimers();
         
         // S'assurer qu'une addiction est sélectionnée
@@ -135,25 +135,64 @@ export class CravingController {
                 : 'general';
         }
         
-        // Logger le craving si pas encore fait
-        const existingCraving = state.events.find(e => 
+        // Logger le craving si pas encore fait (en mode urgence, même verrouillé)
+        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const existingCraving = state.events && state.events.find ? state.events.find(e => 
             e.type === 'craving' && 
-            e.date === Storage.getDateISO() && 
+            e.date === todayISO && 
             e.addictionId === this.selectedAddictionId
-        );
+        ) : null;
         if (!existingCraving) {
-            Storage.addEvent(state, 'craving', this.selectedAddictionId);
+            // Passer isEmergency pour permettre la sauvegarde même verrouillé
+            if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+                window.Store.update((draft) => {
+                    if (!draft.events) draft.events = [];
+                    const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                    draft.events.push({
+                        ts: Date.now(),
+                        date: todayISO,
+                        type: 'craving',
+                        addictionId: this.selectedAddictionId
+                    });
+                }, { reason: 'emergency_used' });
+            } else {
+                Storage.addEvent(state, 'craving', this.selectedAddictionId);
+            }
         }
         
         // Compter les actions faites
         const actionsDone = document.querySelectorAll('.action-chip.done').length;
         
-        // Enregistrer une victoire avec l'intensité
-        Storage.addEvent(state, 'win', this.selectedAddictionId, this.model.getIntensity());
+        // Enregistrer une victoire avec l'intensité (en mode urgence)
+        if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+            window.Store.update((draft) => {
+                if (!draft.events) draft.events = [];
+                const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                draft.events.push({
+                    ts: Date.now(),
+                    date: todayISO,
+                    type: 'win',
+                    addictionId: this.selectedAddictionId,
+                    intensity: this.model.getIntensity()
+                });
+            }, { reason: 'emergency_used' });
+        } else {
+            Storage.addEvent(state, 'win', this.selectedAddictionId, this.model.getIntensity());
+        }
         
-        // Incrémenter les victoires invisibles
+        // Incrémenter les victoires invisibles (en mode urgence)
         if (typeof Wins !== 'undefined') {
             Wins.recordWin(state, actionsDone > 0);
+        } else if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+            // Fallback si Wins n'est pas disponible
+            window.Store.update((draft) => {
+                if (!draft.wins) {
+                    draft.wins = { resistedCravings: 0, minutesSavedEstimate: 0, positiveActionsCount: 0 };
+                }
+                if (actionsDone > 0) {
+                    draft.wins.positiveActionsCount = (draft.wins.positiveActionsCount || 0) + actionsDone;
+                }
+            }, { reason: 'emergency_used' });
         }
         
         // Message de succès
@@ -161,7 +200,8 @@ export class CravingController {
             UI.showToast(I18n.t('protocol_complete'), 'success');
         }
         
-        // Retourner à l'accueil
-        Router.navigateTo('home');
+        // Retourner à l'accueil (reste verrouillé si l'app était verrouillée)
+        // Forcer le re-render pour s'assurer que la vue se met à jour
+        Router.navigateTo('home', true);
     }
 }

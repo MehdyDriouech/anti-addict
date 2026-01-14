@@ -93,7 +93,7 @@ export class ToolsView {
                     <div class="tools-section">
                         <div class="tools-section-title">💜 ${dl.accompagnement}</div>
                         <div class="tool-grid">
-                            <button class="tool-card priority-support" onclick="Tools.closeDrawer(); typeof Evening !== 'undefined' && Evening.openEveningRitual(window.state)">
+                            <button class="tool-card priority-support" onclick="Tools.closeDrawer(); if (typeof Evening !== 'undefined' && Evening.openEveningRitual) { const state = typeof window !== 'undefined' ? window.state : null; if (state) Evening.openEveningRitual(state); }">
                                 <span class="tool-icon">🌙</span>
                                 <span class="tool-label">${getLabel('eveningRitualShort')}</span>
                             </button>

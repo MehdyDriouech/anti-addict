@@ -3,14 +3,21 @@
  */
 
 import { BUILD_VERSION, APP_VERSION, LANGUAGE_LABELS } from '../data/settings-data.js';
+import { PinSettingsView } from './pin-settings-view.js';
 
 export class SettingsView {
+    constructor() {
+        this.pinView = new PinSettingsView();
+    }
+
     /**
      * Rend l'écran de réglages
      * @param {Object} state - State de l'application
      * @param {Function} getAddictionIcon - Fonction pour obtenir l'icône d'une addiction
+     * @param {boolean} hasPin - Si un PIN est défini
+     * @param {boolean} pinEnabled - Si le verrouillage PIN est activé
      */
-    render(state, getAddictionIcon) {
+    async render(state, getAddictionIcon, hasPin = false, pinEnabled = false) {
         const screen = document.getElementById('screen-settings');
         if (!screen) return;
         
@@ -60,6 +67,9 @@ export class SettingsView {
                 </div>
             </div>
             
+            <!-- Section Sécurité PIN -->
+            ${await this.pinView.renderSection(hasPin, pinEnabled, state.profile.lang)}
+            
             <!-- Section Spirituel -->
             <div class="settings-section">
                 <div class="settings-title">${I18n.t('spiritual_cards')}</div>
@@ -97,7 +107,19 @@ export class SettingsView {
                 <div class="settings-title">${I18n.t('addictions')}</div>
                 <div class="settings-list">
                     ${(typeof AddictionsConfig !== 'undefined' && AddictionsConfig.getAllAddictionIds ? AddictionsConfig.getAllAddictionIds() : ['porn', 'cigarette', 'alcohol', 'drugs']).map(id => {
-                        const isTracked = state.addictions.some(a => a.id === id);
+                        // Sécurité : s'assurer que addictions existe et est un tableau
+                        const addictions = state.addictions || [];
+                        const isTracked = Array.isArray(addictions) 
+                            ? addictions.some(a => {
+                                // Gérer les deux formats : string ou objet avec id
+                                if (typeof a === 'string') {
+                                    return a === id;
+                                } else if (a && typeof a === 'object') {
+                                    return a.id === id;
+                                }
+                                return false;
+                            })
+                            : false;
                         const icon = getAddictionIcon(id);
                         return `
                             <div class="settings-item">

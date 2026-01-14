@@ -28,8 +28,12 @@ export class OnboardingView {
      * @param {Object} state - State de l'application
      * @param {Function} onLangChange - Callback pour changement de langue
      * @param {Function} onReligionChange - Callback pour changement de religion
+     * @param {string} step - Étape actuelle ('main' ou 'pin')
      */
-    renderContent(state, onLangChange, onReligionChange) {
+    renderContent(state, onLangChange, onReligionChange, step = 'main') {
+        if (step === 'pin') {
+            return this.renderPinStep(state);
+        }
         const container = document.getElementById('onboarding-content');
         if (!container) return;
         
@@ -81,8 +85,8 @@ export class OnboardingView {
                 </div>
             </div>
             
-            <button class="btn btn-primary btn-lg btn-block" onclick="Onboarding.complete()">
-                ${I18n.t('start')}
+            <button class="btn btn-primary btn-lg btn-block" onclick="Onboarding.nextStep()">
+                ${I18n.t('continue') || 'Continuer'}
             </button>
         `;
         
@@ -97,6 +101,90 @@ export class OnboardingView {
         if (religionSelect) {
             religionSelect.addEventListener('change', onReligionChange);
         }
+    }
+
+    /**
+     * Rend l'étape PIN (optionnelle)
+     * @param {Object} state - State de l'application
+     * @returns {string} HTML
+     */
+    renderPinStep(state) {
+        const lang = state.profile.lang || 'fr';
+        const labels = {
+            fr: {
+                title: 'Sécurité',
+                desc: 'Tu peux définir un code PIN pour protéger tes données. Tu pourras le modifier plus tard dans les réglages.',
+                pinLabel: 'Code PIN (min. 4 chiffres)',
+                confirmLabel: 'Confirmer le code PIN',
+                set: 'Définir le PIN',
+                skip: 'Passer cette étape',
+                pinMismatch: 'Les codes PIN ne correspondent pas',
+                pinTooShort: 'Le PIN doit contenir au moins 4 chiffres'
+            },
+            en: {
+                title: 'Security',
+                desc: 'You can set a PIN code to protect your data. You can change it later in settings.',
+                pinLabel: 'PIN code (min. 4 digits)',
+                confirmLabel: 'Confirm PIN code',
+                set: 'Set PIN',
+                skip: 'Skip this step',
+                pinMismatch: 'PIN codes do not match',
+                pinTooShort: 'PIN must be at least 4 digits'
+            },
+            ar: {
+                title: 'الأمان',
+                desc: 'يمكنك تعيين رمز PIN لحماية بياناتك. يمكنك تغييره لاحقاً في الإعدادات.',
+                pinLabel: 'رمز PIN (4 أرقام على الأقل)',
+                confirmLabel: 'تأكيد رمز PIN',
+                set: 'تعيين PIN',
+                skip: 'تخطي هذه الخطوة',
+                pinMismatch: 'رموز PIN غير متطابقة',
+                pinTooShort: 'يجب أن يحتوي PIN على 4 أرقام على الأقل'
+            }
+        };
+        const l = labels[lang] || labels.fr;
+
+        const container = document.getElementById('onboarding-content');
+        if (!container) return '';
+        
+        container.innerHTML = `
+            <div class="onboarding-icon">🔒</div>
+            <h1 class="onboarding-title">${l.title}</h1>
+            <p class="onboarding-desc">${l.desc}</p>
+            
+            <div class="onboarding-form">
+                <div class="form-group">
+                    <label class="form-label">${l.pinLabel}</label>
+                    <input type="password" 
+                           id="onboard-pin-input" 
+                           class="form-input" 
+                           inputmode="numeric" 
+                           pattern="[0-9]*"
+                           maxlength="10"
+                           placeholder="1234">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">${l.confirmLabel}</label>
+                    <input type="password" 
+                           id="onboard-pin-confirm-input" 
+                           class="form-input" 
+                           inputmode="numeric" 
+                           pattern="[0-9]*"
+                           maxlength="10"
+                           placeholder="1234">
+                </div>
+                <div id="onboard-pin-error" class="error-message" style="display: none;"></div>
+            </div>
+            
+            <button class="btn btn-primary btn-lg btn-block" onclick="Onboarding.completeWithPin()">
+                ${l.set}
+            </button>
+            <button class="btn btn-ghost btn-block mt-sm" onclick="Onboarding.skipPin()">
+                ${l.skip}
+            </button>
+        `;
+        
+        return '';
     }
 
     /**

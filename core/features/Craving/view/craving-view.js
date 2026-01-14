@@ -148,6 +148,9 @@ export class CravingView {
             progressBar.style.width = `${percentage}%`;
         }
         
+        // Note: Les mises à jour fréquentes du DOM peuvent déclencher des erreurs dans
+        // les extensions de navigateur (content_script.js). Ces erreurs sont normales
+        // et ne sont pas critiques. Elles sont filtrées par le filtre console dans app.js.
         if (timeDisplay) {
             timeDisplay.textContent = seconds;
         }

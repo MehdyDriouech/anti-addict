@@ -9,7 +9,7 @@ const settingsController = new SettingsController();
 
 // API publique
 export const Settings = {
-    render: (state) => settingsController.render(state),
+    render: async (state) => await settingsController.render(state),
     applyTheme: (themeName) => settingsController.applyTheme(themeName),
     toggleTheme: (state) => settingsController.toggleTheme(state),
     openLanguageModal: (state) => settingsController.openLanguageModal(state),
@@ -20,7 +20,12 @@ export const Settings = {
     triggerImport: () => settingsController.triggerImport(),
     handleImport: (state, input) => settingsController.handleImport(state, input),
     confirmClearData: (state) => settingsController.confirmClearData(state),
-    getAddictionIcon: (addictionId) => settingsController.model.getAddictionIcon(addictionId)
+    getAddictionIcon: (addictionId) => settingsController.model.getAddictionIcon(addictionId),
+    
+    // PIN Settings
+    togglePinLock: (enabled) => settingsController.togglePinLock(enabled),
+    openSetPinModal: () => settingsController.openSetPinModal(),
+    openChangePinModal: () => settingsController.openChangePinModal()
 };
 
 // Exporter globalement pour compatibilité

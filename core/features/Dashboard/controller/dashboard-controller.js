@@ -17,8 +17,8 @@ export class DashboardController {
      * @param {Function} renderCoachingWidget - Fonction pour rendre le widget coaching
      * @param {Function} renderInsightFallback - Fonction pour rendre le fallback
      */
-    render(state, renderCoachingWidget, renderInsightFallback) {
-        const insights = this.model.getWeeklyInsights(state);
+    async render(state, renderCoachingWidget, renderInsightFallback) {
+        const insights = await this.model.getWeeklyInsights(state);
         const hasInsights = this.model.hasInsights(insights);
         this.view.render(state, insights, hasInsights, renderCoachingWidget, renderInsightFallback, state.profile.lang);
     }

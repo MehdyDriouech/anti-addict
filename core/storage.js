@@ -7,6 +7,8 @@
  * - Migration de schéma automatique (v1 -> v2 -> v3)
  * - Validation des données importées
  * - Export anonymisé et snapshots
+ * 
+ * MIGRATION: Utilise maintenant StorageDriver pattern pour support IndexedDB
  */
 
 // Clé unique pour le stockage
@@ -14,6 +16,165 @@ const STORAGE_KEY = 'revenir_state_v1';
 
 // Version actuelle du schéma
 const CURRENT_SCHEMA_VERSION = 5;
+
+// Driver de stockage actuel (par défaut LocalStorageDriver)
+let currentDriver = null;
+let migrationChecked = false;
+
+/**
+ * Initialise le driver de stockage
+ * Détecte IndexedDB et migre depuis localStorage si nécessaire
+ */
+async function initStorageDriver() {
+    if (currentDriver) {
+        return currentDriver;
+    }
+    
+    // Vérifier si IndexedDB est disponible
+    if (!window.indexedDB) {
+        console.warn('[Storage] IndexedDB not available, using localStorage');
+        return initLocalStorageDriver();
+    }
+
+    try {
+        const { IndexedDBDriver } = await import('./storage/IndexedDBDriver.js');
+        const idbDriver = new IndexedDBDriver();
+        
+        // Vérifier si IndexedDB contient déjà des données
+        await idbDriver.init();
+        const meta = await idbDriver.getMeta();
+        
+        if (meta && meta.storageVersion) {
+            // IndexedDB déjà initialisé, l'utiliser
+            console.log('[Storage] Using IndexedDB (already initialized)');
+            currentDriver = idbDriver;
+            return currentDriver;
+        }
+
+        // IndexedDB vide, vérifier localStorage pour migration
+        if (!migrationChecked) {
+            migrationChecked = true;
+            const migrated = await migrateFromLocalStorage(idbDriver);
+            
+            if (migrated) {
+                console.log('[Storage] Migrated from localStorage to IndexedDB');
+                currentDriver = idbDriver;
+                return currentDriver;
+            }
+        }
+
+        // Pas de données à migrer, initialiser IndexedDB avec state par défaut
+        const defaultState = getDefaultState();
+        await idbDriver.save(defaultState);
+        await idbDriver.setMeta({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            storageVersion: 1,
+            migratedFromLocalStorageAt: null
+        });
+        
+        currentDriver = idbDriver;
+        return currentDriver;
+    } catch (error) {
+        console.error('[Storage] IndexedDB initialization failed, falling back to localStorage', error);
+        return initLocalStorageDriver();
+    }
+}
+
+/**
+ * Initialise LocalStorageDriver
+ */
+async function initLocalStorageDriver() {
+    try {
+        const { LocalStorageDriver } = await import('./storage/LocalStorageDriver.js');
+        currentDriver = new LocalStorageDriver();
+        return currentDriver;
+    } catch (error) {
+        console.warn('[Storage] LocalStorageDriver not available, using fallback', error);
+        // Fallback vers implémentation directe localStorage
+        currentDriver = {
+            async load() {
+                return loadStateSync();
+            },
+            async save(state) {
+                return saveStateSync(state);
+            },
+            async export(state) {
+                return JSON.stringify(state, null, 2);
+            },
+            async import(json) {
+                const state = JSON.parse(json);
+                return migrateState(state);
+            }
+        };
+        return currentDriver;
+    }
+}
+
+/**
+ * Migre les données depuis localStorage vers IndexedDB
+ * @param {IndexedDBDriver} idbDriver - Driver IndexedDB
+ * @returns {Promise<boolean>} true si migration effectuée
+ */
+async function migrateFromLocalStorage(idbDriver) {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+            return false; // Pas de données à migrer
+        }
+
+        // Charger et migrer le state
+        const state = JSON.parse(stored);
+        const migratedState = migrateState(state);
+
+        // Sauvegarder dans IndexedDB
+        await idbDriver.save(migratedState);
+        
+        // Sauvegarder meta avec timestamp de migration
+        await idbDriver.setMeta({
+            schemaVersion: migratedState.schemaVersion || CURRENT_SCHEMA_VERSION,
+            storageVersion: 1,
+            migratedFromLocalStorageAt: Date.now()
+        });
+
+        // Initialiser analytics vide
+        // (sera rempli progressivement)
+
+        return true;
+    } catch (error) {
+        console.error('[Storage] Migration from localStorage failed', error);
+        return false;
+    }
+}
+
+/**
+ * Charge le state de manière synchrone (compatibilité)
+ */
+function loadStateSync() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+            return getDefaultState();
+        }
+        
+        const state = JSON.parse(stored);
+        return migrateState(state);
+    } catch (error) {
+        console.error('[Storage] Erreur lors du chargement:', error);
+        return getDefaultState();
+    }
+}
+
+/**
+ * Sauvegarde le state de manière synchrone (compatibilité)
+ */
+function saveStateSync(state) {
+    try {
+        state.schemaVersion = CURRENT_SCHEMA_VERSION;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+        console.error('[Storage] Erreur lors de la sauvegarde:', error);
+    }
+}
 
 /**
  * State par défaut de l'application (schemaVersion 4)
@@ -153,38 +314,42 @@ function getDefaultState() {
 }
 
 /**
- * Charge le state depuis localStorage
+ * Charge le state depuis le stockage
  * @returns {Object} Le state chargé ou le state par défaut
+ * 
+ * NOTE: Pour compatibilité, reste synchrone par défaut
+ * La version async sera utilisée quand IndexedDB sera activé
  */
 function loadState() {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) {
-            return getDefaultState();
-        }
-        
-        const state = JSON.parse(stored);
-        
-        // Migration si nécessaire
-        return migrateState(state);
-    } catch (error) {
-        console.error('[Storage] Erreur lors du chargement:', error);
-        return getDefaultState();
-    }
+    // Pour l'instant, reste synchrone pour compatibilité
+    // Quand IndexedDB sera activé, on utilisera await initStorageDriver().load()
+    const state = loadStateSync();
+    
+    // Si IndexedDB est utilisé et Security est activé, charger events depuis domains
+    // (lazy loading - sera fait à la demande)
+    // Pour l'instant, on garde la compatibilité avec l'ancien système
+    
+    return state;
 }
 
 /**
- * Sauvegarde le state dans localStorage
+ * Sauvegarde le state dans le stockage
  * @param {Object} state - Le state à sauvegarder
+ * 
+ * NOTE: Pour compatibilité, reste synchrone par défaut
+ * La version async sera utilisée quand IndexedDB sera activé
+ * 
+ * ATTENTION: Cette fonction est appelée partout dans le code.
+ * Pour les nouvelles écritures, utiliser Store.update() à la place.
  */
 function saveState(state) {
-    try {
-        // S'assurer que la version du schéma est présente
-        state.schemaVersion = CURRENT_SCHEMA_VERSION;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-        console.error('[Storage] Erreur lors de la sauvegarde:', error);
-    }
+    // Si Store.update est disponible, on devrait l'utiliser
+    // Mais saveState() est appelé directement dans beaucoup d'endroits
+    // On garde la compatibilité pour l'instant
+    
+    // Pour l'instant, reste synchrone pour compatibilité
+    // Quand IndexedDB sera activé, on utilisera await initStorageDriver().save(state)
+    saveStateSync(state);
 }
 
 /**
@@ -270,13 +435,13 @@ function migrateV1ToV2(state) {
         
         // Conserver les données existantes
         profile: state.profile || defaultState.profile,
-        addictions: state.addictions || defaultState.addictions,
+        addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
         settings: state.settings || defaultState.settings,
-        checkins: state.checkins || defaultState.checkins,
-        events: state.events || defaultState.events,
+        checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
+        events: Array.isArray(state.events) ? state.events : defaultState.events,
         
         // Nouveaux champs v2
-        eveningRituals: state.eveningRituals || defaultState.eveningRituals,
+        eveningRituals: Array.isArray(state.eveningRituals) ? state.eveningRituals : defaultState.eveningRituals,
         ifThenRules: state.ifThenRules || defaultState.ifThenRules,
         intentions: state.intentions || defaultState.intentions,
         wins: state.wins || defaultState.wins,
@@ -299,11 +464,11 @@ function migrateV3ToV4(state) {
         
         // Conserver toutes les données existantes
         profile: state.profile || defaultState.profile,
-        addictions: state.addictions || defaultState.addictions,
+        addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
         settings: state.settings || defaultState.settings,
-        checkins: state.checkins || defaultState.checkins,
-        events: state.events || defaultState.events,
-        eveningRituals: state.eveningRituals || defaultState.eveningRituals,
+        checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
+        events: Array.isArray(state.events) ? state.events : defaultState.events,
+        eveningRituals: Array.isArray(state.eveningRituals) ? state.eveningRituals : defaultState.eveningRituals,
         ifThenRules: state.ifThenRules || defaultState.ifThenRules,
         intentions: state.intentions || defaultState.intentions,
         wins: state.wins || defaultState.wins,
@@ -352,11 +517,11 @@ function migrateV4ToV5(state) {
         
         // Conserver toutes les données existantes
         profile: state.profile || defaultState.profile,
-        addictions: state.addictions || defaultState.addictions,
+        addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
         settings: state.settings || defaultState.settings,
-        checkins: state.checkins || defaultState.checkins,
-        events: state.events || defaultState.events,
-        eveningRituals: state.eveningRituals || defaultState.eveningRituals,
+        checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
+        events: Array.isArray(state.events) ? state.events : defaultState.events,
+        eveningRituals: Array.isArray(state.eveningRituals) ? state.eveningRituals : defaultState.eveningRituals,
         ifThenRules: state.ifThenRules || defaultState.ifThenRules,
         intentions: state.intentions || defaultState.intentions,
         wins: state.wins || defaultState.wins,
@@ -411,11 +576,11 @@ function migrateV2ToV3(state) {
         
         // Conserver les données existantes V2
         profile: state.profile || defaultState.profile,
-        addictions: state.addictions || defaultState.addictions,
+        addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
         settings,
-        checkins: state.checkins || defaultState.checkins,
-        events: state.events || defaultState.events,
-        eveningRituals: state.eveningRituals || defaultState.eveningRituals,
+        checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
+        events: Array.isArray(state.events) ? state.events : defaultState.events,
+        eveningRituals: Array.isArray(state.eveningRituals) ? state.eveningRituals : defaultState.eveningRituals,
         ifThenRules: state.ifThenRules || defaultState.ifThenRules,
         intentions: state.intentions || defaultState.intentions,
         wins: state.wins || defaultState.wins,
@@ -686,7 +851,7 @@ function getDateISO() {
 
 /**
  * Ajoute un événement au state
- * @param {Object} state - Le state actuel
+ * @param {Object} state - Le state actuel (pour compatibilité, mais non utilisé si Store est disponible)
  * @param {string} type - Type d'événement (craving, episode, win, slope)
  * @param {string} addictionId - ID de l'addiction concernée
  * @param {number} intensity - Intensité optionnelle (0-10)
@@ -712,6 +877,33 @@ function addEvent(state, type, addictionId, intensity = null, meta = null) {
         event.meta = meta;
     }
     
+    // Utiliser Store.update() si disponible (nouveau chemin)
+    if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+        const reason = type === 'craving' && meta?.context === 'emergency' ? 'emergency_used' : undefined;
+        
+        // Appel asynchrone mais on retourne le state immédiatement pour compatibilité
+        window.Store.update((draft) => {
+            // S'assurer que events existe
+            if (!draft.events) {
+                draft.events = [];
+            }
+            draft.events.push(event);
+        }, { reason }).catch(error => {
+            console.error('[Storage.addEvent] Erreur Store.update:', error);
+            // Fallback vers ancienne méthode
+            state.events.push(event);
+            saveState(state);
+        });
+        
+        // Retourner le state mis à jour (approximatif, car async)
+        if (!state.events) {
+            state.events = [];
+        }
+        state.events.push(event);
+        return state;
+    }
+    
+    // Ancienne méthode (fallback)
     state.events.push(event);
     saveState(state);
     return state;
@@ -731,7 +923,7 @@ function normalizeAddictionId(addictionId) {
 
 /**
  * Ajoute un check-in au state
- * @param {Object} state - Le state actuel
+ * @param {Object} state - Le state actuel (pour compatibilité)
  * @param {Object} checkinData - Données du check-in
  * @returns {Object} Le state modifié
  */
@@ -758,7 +950,41 @@ function addCheckin(state, checkinData) {
         checkin.tags = checkinData.tags;
     }
     
-    // Remplacer le check-in du jour s'il existe déjà
+    // Utiliser Store.update() si disponible
+    if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+        window.Store.update((draft) => {
+            if (!draft.checkins) {
+                draft.checkins = [];
+            }
+            const existingIndex = draft.checkins.findIndex(c => c.date === checkin.date);
+            if (existingIndex >= 0) {
+                draft.checkins[existingIndex] = checkin;
+            } else {
+                draft.checkins.push(checkin);
+            }
+        }).catch(error => {
+            console.error('[Storage.addCheckin] Erreur Store.update:', error);
+            // Fallback vers ancienne méthode
+            const existingIndex = state.checkins.findIndex(c => c.date === checkin.date);
+            if (existingIndex >= 0) {
+                state.checkins[existingIndex] = checkin;
+            } else {
+                state.checkins.push(checkin);
+            }
+            saveState(state);
+        });
+        
+        // Retourner state mis à jour (approximatif)
+        const existingIndex = state.checkins.findIndex(c => c.date === checkin.date);
+        if (existingIndex >= 0) {
+            state.checkins[existingIndex] = checkin;
+        } else {
+            state.checkins.push(checkin);
+        }
+        return state;
+    }
+    
+    // Ancienne méthode (fallback)
     const existingIndex = state.checkins.findIndex(c => c.date === checkin.date);
     if (existingIndex >= 0) {
         state.checkins[existingIndex] = checkin;
@@ -1162,6 +1388,14 @@ function incrementStoppedSlopes(state) {
  * @returns {number} Nombre de jours du streak
  */
 function calculateStreak(state) {
+    // Sécurité : s'assurer que events et checkins existent et sont des tableaux
+    if (!state.events || !Array.isArray(state.events)) {
+        state.events = [];
+    }
+    if (!state.checkins || !Array.isArray(state.checkins)) {
+        state.checkins = [];
+    }
+    
     // Récupérer les épisodes (rechutes) triés par date
     const episodes = state.events
         .filter(e => e.type === 'episode')
@@ -1193,6 +1427,10 @@ function calculateStreak(state) {
  * @returns {number} Nombre de cravings aujourd'hui
  */
 function countTodayCravings(state) {
+    // Sécurité : s'assurer que events existe et est un tableau
+    if (!state.events || !Array.isArray(state.events)) {
+        return 0;
+    }
     const today = getDateISO();
     return state.events.filter(e => e.type === 'craving' && e.date === today).length;
 }
@@ -1204,6 +1442,10 @@ function countTodayCravings(state) {
  * @returns {Array} Les derniers check-ins
  */
 function getRecentCheckins(state, count = 7) {
+    // Sécurité : s'assurer que checkins existe et est un tableau
+    if (!state.checkins || !Array.isArray(state.checkins)) {
+        return [];
+    }
     return state.checkins
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, count);
@@ -1215,6 +1457,10 @@ function getRecentCheckins(state, count = 7) {
  * @returns {Object|null} Le rituel du jour ou null
  */
 function getTodayEveningRitual(state) {
+    // Sécurité : s'assurer que eveningRituals existe et est un tableau
+    if (!state.eveningRituals || !Array.isArray(state.eveningRituals)) {
+        return null;
+    }
     const today = getDateISO();
     return state.eveningRituals.find(r => r.date === today) || null;
 }
@@ -1235,6 +1481,10 @@ window.Storage = {
     exportState,
     importState,
     validateImportedState,
+    
+    // Storage Driver (nouveau)
+    initStorageDriver,
+    getCurrentDriver: () => currentDriver,
     
     // Events
     addEvent,

@@ -2,8 +2,8 @@
  * Settings Data - Constantes et labels pour les réglages
  */
 
-export const BUILD_VERSION = '13-01-2026-23-05';
-export const APP_VERSION = '0.3.4';
+export const BUILD_VERSION = '14-01-2026-15-34';
+export const APP_VERSION = '0.3.5';
 
 export const LANGUAGE_LABELS = {
     fr: 'Français',

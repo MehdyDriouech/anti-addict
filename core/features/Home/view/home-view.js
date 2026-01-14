@@ -18,6 +18,16 @@ export class HomeView {
         const screen = document.getElementById('screen-home');
         if (!screen) return;
         
+        // Vérifier si l'app est verrouillée
+        const isLocked = window.Security && window.Security.isLocked && window.Security.isLocked();
+        
+        if (isLocked) {
+            // Afficher la vue verrouillée avec seulement les boutons d'urgence
+            this.renderLockedView(state);
+            return;
+        }
+        
+        // Vue normale
         screen.innerHTML = `
             <div class="home-layout">
                 <!-- UX #10: Bannière de validation émotionnelle -->
@@ -82,10 +92,72 @@ export class HomeView {
     }
 
     /**
+     * Rend la vue verrouillée avec seulement les boutons d'urgence
+     * @param {Object} state - State de l'application
+     */
+    renderLockedView(state) {
+        const screen = document.getElementById('screen-home');
+        if (!screen) return;
+        
+        const lang = state.profile.lang || 'fr';
+        const labels = {
+            fr: {
+                lockedTitle: 'Application verrouillée',
+                lockedMessage: 'Déverrouille l\'application pour accéder à toutes les fonctionnalités',
+                urgencyButton: 'Urgence Tentation',
+                sosButton: 'SOS'
+            },
+            en: {
+                lockedTitle: 'App locked',
+                lockedMessage: 'Unlock the app to access all features',
+                urgencyButton: 'Urgent craving',
+                sosButton: 'SOS'
+            },
+            ar: {
+                lockedTitle: 'التطبيق مقفل',
+                lockedMessage: 'افتح القفل للوصول إلى جميع الميزات',
+                urgencyButton: 'إلحاح الرغبة',
+                sosButton: 'SOS'
+            }
+        };
+        const l = labels[lang] || labels.fr;
+        
+        screen.innerHTML = `
+            <div class="home-layout locked-view">
+                <div class="locked-content">
+                    <div class="locked-icon">🔒</div>
+                    <h2 class="locked-title">${l.lockedTitle}</h2>
+                    <p class="locked-message">${l.lockedMessage}</p>
+                </div>
+                
+                <!-- Boutons d'urgence uniquement -->
+                <div class="locked-actions">
+                    <button class="btn btn-danger btn-lg btn-block" onclick="Router.navigateTo('craving')">
+                        <span class="btn-icon">🔥</span>
+                        <span class="btn-text">${l.urgencyButton}</span>
+                    </button>
+                    <button class="btn btn-primary btn-lg btn-block" onclick="typeof SOS !== 'undefined' ? SOS.activate(window.state) : Router.navigateTo('craving')">
+                        <span class="btn-icon">🆘</span>
+                        <span class="btn-text">${l.sosButton}</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
      * Rend le bouton SOS flottant (FAB)
      * @param {Object} state - State de l'application
      */
     renderSOSFab(state) {
+        // Ne pas afficher le FAB SOS si l'app est verrouillée
+        const isLocked = window.Security && window.Security.isLocked && window.Security.isLocked();
+        if (isLocked) {
+            const existing = document.getElementById('sosFab');
+            if (existing) existing.remove();
+            return;
+        }
+        
         const existing = document.getElementById('sosFab');
         if (existing) existing.remove();
         

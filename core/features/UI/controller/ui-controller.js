@@ -27,10 +27,11 @@ export class UIController {
      * @param {Function} onConfirm - Callback de confirmation
      * @param {boolean} isDanger - Si c'est une action dangereuse
      * @param {string} modalId - ID du modal (optionnel)
+     * @param {string} confirmButtonText - Texte personnalisé pour le bouton de confirmation (optionnel)
      * @returns {string} ID du modal créé
      */
-    showModal(title, content, onConfirm, isDanger = false, modalId = 'dynamic-modal') {
-        const id = this.view.showModal(title, content, onConfirm, isDanger, modalId);
+    showModal(title, content, onConfirm, isDanger = false, modalId = 'dynamic-modal', confirmButtonText = null) {
+        const id = this.view.showModal(title, content, onConfirm, isDanger, modalId, confirmButtonText);
         this.model.registerModal(id);
         return id;
     }

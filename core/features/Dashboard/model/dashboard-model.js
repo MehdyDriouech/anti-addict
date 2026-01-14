@@ -6,11 +6,11 @@ export class DashboardModel {
     /**
      * Récupère les insights hebdomadaires
      * @param {Object} state - State de l'application
-     * @returns {Object|null} Insights ou null
+     * @returns {Promise<Object|null>} Insights ou null
      */
-    getWeeklyInsights(state) {
+    async getWeeklyInsights(state) {
         if (typeof Coaching !== 'undefined' && Coaching.computeWeeklyInsights) {
-            return Coaching.computeWeeklyInsights(state);
+            return await Coaching.computeWeeklyInsights(state);
         }
         return null;
     }

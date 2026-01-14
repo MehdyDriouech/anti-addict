@@ -10,8 +10,8 @@ const uiController = new UIController();
 // API publique
 export const UI = {
     showToast: (message, type) => uiController.showToast(message, type),
-    showModal: (title, content, onConfirm, isDanger, modalId) => 
-        uiController.showModal(title, content, onConfirm, isDanger, modalId),
+    showModal: (title, content, onConfirm, isDanger, modalId, confirmButtonText) => 
+        uiController.showModal(title, content, onConfirm, isDanger, modalId, confirmButtonText),
     closeModal: (modalId) => uiController.closeModal(modalId),
     showHelpModal: (lang) => uiController.showHelpModal(lang)
 };

@@ -12,6 +12,9 @@ export const Onboarding = {
     show: (state) => onboardingController.show(state),
     hide: () => onboardingController.hide(),
     complete: (state) => onboardingController.complete(state),
+    nextStep: () => onboardingController.nextStep(),
+    completeWithPin: () => onboardingController.completeWithPin(),
+    skipPin: () => onboardingController.skipPin(),
     showDisclaimerModal: (addictionsWithDisclaimer) => onboardingController.showDisclaimerModal(addictionsWithDisclaimer)
 };
 
