@@ -33,15 +33,17 @@ export class ToolsController {
      * @param {Object} state - State de l'application
      */
     openSlope(state) {
-        const currentAddiction = state.addictions?.[0] || 'porn';
-        const pluginName = this.model.getPluginName(currentAddiction);
+        // Si plusieurs addictions sont actives, utiliser l'addiction sélectionnée ou la première
+        const selectedAddictionId = state.currentAddiction || state.addictions?.[0]?.id || state.addictions?.[0] || 'porn';
+        const pluginName = this.model.getPluginName(selectedAddictionId);
         
         if (pluginName && typeof window[pluginName] !== 'undefined') {
-            window[pluginName].openSlopeModal(state);
+            // Passer l'addiction sélectionnée au plugin
+            window[pluginName].openSlopeModal(state, selectedAddictionId);
         } else {
             // Fallback vers AntiPorn
             if (typeof AntiPorn !== 'undefined') {
-                AntiPorn.openSlopeModal(state);
+                AntiPorn.openSlopeModal(state, selectedAddictionId);
             }
         }
     }

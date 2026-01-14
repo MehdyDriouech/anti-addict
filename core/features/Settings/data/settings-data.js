@@ -3,6 +3,7 @@
  */
 
 export const BUILD_VERSION = '13-01-2026-23-05';
+export const APP_VERSION = '0.3.4';
 
 export const LANGUAGE_LABELS = {
     fr: 'Français',

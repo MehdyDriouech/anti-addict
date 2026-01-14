@@ -2,7 +2,7 @@
  * Settings View - Rendu HTML pour les réglages
  */
 
-import { BUILD_VERSION, LANGUAGE_LABELS } from '../data/settings-data.js';
+import { BUILD_VERSION, APP_VERSION, LANGUAGE_LABELS } from '../data/settings-data.js';
 
 export class SettingsView {
     /**
@@ -180,7 +180,7 @@ export class SettingsView {
                             <div class="settings-item-icon">ℹ️</div>
                             <div class="settings-item-text">
                                 <span class="settings-item-title">${I18n.t('version')}</span>
-                                <span class="settings-item-value">5.0 (${BUILD_VERSION})</span>
+                                <span class="settings-item-value">${APP_VERSION} (${BUILD_VERSION})</span>
                             </div>
                         </div>
                     </div>

@@ -8,20 +8,28 @@ export class CravingView {
      * @param {Object} state - State de l'application
      * @param {Array} suggestedActions - Actions suggérées
      * @param {string} lang - Langue
+     * @param {string} selectedAddictionId - ID de l'addiction sélectionnée (optionnel)
      */
-    render(state, suggestedActions, lang) {
+    render(state, suggestedActions, lang, selectedAddictionId = null) {
         const screen = document.getElementById('screen-craving');
         if (!screen) return;
         
         const labels = {
-            fr: { suggestedActions: 'Actions suggérées', hadEpisode: 'J\'ai eu un épisode' },
-            en: { suggestedActions: 'Suggested actions', hadEpisode: 'I had an episode' },
-            ar: { suggestedActions: 'إجراءات مقترحة', hadEpisode: 'حدث لي انتكاس' }
+            fr: { suggestedActions: 'Actions suggérées', hadEpisode: 'J\'ai eu un épisode', selectAddiction: 'Pour quelle addiction ?' },
+            en: { suggestedActions: 'Suggested actions', hadEpisode: 'I had an episode', selectAddiction: 'For which addiction?' },
+            ar: { suggestedActions: 'إجراءات مقترحة', hadEpisode: 'حدث لي انتكاس', selectAddiction: 'لأي إدمان؟' }
         };
         const l = labels[lang] || labels.fr;
         
+        // Générer le sélecteur d'addiction si plusieurs addictions actives
+        const activeAddictions = state.addictions || [];
+        const addictionSelector = this.renderAddictionSelector(state, selectedAddictionId || (activeAddictions[0]?.id || null), 'onCravingAddictionChange');
+        
         screen.innerHTML = `
             <div class="protocol-container">
+                <!-- Sélecteur d'addiction -->
+                ${addictionSelector}
+                
                 <!-- Header -->
                 <div class="protocol-header">
                     <h1 class="protocol-title">${I18n.t('protocol_title')}</h1>
@@ -284,5 +292,84 @@ export class CravingView {
             btn.style.color = 'var(--success)';
         }
         this.markAllStepsCompleted();
+    }
+
+    /**
+     * Génère un sélecteur d'addiction pour l'écran craving
+     * @param {Object} state - State de l'application
+     * @param {string} selectedAddictionId - ID de l'addiction actuellement sélectionnée
+     * @param {string} onAddictionChange - Nom de fonction à appeler lors du changement
+     * @returns {string} HTML du sélecteur
+     */
+    renderAddictionSelector(state, selectedAddictionId, onAddictionChange) {
+        const activeAddictions = state.addictions || [];
+        
+        // Si une seule addiction, ne pas afficher le sélecteur
+        if (activeAddictions.length <= 1) {
+            return '';
+        }
+
+        const lang = state.profile?.lang || 'fr';
+        const icons = {
+            porn: '🔞',
+            cigarette: '🚬',
+            alcohol: '🍷',
+            drugs: '💊',
+            social_media: '📱',
+            gaming: '🎮',
+            food: '🍔',
+            shopping: '🛒'
+        };
+
+        const selectorLabel = {
+            fr: 'Pour quelle addiction ?',
+            en: 'For which addiction?',
+            ar: 'لأي إدمان؟'
+        }[lang] || 'For which addiction?';
+
+        // Si 3+ addictions, utiliser un dropdown
+        if (activeAddictions.length >= 3) {
+            const optionsHtml = activeAddictions.map(addiction => {
+                const addictionId = typeof addiction === 'string' ? addiction : addiction.id;
+                const icon = icons[addictionId] || '📋';
+                const name = typeof I18n !== 'undefined' ? I18n.t(`addiction_${addictionId}`) : addictionId;
+                const isSelected = addictionId === selectedAddictionId;
+                return `<option value="${addictionId}" ${isSelected ? 'selected' : ''}>${icon} ${name}</option>`;
+            }).join('');
+
+            return `
+                <div class="addiction-selector-container craving-selector">
+                    <label class="addiction-selector-label" for="craving-addiction-selector-dropdown">${selectorLabel}</label>
+                    <select id="craving-addiction-selector-dropdown" class="addiction-selector-dropdown" onchange="${onAddictionChange}(this.value)">
+                        ${optionsHtml}
+                    </select>
+                </div>
+            `;
+        }
+
+        // Sinon (2 addictions), utiliser les chips
+        const addictionChips = activeAddictions.map(addiction => {
+            const addictionId = typeof addiction === 'string' ? addiction : addiction.id;
+            const icon = icons[addictionId] || '📋';
+            const name = typeof I18n !== 'undefined' ? I18n.t(`addiction_${addictionId}`) : addictionId;
+            const isSelected = addictionId === selectedAddictionId;
+            
+            return `
+                <button class="chip addiction-chip ${isSelected ? 'active' : ''}" 
+                        onclick="${onAddictionChange}('${addictionId}')"
+                        data-addiction-id="${addictionId}">
+                    <span class="chip-icon">${icon}</span>
+                    <span class="chip-label">${name}</span>
+                    ${isSelected ? '<span class="chip-check">✓</span>' : ''}
+                </button>
+            `;
+        }).join('');
+
+        return `
+            <div class="addiction-selector-container craving-selector">
+                <label class="addiction-selector-label">${selectorLabel}</label>
+                <div class="addiction-chips">${addictionChips}</div>
+            </div>
+        `;
     }
 }

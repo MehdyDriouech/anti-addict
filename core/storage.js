@@ -131,9 +131,9 @@ function getDefaultState() {
             recentActions: []
         },
         
-        // V3: Calendrier sobriété
+        // V3: Calendrier de progression
         calendar: {
-            sobrietyDays: [],
+            cleanDays: [], // Renommé de sobrietyDays pour être plus générique
             milestones: []
         },
         
@@ -694,11 +694,14 @@ function getDateISO() {
  * @returns {Object} Le state modifié
  */
 function addEvent(state, type, addictionId, intensity = null, meta = null) {
+    // Normaliser addictionId pour éviter les objets
+    const normalizedAddictionId = normalizeAddictionId(addictionId);
+    
     const event = {
         ts: Date.now(),
         date: getDateISO(),
         type,
-        addictionId
+        addictionId: normalizedAddictionId
     };
     
     if (intensity !== null) {
@@ -712,6 +715,18 @@ function addEvent(state, type, addictionId, intensity = null, meta = null) {
     state.events.push(event);
     saveState(state);
     return state;
+}
+
+/**
+ * Normalise un addictionId (peut être string ou objet)
+ * @param {string|Object} addictionId - ID de l'addiction
+ * @returns {string|null} ID normalisé ou null
+ */
+function normalizeAddictionId(addictionId) {
+    if (!addictionId) return null;
+    if (typeof addictionId === 'string') return addictionId;
+    if (typeof addictionId === 'object' && addictionId.id) return addictionId.id;
+    return String(addictionId);
 }
 
 /**
@@ -1095,9 +1110,19 @@ function addSpiritualGoal(state, goal) {
  * @returns {Object} Le state modifié
  */
 function markSobrietyDay(state, date = null) {
+    // Migration : si sobrietyDays existe mais pas cleanDays, migrer
+    if (state.calendar?.sobrietyDays && !state.calendar.cleanDays) {
+        state.calendar.cleanDays = [...state.calendar.sobrietyDays];
+        delete state.calendar.sobrietyDays;
+    }
+    
+    if (!state.calendar.cleanDays) {
+        state.calendar.cleanDays = [];
+    }
+    
     const targetDate = date || getDateISO();
-    if (!state.calendar.sobrietyDays.includes(targetDate)) {
-        state.calendar.sobrietyDays.push(targetDate);
+    if (!state.calendar.cleanDays.includes(targetDate)) {
+        state.calendar.cleanDays.push(targetDate);
         saveState(state);
     }
     return state;

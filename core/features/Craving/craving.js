@@ -15,7 +15,8 @@ export const Craving = {
     updateIntensity: (value) => cravingController.updateIntensity(value),
     showEncouragement: (state) => cravingController.showEncouragement(state),
     confirmStep: () => cravingController.confirmStep(),
-    finish: (state) => cravingController.finish(state)
+    finish: (state) => cravingController.finish(state),
+    onAddictionChange: (addictionId, state) => cravingController.onAddictionChange(addictionId, state)
 };
 
 // Exporter globalement pour compatibilité
@@ -39,5 +40,9 @@ if (typeof window !== 'undefined') {
     window.finishProtocol = () => {
         const state = typeof window !== 'undefined' ? window.state : null;
         if (state) Craving.finish(state);
+    };
+    window.onCravingAddictionChange = (addictionId) => {
+        const state = typeof window !== 'undefined' ? window.state : null;
+        if (state) Craving.onAddictionChange(addictionId, state);
     };
 }

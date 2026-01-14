@@ -9,6 +9,7 @@ export class CravingController {
     constructor() {
         this.model = new CravingModel();
         this.view = new CravingView();
+        this.selectedAddictionId = null; // Addiction sélectionnée par l'utilisateur
     }
 
     /**
@@ -16,16 +17,42 @@ export class CravingController {
      * @param {Object} state - State de l'application
      */
     render(state) {
-        const suggestedActions = this.model.getSuggestedActions(state, state.profile.lang);
-        this.view.render(state, suggestedActions, state.profile.lang);
+        // Initialiser avec la première addiction si disponible
+        const activeAddictions = state.addictions || [];
+        if (activeAddictions.length > 0 && !this.selectedAddictionId) {
+            this.selectedAddictionId = typeof activeAddictions[0] === 'string' 
+                ? activeAddictions[0] 
+                : activeAddictions[0].id;
+        }
         
-        // Logger automatiquement le craving
-        const primaryAddiction = state.addictions[0]?.id || 'general';
-        Storage.addEvent(state, 'craving', primaryAddiction);
+        const suggestedActions = this.model.getSuggestedActions(state, state.profile.lang);
+        this.view.render(state, suggestedActions, state.profile.lang, this.selectedAddictionId);
+        
+        // Ne pas logger automatiquement le craving - attendre la sélection de l'addiction
+        // Le craving sera loggé dans finish() avec l'addiction sélectionnée
         
         // Réinitialiser et démarrer le protocole
         this.model.resetProtocolState();
         this.startProtocol();
+    }
+
+    /**
+     * Gère le changement d'addiction sélectionnée
+     * @param {string} addictionId - ID de l'addiction sélectionnée
+     * @param {Object} state - State de l'application
+     */
+    onAddictionChange(addictionId, state) {
+        // Normaliser addictionId pour s'assurer que c'est une string
+        this.selectedAddictionId = typeof addictionId === 'string' 
+            ? addictionId 
+            : (typeof addictionId === 'object' && addictionId.id ? addictionId.id : String(addictionId));
+        
+        // Re-rendre la vue avec la nouvelle addiction sélectionnée
+        const suggestedActions = this.model.getSuggestedActions(state, state.profile.lang);
+        this.view.render(state, suggestedActions, state.profile.lang, this.selectedAddictionId);
+        
+        // Logger le craving avec l'addiction sélectionnée
+        Storage.addEvent(state, 'craving', this.selectedAddictionId);
     }
 
     /**
@@ -100,12 +127,29 @@ export class CravingController {
     finish(state) {
         this.model.stopAllTimers();
         
+        // S'assurer qu'une addiction est sélectionnée
+        if (!this.selectedAddictionId) {
+            const activeAddictions = state.addictions || [];
+            this.selectedAddictionId = activeAddictions.length > 0 
+                ? (typeof activeAddictions[0] === 'string' ? activeAddictions[0] : activeAddictions[0].id)
+                : 'general';
+        }
+        
+        // Logger le craving si pas encore fait
+        const existingCraving = state.events.find(e => 
+            e.type === 'craving' && 
+            e.date === Storage.getDateISO() && 
+            e.addictionId === this.selectedAddictionId
+        );
+        if (!existingCraving) {
+            Storage.addEvent(state, 'craving', this.selectedAddictionId);
+        }
+        
         // Compter les actions faites
         const actionsDone = document.querySelectorAll('.action-chip.done').length;
         
         // Enregistrer une victoire avec l'intensité
-        const primaryAddiction = state.addictions[0]?.id || 'general';
-        Storage.addEvent(state, 'win', primaryAddiction, this.model.getIntensity());
+        Storage.addEvent(state, 'win', this.selectedAddictionId, this.model.getIntensity());
         
         // Incrémenter les victoires invisibles
         if (typeof Wins !== 'undefined') {
