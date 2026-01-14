@@ -193,13 +193,24 @@ export class SOSController {
      * @param {Object} state - State de l'application
      */
     confirmExit(state) {
+        // Appeler confirmExit du model (qui sauvegarde en mode urgence)
         this.model.confirmExit(state);
         this.deactivate();
+        
+        // Mettre à jour le state global si nécessaire
+        if (typeof window !== 'undefined' && window.state) {
+            // Le state sera mis à jour par Store.update dans le model
+        }
         
         if (typeof showToast === 'function') {
             const lang = state?.profile?.lang || 'fr';
             const l = LABELS[lang] || LABELS.fr;
             showToast(l.success);
+        }
+        
+        // Retourner à la home
+        if (typeof Router !== 'undefined') {
+            Router.navigateTo('home', true);
         }
     }
 

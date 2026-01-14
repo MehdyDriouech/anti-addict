@@ -64,9 +64,22 @@ export class SOSModel {
         this.sosActive = true;
         this.lowTextMode = state.settings?.lowTextMode || false;
         
-        // Logger l'événement SOS
+        // Logger l'événement SOS (en mode urgence, même verrouillé)
         const effectiveAddiction = addictionId || state.addictions?.[0] || 'porn';
-        Storage.addEvent(state, 'craving', effectiveAddiction, null, { context: 'sos' });
+        if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+            window.Store.update((draft) => {
+                if (!draft.events) draft.events = [];
+                draft.events.push({
+                    ts: Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    type: 'craving',
+                    addictionId: effectiveAddiction,
+                    meta: { context: 'sos' }
+                });
+            }, { reason: 'emergency_used' });
+        } else {
+            Storage.addEvent(state, 'craving', effectiveAddiction, null, { context: 'sos' });
+        }
     }
 
     /**
@@ -91,8 +104,18 @@ export class SOSModel {
      * @param {Object} state - State de l'application
      */
     confirmExit(state) {
-        // Incrémenter les cravings résistés
-        Storage.incrementWins(state, { resistedCravings: 1, minutesSaved: 15 });
+        // Incrémenter les cravings résistés (en mode urgence, même verrouillé)
+        if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+            window.Store.update((draft) => {
+                if (!draft.wins) {
+                    draft.wins = { resistedCravings: 0, minutesSavedEstimate: 0, positiveActionsCount: 0 };
+                }
+                draft.wins.resistedCravings = (draft.wins.resistedCravings || 0) + 1;
+                draft.wins.minutesSavedEstimate = (draft.wins.minutesSavedEstimate || 0) + 15;
+            }, { reason: 'emergency_used' });
+        } else {
+            Storage.incrementWins(state, { resistedCravings: 1, minutesSaved: 15 });
+        }
     }
 
     /**
