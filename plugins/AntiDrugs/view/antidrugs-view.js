@@ -10,11 +10,16 @@ export class AntiDrugsView extends AddictionBaseView {
         super('drugs');
     }
 
-    renderSlopeContent(lang, stoppedCount, tips) {
+    renderSlopeContent(lang, stoppedCount, tips, state = null, selectedAddictionId = 'drugs') {
         if (!this.slopeModalEl) return;
         const l = UI_LABELS[lang] || UI_LABELS.fr;
         this.currentStepIdx = 0;
         this.completedSteps = [];
+        
+        // Générer le sélecteur d'addiction si plusieurs addictions sont actives
+        const selectorHtml = state && state.addictions && state.addictions.length > 1 
+            ? this.renderAddictionSelector(state, selectedAddictionId, 'AntiDrugs.onAddictionChange')
+            : '';
         
         const stepsHtml = Object.entries(SLOPE_STEPS).map(([key, step], idx) => {
             const stepStatus = idx === 0 ? 'current' : 'locked';
@@ -33,6 +38,7 @@ export class AntiDrugsView extends AddictionBaseView {
 
         this.slopeModalEl.innerHTML = `<div class="modal-content slope-modal slope-advanced">
             <button class="modal-close" onclick="AntiDrugs.closeSlopeModal()">×</button>
+            ${selectorHtml}
             <div class="slope-header"><h2>⚠️ ${l.title}</h2><p>${l.subtitle}</p>
                 <div class="stopped-counter"><span class="counter-value">${stoppedCount}</span><span class="counter-label">${l.stoppedCount}</span></div>
             </div>

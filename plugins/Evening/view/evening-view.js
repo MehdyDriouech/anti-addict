@@ -53,14 +53,43 @@ export class EveningView {
      * Rendu du formulaire du rituel
      * @param {string} lang - Langue
      * @param {Object} eveningData - Données du rituel
-     * @param {string} addictionId - ID de l'addiction courante
+     * @param {Object} state - State de l'application (pour accéder aux addictions actives)
      */
-    renderForm(lang, eveningData, addictionId = null) {
+    renderForm(lang, eveningData, state = null) {
         const l = LABELS[lang] || LABELS.fr;
         const suggestions = HELPED_SUGGESTIONS[lang] || HELPED_SUGGESTIONS.fr;
         
-        // Récupérer la question d'exposition contextuelle
-        const exposureQuestion = this.getExposureQuestion(lang, addictionId);
+        // Récupérer les addictions actives
+        const activeAddictions = state?.addictions || [];
+        const exposures = eveningData.exposures || {};
+        
+        // Générer les sections d'exposition pour chaque addiction active
+        const exposureSections = activeAddictions.map(addiction => {
+            const addictionId = typeof addiction === 'string' ? addiction : addiction.id;
+            const exposureQuestion = this.getExposureQuestion(lang, addictionId);
+            const isExposed = exposures[addictionId] || false;
+            const addictionName = typeof I18n !== 'undefined' ? I18n.t(`addiction_${addictionId}`) : addictionId;
+            const addictionIcon = this.getAddictionIcon(addictionId);
+            
+            return `
+                <div class="form-group exposure-group">
+                    <label class="exposure-label">
+                        <span class="exposure-icon">${addictionIcon}</span>
+                        <span class="exposure-text">${exposureQuestion}</span>
+                    </label>
+                    <div class="btn-group">
+                        <button class="btn ${isExposed ? 'btn-danger' : 'btn-secondary'}" 
+                                onclick="Evening.setExposed('${addictionId}', true)">
+                            ${l.yes}
+                        </button>
+                        <button class="btn ${!isExposed ? 'btn-success' : 'btn-secondary'}" 
+                                onclick="Evening.setExposed('${addictionId}', false)">
+                            ${l.no}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
         
         this.modalEl.innerHTML = `
             <div class="modal-content evening-modal">
@@ -72,20 +101,8 @@ export class EveningView {
                 </div>
                 
                 <div class="evening-form">
-                    <!-- Exposition -->
-                    <div class="form-group">
-                        <label>${exposureQuestion}</label>
-                        <div class="btn-group">
-                            <button class="btn ${eveningData.exposed ? 'btn-danger' : 'btn-secondary'}" 
-                                    onclick="Evening.setExposed(true)">
-                                ${l.yes}
-                            </button>
-                            <button class="btn ${!eveningData.exposed ? 'btn-success' : 'btn-secondary'}" 
-                                    onclick="Evening.setExposed(false)">
-                                ${l.no}
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Expositions par addiction -->
+                    ${exposureSections}
                     
                     <!-- Ce qui a aidé -->
                     <div class="form-group">
@@ -152,12 +169,26 @@ export class EveningView {
                 <div class="summary-card">
                     <h4>${l.summary}</h4>
                     
-                    <div class="summary-item">
-                        <span class="summary-label">${l.exposedLabel}:</span>
-                        <span class="summary-value ${eveningData.exposed ? 'negative' : 'positive'}">
-                            ${eveningData.exposed ? l.exposedYes : l.exposedNo}
-                        </span>
-                    </div>
+                    ${Object.keys(eveningData.exposures || {}).length > 0 ? 
+                        Object.entries(eveningData.exposures).map(([addictionId, isExposed]) => {
+                            const addictionName = typeof I18n !== 'undefined' ? I18n.t(`addiction_${addictionId}`) : addictionId;
+                            const icon = this.getAddictionIcon(addictionId);
+                            return `
+                                <div class="summary-item">
+                                    <span class="summary-label">${icon} ${addictionName}:</span>
+                                    <span class="summary-value ${isExposed ? 'negative' : 'positive'}">
+                                        ${isExposed ? l.exposedYes : l.exposedNo}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('') : 
+                        `<div class="summary-item">
+                            <span class="summary-label">${l.exposedLabel}:</span>
+                            <span class="summary-value ${eveningData.exposed ? 'negative' : 'positive'}">
+                                ${eveningData.exposed ? l.exposedYes : l.exposedNo}
+                            </span>
+                        </div>`
+                    }
                     
                     ${eveningData.helped ? `
                         <div class="summary-item">

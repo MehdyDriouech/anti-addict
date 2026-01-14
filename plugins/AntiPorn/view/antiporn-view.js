@@ -3,10 +3,12 @@
  */
 
 import { SLOPE_SIGNALS, SLOPE_STEPS, NIGHT_CHECKLIST_ITEMS, TRIGGERS, ENVIRONMENT_RULES } from '../data/antiporn-data.js';
+import { AddictionBaseView } from '../../AddictionBase/view/addiction-base-view.js';
 
 export class AntiPornView {
     constructor() {
         this.slopeModalEl = null; this.nightModalEl = null; this.phoneBedModalEl = null; this.configModalEl = null;
+        this.baseView = new AddictionBaseView('porn');
     }
 
     createModal(id) {
@@ -33,19 +35,32 @@ export class AntiPornView {
     closePhoneBedModal() { this.hideModal(this.phoneBedModalEl); }
     closeConfigModal() { this.hideModal(this.configModalEl); }
 
-    renderSlopeContent(lang, stoppedCount, slopeStep, slopeStepsCompleted, spiritualCard) {
+    renderSlopeContent(lang, stoppedCount, slopeStep, slopeStepsCompleted, spiritualCard, state, selectedAddictionId = 'porn') {
         const l = this.getSlopeLabels(lang);
         const stepKeys = Object.keys(SLOPE_STEPS);
         const allCompleted = stepKeys.every(k => slopeStepsCompleted[k]);
         
+        // Normaliser selectedAddictionId (peut être string ou objet)
+        const normalizedAddictionId = typeof selectedAddictionId === 'string' 
+            ? selectedAddictionId 
+            : (typeof selectedAddictionId === 'object' && selectedAddictionId.id ? selectedAddictionId.id : String(selectedAddictionId));
+        
+        // Récupérer les données de l'addiction sélectionnée
+        const addictionData = this.getAddictionData(normalizedAddictionId, lang);
+        const currentStoppedCount = state.addictionConfigs?.[normalizedAddictionId]?.stoppedSlopes || 0;
+        
+        // Générer le sélecteur d'addiction avec l'addiction normalisée
+        const selectorHtml = this.baseView.renderAddictionSelector(state, normalizedAddictionId, 'AntiPorn.onAddictionChange');
+        
         this.slopeModalEl.innerHTML = `
             <div class="modal-content slope-modal slope-advanced">
-                <button class="modal-close" onclick="AntiPorn.closeSlopeModal()">×</button>
+                <button class="modal-close" onclick="window.AntiPorn.closeSlopeModal()">×</button>
+                ${selectorHtml}
                 <div class="slope-header">
                     <h2>${l.title}</h2>
                     <p>${l.subtitle}</p>
                     <div class="stopped-counter">
-                        <span class="counter-value">${stoppedCount}</span>
+                        <span class="counter-value">${currentStoppedCount}</span>
                         <span class="counter-label">${l.stoppedCount}</span>
                     </div>
                 </div>
@@ -53,9 +68,9 @@ export class AntiPornView {
                 <div class="slope-signals compact">
                     <label>${l.whatSignal}</label>
                     <div class="signal-chips">
-                        ${Object.entries(SLOPE_SIGNALS).slice(0, 4).map(([key, labels]) => `
-                            <button class="chip small" onclick="AntiPorn.logWithSignal('${key}')">
-                                ${labels[lang] || labels.fr}
+                        ${addictionData.signals.map(([key, label]) => `
+                            <button class="chip small" onclick="window.AntiPorn.logWithSignal('${key}')">
+                                ${label}
                             </button>
                         `).join('')}
                     </div>
@@ -77,7 +92,7 @@ export class AntiPornView {
                                 </div>
                                 <p class="step-desc">${step.desc[lang] || step.desc.fr}</p>
                                 ${isCurrent && !isCompleted ? `
-                                    <button class="btn btn-primary btn-block step-btn" onclick="AntiPorn.completeStep('${stepKey}')">
+                                    <button class="btn btn-primary btn-block step-btn" onclick="window.AntiPorn.completeStep('${stepKey}')">
                                         ${l.done}
                                     </button>
                                 ` : ''}
@@ -96,13 +111,47 @@ export class AntiPornView {
                                 <cite>— ${spiritualCard.ref}</cite>
                             </div>
                         ` : ''}
-                        <button class="btn btn-primary btn-large" onclick="AntiPorn.confirmSlope()">
+                        <button class="btn btn-primary btn-large" onclick="window.AntiPorn.confirmSlope()">
                             ${l.close}
                         </button>
                     </div>
                 ` : ''}
             </div>
         `;
+        
+        // Attacher les event listeners aux chips d'addiction après le rendu
+        this.attachAddictionSelectorListeners();
+    }
+
+    /**
+     * Attache les event listeners aux chips d'addiction du sélecteur
+     * pour garantir que les clics fonctionnent même après plusieurs mises à jour du DOM
+     * Utilise la délégation d'événements pour plus de robustesse
+     */
+    attachAddictionSelectorListeners() {
+        if (!this.slopeModalEl) return;
+        
+        // Supprimer l'ancien listener de délégation s'il existe
+        if (this._addictionSelectorHandler) {
+            this.slopeModalEl.removeEventListener('click', this._addictionSelectorHandler);
+        }
+        
+        // Créer un nouveau handler avec délégation d'événements
+        this._addictionSelectorHandler = (e) => {
+            const chip = e.target.closest('.addiction-chip');
+            if (!chip) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const addictionId = chip.getAttribute('data-addiction-id');
+            if (addictionId && window.AntiPorn && window.AntiPorn.onAddictionChange) {
+                window.AntiPorn.onAddictionChange(addictionId);
+            }
+        };
+        
+        // Attacher le listener au conteneur (délégation d'événements)
+        this.slopeModalEl.addEventListener('click', this._addictionSelectorHandler);
     }
 
     getSlopeLabels(lang) {
@@ -114,12 +163,17 @@ export class AntiPornView {
         return labels[lang] || labels.fr;
     }
 
-    renderNightContent(lang, nightRoutine, monthLogs, todayLog) {
+    renderNightContent(lang, nightRoutine, monthLogs, todayLog, state = null, selectedAddictionId = 'porn') {
         const l = this.getNightLabels(lang);
         const checklist = nightRoutine.checklist || ['phone_out', 'lights_dim', 'leave_bed'];
         
+        // Générer le sélecteur d'addiction si plusieurs addictions sont actives
+        const selectorHtml = state && state.addictions && state.addictions.length > 1 
+            ? this.baseView.renderAddictionSelector(state, selectedAddictionId, 'AntiPorn.onNightAddictionChange')
+            : '';
+        
         this.nightModalEl.innerHTML = `
-            <div class="modal-content night-modal"><button class="modal-close" onclick="AntiPorn.closeNightModal()">×</button>
+            <div class="modal-content night-modal"><button class="modal-close" onclick="AntiPorn.closeNightModal()">×</button>${selectorHtml}
                 <div class="night-header"><h2>${l.title}</h2><p>${l.subtitle}</p></div>
                 <div class="night-stats"><span class="stat-value">${monthLogs}</span><span class="stat-label">${l.completed} (${l.stats})</span></div>
                 ${todayLog?.completed ? `<div class="night-completed"><span class="completed-icon">✓</span><span>${l.completedTonight}</span></div>` : ''}
@@ -149,10 +203,15 @@ export class AntiPornView {
         this.phoneBedModalEl.innerHTML = `<div class="modal-content phone-bed-modal"><button class="modal-close" onclick="AntiPorn.closePhoneBedModal()">×</button><h2>${l.title}</h2><p>${l.question}</p><div class="phone-bed-stats"><span>${l.stats}: ${stats.phoneOut}/${stats.total} ${l.out}</span></div><div class="btn-group"><button class="btn btn-secondary" onclick="AntiPorn.answerPhoneBed(true)">${l.yes}</button><button class="btn btn-success" onclick="AntiPorn.answerPhoneBed(false)">✓ ${l.no}</button></div></div>`;
     }
 
-    renderConfigContent(lang, customTriggers, activeRules) {
+    renderConfigContent(lang, customTriggers, activeRules, state = null, selectedAddictionId = 'porn') {
         const l = { fr: { title: '⚙️ Configuration', triggers: 'Mes déclencheurs', rules: 'Règles environnement', save: 'Enregistrer' }, en: { title: '⚙️ Configuration', triggers: 'My triggers', rules: 'Environment rules', save: 'Save' }, ar: { title: '⚙️ الإعدادات', triggers: 'محفزاتي', rules: 'قواعد البيئة', save: 'حفظ' } }[lang] || { fr: { title: '⚙️ Configuration', triggers: 'Mes déclencheurs', rules: 'Règles environnement', save: 'Enregistrer' } }.fr;
         
-        this.configModalEl.innerHTML = `<div class="modal-content config-modal"><button class="modal-close" onclick="AntiPorn.closeConfigModal()">×</button><h2>${l.title}</h2>
+        // Générer le sélecteur d'addiction si plusieurs addictions sont actives
+        const selectorHtml = state && state.addictions && state.addictions.length > 1 
+            ? this.baseView.renderAddictionSelector(state, selectedAddictionId, 'AntiPorn.onConfigAddictionChange')
+            : '';
+        
+        this.configModalEl.innerHTML = `<div class="modal-content config-modal"><button class="modal-close" onclick="AntiPorn.closeConfigModal()">×</button>${selectorHtml}<h2>${l.title}</h2>
             <div class="config-section"><h4>${l.triggers}</h4><div class="trigger-chips">${Object.entries(TRIGGERS).map(([key, labels]) => `<button class="chip ${customTriggers.includes(key) ? 'active' : ''}" onclick="AntiPorn.toggleTrigger('${key}')">${labels[lang] || labels.fr}</button>`).join('')}</div></div>
             <div class="config-section"><h4>${l.rules}</h4><div class="rules-list">${Object.entries(ENVIRONMENT_RULES).map(([key, labels]) => `<label class="rule-item"><input type="checkbox" data-rule="${key}" ${activeRules.includes(key) ? 'checked' : ''}><span>${labels[lang] || labels.fr}</span></label>`).join('')}</div></div>
             <button class="btn btn-primary btn-block" onclick="AntiPorn.saveConfig()">✓ ${l.save}</button>
@@ -179,5 +238,50 @@ export class AntiPornView {
         if (counterValue) {
             counterValue.textContent = count;
         }
+    }
+
+    /**
+     * Récupère les données (signaux, conseils) d'une addiction spécifique
+     * @param {string} addictionId - ID de l'addiction
+     * @param {string} lang - Langue
+     * @returns {Object} Données de l'addiction
+     */
+    getAddictionData(addictionId, lang) {
+        // Si c'est porn, utiliser les données locales
+        if (addictionId === 'porn') {
+            return this.getSlopeData(lang);
+        }
+
+        // Pour les autres addictions, utiliser le plugin correspondant
+        const pluginNames = {
+            'cigarette': 'AntiSmoke',
+            'alcohol': 'AntiAlcohol',
+            'drugs': 'AntiDrugs',
+            'social_media': 'AntiSocialMedia',
+            'gaming': 'AntiGaming',
+            'food': 'AntiFood',
+            'shopping': 'AntiShopping'
+        };
+
+        const pluginName = pluginNames[addictionId];
+        if (pluginName && typeof window[pluginName] !== 'undefined' && window[pluginName].getSlopeData) {
+            return window[pluginName].getSlopeData(lang);
+        }
+
+        // Fallback vers les données de porn
+        return this.getSlopeData(lang);
+    }
+
+    /**
+     * Récupère les données de pente pour l'addiction porn
+     * @param {string} lang - Langue
+     * @returns {Object} Données de pente
+     */
+    getSlopeData(lang) {
+        return {
+            signals: Object.entries(SLOPE_SIGNALS).slice(0, 4).map(([key, labels]) => [key, labels[lang] || labels.fr]),
+            steps: SLOPE_STEPS,
+            tips: []
+        };
     }
 }

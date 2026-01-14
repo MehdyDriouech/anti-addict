@@ -11,6 +11,7 @@ export class AntiSocialMediaController {
         this.model = model;
         this.view = view;
         this.currentState = null;
+        this.currentSelectedAddiction = null;
     }
 
     init() {
@@ -30,13 +31,69 @@ export class AntiSocialMediaController {
         this.view.configModalEl = document.getElementById('antisocialmediaConfigModal');
     }
 
-    openSlopeModal(state) {
+    openSlopeModal(state, selectedAddictionId = null) {
         this.currentState = state;
         this.init();
+        
+        // Déterminer l'addiction sélectionnée
+        if (!selectedAddictionId) {
+            selectedAddictionId = state.currentAddiction || state.addictions?.[0]?.id || state.addictions?.[0] || 'social_media';
+        }
+        this.currentSelectedAddiction = selectedAddictionId;
+        
         const lang = state.profile?.lang || 'fr';
-        const stoppedCount = this.model.getStoppedSlopesCount(state);
+        const stoppedCount = this.model.getStoppedSlopesCount(state, selectedAddictionId);
         const tips = this.model.getRandomTips(lang, 3);
-        this.view.renderSlopeContent(lang, stoppedCount, tips);
+        this.view.renderSlopeContent(lang, stoppedCount, tips, state, selectedAddictionId);
+    }
+
+    /**
+     * Gère le changement d'addiction dans le sélecteur
+     * @param {string} addictionId - ID de la nouvelle addiction sélectionnée
+     */
+    onAddictionChange(addictionId) {
+        if (!this.currentState) {
+            this.currentState = typeof window !== 'undefined' ? window.state : null;
+        }
+        if (!this.currentState) return;
+        
+        // Normaliser addictionId
+        const normalizedAddictionId = typeof addictionId === 'string' 
+            ? addictionId 
+            : (typeof addictionId === 'object' && addictionId.id ? addictionId.id : String(addictionId));
+        
+        // Si on change vers la même addiction, ne rien faire
+        if (normalizedAddictionId === this.currentSelectedAddiction) {
+            return;
+        }
+        
+        this.currentSelectedAddiction = normalizedAddictionId;
+        this.currentState.currentAddiction = normalizedAddictionId;
+        
+        // Si l'addiction change vers une autre, ouvrir la modale du plugin correspondant
+        if (normalizedAddictionId !== 'social_media') {
+            const pluginNames = {
+                'porn': 'AntiPorn',
+                'cigarette': 'AntiSmoke',
+                'alcohol': 'AntiAlcohol',
+                'drugs': 'AntiDrugs',
+                'gaming': 'AntiGaming',
+                'food': 'AntiFood',
+                'shopping': 'AntiShopping'
+            };
+            const pluginName = pluginNames[normalizedAddictionId];
+            if (pluginName && typeof window[pluginName] !== 'undefined' && window[pluginName].openSlopeModal) {
+                this.closeSlopeModal();
+                window[pluginName].openSlopeModal(this.currentState, normalizedAddictionId);
+                return;
+            }
+        }
+        
+        // Sinon, re-rendre avec la nouvelle addiction
+        const lang = this.currentState.profile?.lang || 'fr';
+        const stoppedCount = this.model.getStoppedSlopesCount(this.currentState, normalizedAddictionId);
+        const tips = this.model.getRandomTips(lang, 3);
+        this.view.renderSlopeContent(lang, stoppedCount, tips, this.currentState, normalizedAddictionId);
     }
 
     closeSlopeModal() { this.view.closeSlopeModal(); }

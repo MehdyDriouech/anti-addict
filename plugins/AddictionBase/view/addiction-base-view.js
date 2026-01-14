@@ -201,4 +201,114 @@ export class AddictionBaseView {
         };
         return `<button class="btn btn-secondary" onclick="${onClick}">${labels[lang] || labels.fr}</button>`;
     }
+
+    /**
+     * Génère un sélecteur d'addiction pour les modales
+     * @param {Object} state - State de l'application
+     * @param {string} selectedAddictionId - ID de l'addiction actuellement sélectionnée
+     * @param {string} onAddictionChange - Callback ou nom de fonction à appeler lors du changement
+     * @returns {string} HTML du sélecteur
+     */
+    renderAddictionSelector(state, selectedAddictionId, onAddictionChange) {
+        const activeAddictions = state.addictions || [];
+        
+        // Si une seule addiction, ne pas afficher le sélecteur
+        if (activeAddictions.length <= 1) {
+            return '';
+        }
+
+        const lang = state.profile?.lang || 'fr';
+        const icons = {
+            porn: '🔞',
+            cigarette: '🚬',
+            alcohol: '🍷',
+            drugs: '💊',
+            social_media: '📱',
+            gaming: '🎮',
+            food: '🍔',
+            shopping: '🛒'
+        };
+
+        const selectorLabel = {
+            fr: 'Addiction actuelle',
+            en: 'Current addiction',
+            ar: 'الإدمان الحالي'
+        }[lang] || 'Current addiction';
+
+        // Construire le callback pour le dropdown
+        let dropdownCallback = '';
+        if (typeof onAddictionChange === 'function') {
+            dropdownCallback = `onAddictionChange(this.value)`;
+        } else if (typeof onAddictionChange === 'string') {
+            if (onAddictionChange.startsWith('window.')) {
+                dropdownCallback = `${onAddictionChange}(this.value)`;
+            } else {
+                dropdownCallback = `window.${onAddictionChange}(this.value)`;
+            }
+        } else {
+            dropdownCallback = `window.handleAddictionChange(this.value)`;
+        }
+
+        // Si 3+ addictions, utiliser un dropdown
+        if (activeAddictions.length >= 3) {
+            const optionsHtml = activeAddictions.map(addiction => {
+                const addictionId = typeof addiction === 'string' ? addiction : addiction.id;
+                const icon = icons[addictionId] || '📋';
+                const name = typeof I18n !== 'undefined' ? I18n.t(`addiction_${addictionId}`) : addictionId;
+                const isSelected = addictionId === selectedAddictionId;
+                return `<option value="${addictionId}" ${isSelected ? 'selected' : ''}>${icon} ${name}</option>`;
+            }).join('');
+
+            return `
+                <div class="addiction-selector-container">
+                    <label class="addiction-selector-label" for="addiction-selector-dropdown">${selectorLabel}</label>
+                    <select id="addiction-selector-dropdown" class="addiction-selector-dropdown" onchange="${dropdownCallback}">
+                        ${optionsHtml}
+                    </select>
+                </div>
+            `;
+        }
+
+        // Sinon (2 addictions), utiliser les chips
+        const addictionChips = activeAddictions.map(addiction => {
+            const addictionId = typeof addiction === 'string' ? addiction : addiction.id;
+            const icon = icons[addictionId] || '📋';
+            const name = typeof I18n !== 'undefined' ? I18n.t(`addiction_${addictionId}`) : addictionId;
+            const isSelected = addictionId === selectedAddictionId;
+            
+            // Construire le callback
+            let callback = '';
+            if (typeof onAddictionChange === 'function') {
+                callback = `onAddictionChange('${addictionId}')`;
+            } else if (typeof onAddictionChange === 'string') {
+                if (onAddictionChange.startsWith('window.')) {
+                    callback = `${onAddictionChange}('${addictionId}')`;
+                } else {
+                    const objectName = onAddictionChange.split('.')[0];
+                    callback = `window.${onAddictionChange}('${addictionId}')`;
+                }
+            } else {
+                callback = `window.handleAddictionChange('${addictionId}')`;
+            }
+
+            return `
+                <button class="chip addiction-chip ${isSelected ? 'active' : ''}" 
+                        onclick="${callback}"
+                        data-addiction-id="${addictionId}">
+                    <span class="chip-icon">${icon}</span>
+                    <span class="chip-label">${name}</span>
+                    ${isSelected ? '<span class="chip-check">✓</span>' : ''}
+                </button>
+            `;
+        }).join('');
+
+        return `
+            <div class="addiction-selector-container">
+                <label class="addiction-selector-label">${selectorLabel}</label>
+                <div class="addiction-chips-container">
+                    ${addictionChips}
+                </div>
+            </div>
+        `;
+    }
 }

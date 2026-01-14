@@ -10,12 +10,17 @@ export class AntiAlcoholView extends AddictionBaseView {
         super('alcohol');
     }
 
-    renderSlopeContent(lang, stoppedCount, tips) {
+    renderSlopeContent(lang, stoppedCount, tips, state = null, selectedAddictionId = 'alcohol') {
         if (!this.slopeModalEl) return;
         
         const l = UI_LABELS[lang] || UI_LABELS.fr;
         this.currentStepIdx = 0;
         this.completedSteps = [];
+        
+        // Générer le sélecteur d'addiction si plusieurs addictions sont actives
+        const selectorHtml = state && state.addictions && state.addictions.length > 1 
+            ? this.renderAddictionSelector(state, selectedAddictionId, 'AntiAlcohol.onAddictionChange')
+            : '';
         
         const stepsHtml = Object.entries(SLOPE_STEPS).map(([key, step], idx) => {
             const stepStatus = idx === 0 ? 'current' : 'locked';
@@ -41,6 +46,7 @@ export class AntiAlcoholView extends AddictionBaseView {
         this.slopeModalEl.innerHTML = `
             <div class="modal-content slope-modal slope-advanced">
                 <button class="modal-close" onclick="AntiAlcohol.closeSlopeModal()">×</button>
+                ${selectorHtml}
                 <div class="slope-header">
                     <h2>🍷 ${l.title}</h2>
                     <p>${l.subtitle}</p>

@@ -113,4 +113,16 @@ export class ExperimentsModel {
     getPastExperiments(state) {
         return state.experiments.filter(e => !this.isExperimentActive(e) && e.results);
     }
+
+    deleteExperiment(experimentId, state) {
+        const index = state.experiments.findIndex(e => e.id === experimentId);
+        if (index === -1) return null;
+        
+        // Retirer l'expérience sans la sauvegarder dans past
+        const deleted = state.experiments[index];
+        state.experiments.splice(index, 1);
+        
+        Storage.saveState(state);
+        return deleted;
+    }
 }

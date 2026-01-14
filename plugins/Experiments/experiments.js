@@ -29,6 +29,7 @@ const Experiments = {
     close: () => experimentsController.close(),
     start: (templateKey) => experimentsController.start(templateKey),
     end: (experimentId) => experimentsController.end(experimentId),
+    delete: (experimentId) => experimentsController.delete(experimentId),
     
     renderExperimentWidget: (state) => experimentsController.renderWidget(state)
 };

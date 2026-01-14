@@ -16,7 +16,7 @@ export const MONTHS = {
 
 export const LABELS = {
     fr: {
-        title: '📅 Calendrier sobriété',
+        title: '📅 Calendrier de progression',
         today: 'Aujourd\'hui',
         streak: 'Streak actuel',
         timeline: 'Timeline',
@@ -31,7 +31,7 @@ export const LABELS = {
         exported: 'Timeline exportée'
     },
     en: {
-        title: '📅 Sobriety calendar',
+        title: '📅 Progress calendar',
         today: 'Today',
         streak: 'Current streak',
         timeline: 'Timeline',
@@ -46,7 +46,7 @@ export const LABELS = {
         exported: 'Timeline exported'
     },
     ar: {
-        title: '📅 تقويم الصحو',
+        title: '📅 تقويم التقدم',
         today: 'اليوم',
         streak: 'السلسلة الحالية',
         timeline: 'الجدول الزمني',

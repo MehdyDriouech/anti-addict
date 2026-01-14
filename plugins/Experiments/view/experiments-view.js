@@ -50,9 +50,14 @@ export class ExperimentsView {
                             <div class="experiment-baseline">
                                 <span>${l.baseline}: ${activeExp.baseline.cravingsPerDay} cravings/jour</span>
                             </div>
-                            <button class="btn btn-secondary" onclick="Experiments.end('${activeExp.id}')">
-                                ${l.end}
-                            </button>
+                            <div class="experiment-actions">
+                                <button class="btn btn-secondary" onclick="Experiments.end('${activeExp.id}')">
+                                    ${l.end}
+                                </button>
+                                <button class="btn btn-danger btn-small" onclick="Experiments.delete('${activeExp.id}')">
+                                    ${l.delete}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ` : `

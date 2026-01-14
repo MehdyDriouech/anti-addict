@@ -23,7 +23,7 @@ const Evening = {
     close: () => eveningController.close(),
     
     // Form
-    setExposed: (value) => eveningController.setExposed(value),
+    setExposed: (addictionId, value) => eveningController.setExposed(addictionId, value),
     setHelped: (value) => eveningController.setHelped(value),
     save: () => eveningController.save(),
     

@@ -20,8 +20,9 @@ const AntiSmoke = {
     UI_LABELS,
     
     // API principale
-    openSlopeModal: (state) => antismokeController.openSlopeModal(state),
+    openSlopeModal: (state, selectedAddictionId) => antismokeController.openSlopeModal(state, selectedAddictionId),
     closeSlopeModal: () => antismokeController.closeSlopeModal(),
+    onAddictionChange: (addictionId) => antismokeController.onAddictionChange(addictionId),
     logWithSignal: (signal) => antismokeController.logWithSignal(signal),
     confirmSlope: () => antismokeController.confirmSlope(),
     completeStep: (stepKey) => antismokeController.completeStep(stepKey),
@@ -38,7 +39,8 @@ const AntiSmoke = {
     
     // Helpers
     getRandomTips: (lang, count) => antismokeModel.getRandomTips(lang, count),
-    calculateMoneySaved: (perDay, price, days) => antismokeModel.calculateMoneySaved(perDay, price, days)
+    calculateMoneySaved: (perDay, price, days) => antismokeModel.calculateMoneySaved(perDay, price, days),
+    getSlopeData: (lang) => antismokeView.getSlopeData(lang)
 };
 
 window.AntiSmoke = AntiSmoke;

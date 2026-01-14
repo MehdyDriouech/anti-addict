@@ -17,14 +17,16 @@ const AntiPorn = {
     logSlope: (state, signal) => antipornController.logSlope(state, signal),
     getRecentSlopes: (state, days) => antipornController.getRecentSlopes(state, days),
     
-    openSlopeModal: (state) => antipornController.openSlopeModal(state),
+    openSlopeModal: (state, selectedAddictionId) => antipornController.openSlopeModal(state, selectedAddictionId),
     closeSlopeModal: () => antipornController.closeSlopeModal(),
+    onAddictionChange: (addictionId) => antipornController.onAddictionChange(addictionId),
     logWithSignal: (signal) => antipornController.logWithSignal(signal),
     confirmSlope: () => antipornController.confirmSlope(),
     completeStep: (stepKey) => antipornController.completeStep(stepKey),
     
-    openNightModal: (state) => antipornController.openNightModal(state),
+    openNightModal: (state, selectedAddictionId) => antipornController.openNightModal(state, selectedAddictionId),
     closeNightModal: () => antipornController.closeNightModal(),
+    onNightAddictionChange: (addictionId) => antipornController.onNightAddictionChange(addictionId),
     toggleNightRoutine: () => antipornController.toggleNightRoutine(),
     addCustomNightItem: () => antipornController.addCustomNightItem(),
     removeCustomNightItem: (index) => antipornController.removeCustomNightItem(index),
@@ -36,14 +38,16 @@ const AntiPorn = {
     answerPhoneBed: (phoneInBed) => antipornController.answerPhoneBed(phoneInBed),
     getPhoneBedStats: (state) => antipornController.getPhoneBedStats(state),
     
-    openConfigModal: (state) => antipornController.openConfigModal(state),
+    openConfigModal: (state, selectedAddictionId) => antipornController.openConfigModal(state, selectedAddictionId),
     closeConfigModal: () => antipornController.closeConfigModal(),
+    onConfigAddictionChange: (addictionId) => antipornController.onConfigAddictionChange(addictionId),
     toggleTrigger: (trigger) => antipornController.toggleTrigger(trigger),
     saveConfig: () => antipornController.saveConfig(),
     
     renderEnvironmentChecklist: (state) => antipornController.renderEnvironmentChecklist(state),
     getRandomTips: (lang, count) => antipornController.getRandomTips(lang, count),
-    renderNightButton: (state) => antipornController.renderNightButton(state)
+    renderNightButton: (state) => antipornController.renderNightButton(state),
+    getSlopeData: (lang) => antipornView.getSlopeData(lang)
 };
 
 window.AntiPorn = AntiPorn;

@@ -13,12 +13,17 @@ export class AntiSmokeView extends AddictionBaseView {
     /**
      * Affiche la modale de pente (envie de fumer)
      */
-    renderSlopeContent(lang, stoppedCount, tips) {
+    renderSlopeContent(lang, stoppedCount, tips, state = null, selectedAddictionId = 'cigarette') {
         if (!this.slopeModalEl) return;
         
         const l = UI_LABELS[lang] || UI_LABELS.fr;
         this.currentStepIdx = 0;
         this.completedSteps = [];
+        
+        // Générer le sélecteur d'addiction si plusieurs addictions sont actives
+        const selectorHtml = state && state.addictions && state.addictions.length > 1 
+            ? this.renderAddictionSelector(state, selectedAddictionId, 'AntiSmoke.onAddictionChange')
+            : '';
         
         const stepsHtml = Object.entries(SLOPE_STEPS).map(([key, step], idx) => {
             const stepStatus = idx === 0 ? 'current' : 'locked';
@@ -48,6 +53,7 @@ export class AntiSmokeView extends AddictionBaseView {
         this.slopeModalEl.innerHTML = `
             <div class="modal-content slope-modal slope-advanced">
                 <button class="modal-close" onclick="AntiSmoke.closeSlopeModal()">×</button>
+                ${selectorHtml}
                 <div class="slope-header">
                     <h2>🚭 ${l.title}</h2>
                     <p>${l.subtitle}</p>
@@ -85,6 +91,19 @@ export class AntiSmokeView extends AddictionBaseView {
         
         this.slopeModalEl.classList.add('active');
         this.setupOverlayClose(this.slopeModalEl, () => window.AntiSmoke.closeSlopeModal());
+    }
+
+    /**
+     * Récupère les données de pente pour l'addiction cigarette
+     * @param {string} lang - Langue
+     * @returns {Object} Données de pente
+     */
+    getSlopeData(lang) {
+        return {
+            signals: Object.entries(SLOPE_SIGNALS).map(([key, signal]) => [key, signal[lang] || signal.fr]),
+            steps: SLOPE_STEPS,
+            tips: CONTEXTUAL_TIPS[lang] || CONTEXTUAL_TIPS.fr
+        };
     }
 
     /**

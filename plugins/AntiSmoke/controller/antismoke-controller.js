@@ -11,6 +11,7 @@ export class AntiSmokeController {
         this.model = model;
         this.view = view;
         this.currentState = null;
+        this.currentSelectedAddiction = null;
     }
 
     /**
@@ -38,15 +39,71 @@ export class AntiSmokeController {
     /**
      * Ouvre la modale de pente (envie de fumer)
      */
-    openSlopeModal(state) {
+    openSlopeModal(state, selectedAddictionId = null) {
         this.currentState = state;
         this.init();
         
+        // Déterminer l'addiction sélectionnée
+        if (!selectedAddictionId) {
+            selectedAddictionId = state.currentAddiction || state.addictions?.[0]?.id || state.addictions?.[0] || 'cigarette';
+        }
+        this.currentSelectedAddiction = selectedAddictionId;
+        
         const lang = state.profile?.lang || 'fr';
-        const stoppedCount = this.model.getStoppedSlopesCount(state);
+        const stoppedCount = this.model.getStoppedSlopesCount(state, selectedAddictionId);
         const tips = this.model.getRandomTips(lang, 3);
         
-        this.view.renderSlopeContent(lang, stoppedCount, tips);
+        this.view.renderSlopeContent(lang, stoppedCount, tips, state, selectedAddictionId);
+    }
+
+    /**
+     * Gère le changement d'addiction dans le sélecteur
+     * @param {string} addictionId - ID de la nouvelle addiction sélectionnée
+     */
+    onAddictionChange(addictionId) {
+        if (!this.currentState) {
+            this.currentState = typeof window !== 'undefined' ? window.state : null;
+        }
+        if (!this.currentState) return;
+        
+        // Normaliser addictionId
+        const normalizedAddictionId = typeof addictionId === 'string' 
+            ? addictionId 
+            : (typeof addictionId === 'object' && addictionId.id ? addictionId.id : String(addictionId));
+        
+        // Si on change vers la même addiction, ne rien faire
+        if (normalizedAddictionId === this.currentSelectedAddiction) {
+            return;
+        }
+        
+        this.currentSelectedAddiction = normalizedAddictionId;
+        this.currentState.currentAddiction = normalizedAddictionId;
+        
+        // Si l'addiction change vers une autre, ouvrir la modale du plugin correspondant
+        if (normalizedAddictionId !== 'cigarette') {
+            const pluginNames = {
+                'porn': 'AntiPorn',
+                'alcohol': 'AntiAlcohol',
+                'drugs': 'AntiDrugs',
+                'social_media': 'AntiSocialMedia',
+                'gaming': 'AntiGaming',
+                'food': 'AntiFood',
+                'shopping': 'AntiShopping'
+            };
+            const pluginName = pluginNames[normalizedAddictionId];
+            if (pluginName && typeof window[pluginName] !== 'undefined' && window[pluginName].openSlopeModal) {
+                this.closeSlopeModal();
+                window[pluginName].openSlopeModal(this.currentState, normalizedAddictionId);
+                return;
+            }
+        }
+        
+        // Sinon, réinitialiser les étapes et re-rendre avec la nouvelle addiction
+        // Les étapes seront réinitialisées dans renderSlopeContent via currentStepIdx et completedSteps
+        const lang = this.currentState.profile?.lang || 'fr';
+        const stoppedCount = this.model.getStoppedSlopesCount(this.currentState, normalizedAddictionId);
+        const tips = this.model.getRandomTips(lang, 3);
+        this.view.renderSlopeContent(lang, stoppedCount, tips, this.currentState, normalizedAddictionId);
     }
 
     /**

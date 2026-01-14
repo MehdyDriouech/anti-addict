@@ -41,6 +41,11 @@ export class CalendarModel {
         const monthStart = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}-01`;
         const monthEnd = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
         
+        // Migration : si sobrietyDays existe mais pas cleanDays, migrer
+        if (state.calendar?.sobrietyDays && !state.calendar.cleanDays) {
+            state.calendar.cleanDays = [...state.calendar.sobrietyDays];
+        }
+        
         return {
             daysInMonth,
             startDay,
@@ -48,24 +53,37 @@ export class CalendarModel {
             monthEnd,
             episodes: state.events.filter(e => e.type === 'episode' && e.date >= monthStart && e.date <= monthEnd),
             cravings: state.events.filter(e => e.type === 'craving' && e.date >= monthStart && e.date <= monthEnd),
-            sobrietyDays: state.calendar?.sobrietyDays?.filter(d => d >= monthStart && d <= monthEnd) || []
+            cleanDays: state.calendar?.cleanDays?.filter(d => d >= monthStart && d <= monthEnd) || []
         };
     }
 
     toggleDay(state, dateStr) {
-        if (!state.calendar.sobrietyDays) state.calendar.sobrietyDays = [];
+        // Migration : si sobrietyDays existe mais pas cleanDays, migrer
+        if (state.calendar?.sobrietyDays && !state.calendar.cleanDays) {
+            state.calendar.cleanDays = [...state.calendar.sobrietyDays];
+            delete state.calendar.sobrietyDays;
+        }
         
-        const index = state.calendar.sobrietyDays.indexOf(dateStr);
+        if (!state.calendar.cleanDays) state.calendar.cleanDays = [];
+        
+        const index = state.calendar.cleanDays.indexOf(dateStr);
         if (index >= 0) {
-            state.calendar.sobrietyDays.splice(index, 1);
+            state.calendar.cleanDays.splice(index, 1);
         } else {
-            state.calendar.sobrietyDays.push(dateStr);
+            state.calendar.cleanDays.push(dateStr);
         }
         Storage.saveState(state);
     }
 
-    getGroupedEvents(state, limit = 50) {
-        const events = [...state.events].sort((a, b) => b.ts - a.ts).slice(0, limit);
+    getGroupedEvents(state, limit = 50, addictionId = null) {
+        let events = [...state.events];
+        
+        // Filtrer par addiction si spécifié
+        if (addictionId) {
+            events = events.filter(event => event.addictionId === addictionId);
+        }
+        
+        events = events.sort((a, b) => b.ts - a.ts).slice(0, limit);
         const grouped = {};
         events.forEach(event => {
             if (!grouped[event.date]) grouped[event.date] = [];
@@ -75,10 +93,15 @@ export class CalendarModel {
     }
 
     exportData(state) {
+        // Migration : si sobrietyDays existe mais pas cleanDays, migrer
+        if (state.calendar?.sobrietyDays && !state.calendar.cleanDays) {
+            state.calendar.cleanDays = [...state.calendar.sobrietyDays];
+        }
+        
         return {
             exportDate: Storage.getDateISO(),
             events: state.events,
-            sobrietyDays: state.calendar?.sobrietyDays || []
+            cleanDays: state.calendar?.cleanDays || []
         };
     }
 }

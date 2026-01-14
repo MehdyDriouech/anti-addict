@@ -17,9 +17,10 @@ const Calendar = {
     nextMonth: () => calendarController.nextMonth(),
     toggleDay: (dateStr) => calendarController.toggleDay(dateStr),
     
-    openTimeline: (state) => calendarController.openTimeline(state),
+    openTimeline: (state, selectedAddictionId) => calendarController.openTimeline(state, selectedAddictionId),
     closeTimeline: () => calendarController.closeTimeline(),
     exportTimeline: () => calendarController.exportTimeline(),
+    onTimelineAddictionChange: (addictionId, state) => calendarController.onTimelineAddictionChange(addictionId, state),
     
     renderCalendarWidget: (state) => calendarController.renderWidget(state),
     formatDate: (dateStr, lang) => calendarController.formatDate(dateStr, lang),
@@ -27,5 +28,9 @@ const Calendar = {
 };
 
 window.Calendar = Calendar;
+window.onTimelineAddictionChange = (addictionId) => {
+    const state = typeof window !== 'undefined' ? window.state : null;
+    if (state) Calendar.onTimelineAddictionChange(addictionId, state);
+};
 
 export default Calendar;

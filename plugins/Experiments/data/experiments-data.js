@@ -77,7 +77,10 @@ export const LABELS = {
         results: 'Résultats',
         days: 'jours',
         experimentStarted: 'Expérience démarrée !',
-        experimentEnded: 'Expérience terminée !'
+        experimentEnded: 'Expérience terminée !',
+        delete: 'Supprimer',
+        deleteConfirm: 'Êtes-vous sûr de vouloir supprimer cette expérience ? Cette action est irréversible.',
+        experimentDeleted: 'Expérience supprimée'
     },
     en: {
         title: '🧪 Experiments',
@@ -95,7 +98,10 @@ export const LABELS = {
         results: 'Results',
         days: 'days',
         experimentStarted: 'Experiment started!',
-        experimentEnded: 'Experiment ended!'
+        experimentEnded: 'Experiment ended!',
+        delete: 'Delete',
+        deleteConfirm: 'Are you sure you want to delete this experiment? This action is irreversible.',
+        experimentDeleted: 'Experiment deleted'
     },
     ar: {
         title: '🧪 التجارب',
@@ -113,6 +119,9 @@ export const LABELS = {
         results: 'النتائج',
         days: 'أيام',
         experimentStarted: 'بدأت التجربة!',
-        experimentEnded: 'انتهت التجربة!'
+        experimentEnded: 'انتهت التجربة!',
+        delete: 'حذف',
+        deleteConfirm: 'هل أنت متأكد من حذف هذه التجربة؟ هذا الإجراء لا يمكن التراجع عنه.',
+        experimentDeleted: 'تم حذف التجربة'
     }
 };

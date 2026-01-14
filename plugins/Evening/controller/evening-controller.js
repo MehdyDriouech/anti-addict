@@ -52,16 +52,16 @@ export class EveningController {
         if (!currentState) return;
         
         const lang = currentState.profile.lang;
-        const addictionId = currentState.addictions?.[0] || null;
-        this.view.renderForm(lang, this.model.getData(), addictionId);
+        this.view.renderForm(lang, this.model.getData(), currentState);
     }
 
     /**
-     * Définit l'exposition
-     * @param {boolean} value
+     * Définit l'exposition pour une addiction spécifique
+     * @param {string} addictionId - ID de l'addiction
+     * @param {boolean} value - Valeur de l'exposition
      */
-    setExposed(value) {
-        this.model.setExposed(value);
+    setExposed(addictionId, value) {
+        this.model.setExposed(addictionId, value);
         const state = typeof window !== 'undefined' ? window.state : null;
         this.renderForm(state);
     }

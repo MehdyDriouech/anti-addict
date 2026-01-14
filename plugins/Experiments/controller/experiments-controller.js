@@ -68,6 +68,42 @@ export class ExperimentsController {
         }
     }
 
+    delete(experimentId) {
+        const state = typeof window !== 'undefined' ? window.state : null;
+        if (!state) return;
+        
+        const lang = state.profile.lang;
+        const l = LABELS[lang] || LABELS.fr;
+        
+        // Demander confirmation
+        if (typeof UI !== 'undefined' && UI.showConfirm) {
+            UI.showConfirm(l.deleteConfirm, () => {
+                const deleted = this.model.deleteExperiment(experimentId, state);
+                if (deleted) {
+                    this.renderModal(state);
+                    if (typeof UI !== 'undefined' && UI.showToast) {
+                        UI.showToast(l.experimentDeleted, 'success');
+                    } else if (typeof showToast === 'function') {
+                        showToast(l.experimentDeleted);
+                    }
+                }
+            });
+        } else {
+            // Fallback si UI.showConfirm n'existe pas
+            if (confirm(l.deleteConfirm)) {
+                const deleted = this.model.deleteExperiment(experimentId, state);
+                if (deleted) {
+                    this.renderModal(state);
+                    if (typeof UI !== 'undefined' && UI.showToast) {
+                        UI.showToast(l.experimentDeleted, 'success');
+                    } else if (typeof showToast === 'function') {
+                        showToast(l.experimentDeleted);
+                    }
+                }
+            }
+        }
+    }
+
     renderWidget(state) {
         const activeExp = this.model.getActiveExperiment(state);
         if (!activeExp) return '';

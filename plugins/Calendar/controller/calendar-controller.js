@@ -10,6 +10,7 @@ export class CalendarController {
     constructor(model, view) {
         this.model = model;
         this.view = view;
+        this.selectedTimelineAddictionId = null; // Addiction sélectionnée pour le filtre timeline
     }
 
     open(state) {
@@ -53,16 +54,29 @@ export class CalendarController {
         this.renderCalendar(state);
     }
 
-    openTimeline(state) {
+    openTimeline(state, selectedAddictionId = null) {
+        this.selectedTimelineAddictionId = selectedAddictionId || null;
         const modalEl = this.view.createTimelineModal();
         if (!modalEl._hasClickListener) {
             modalEl.addEventListener('click', (e) => { if (e.target === modalEl) this.closeTimeline(); });
             modalEl._hasClickListener = true;
         }
         const lang = state.profile.lang;
-        const groupedEvents = this.model.getGroupedEvents(state);
-        this.view.renderTimelineModal(lang, groupedEvents);
+        const groupedEvents = this.model.getGroupedEvents(state, 50, this.selectedTimelineAddictionId);
+        this.view.renderTimelineModal(lang, groupedEvents, state, this.selectedTimelineAddictionId);
         this.view.showTimeline();
+    }
+
+    /**
+     * Gère le changement d'addiction dans le filtre timeline
+     * @param {string} addictionId - ID de l'addiction sélectionnée (null pour tous)
+     * @param {Object} state - State de l'application
+     */
+    onTimelineAddictionChange(addictionId, state) {
+        this.selectedTimelineAddictionId = addictionId || null;
+        const lang = state.profile.lang;
+        const groupedEvents = this.model.getGroupedEvents(state, 50, this.selectedTimelineAddictionId);
+        this.view.renderTimelineModal(lang, groupedEvents, state, this.selectedTimelineAddictionId);
     }
 
     closeTimeline() { this.view.hideTimeline(); }

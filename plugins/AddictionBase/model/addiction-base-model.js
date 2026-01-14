@@ -53,9 +53,12 @@ export class AddictionBaseModel {
 
     /**
      * Récupère le nombre de pentes stoppées pour cette addiction
+     * @param {Object} state - State de l'application
+     * @param {string} addictionId - ID de l'addiction (optionnel, utilise this.addictionId par défaut)
      */
-    getStoppedSlopesCount(state) {
-        const config = this.getAddictionConfig(state);
+    getStoppedSlopesCount(state, addictionId = null) {
+        const targetAddictionId = addictionId || this.addictionId;
+        const config = state.addictionConfigs?.[targetAddictionId] || null;
         return config?.stoppedSlopes || 0;
     }
 

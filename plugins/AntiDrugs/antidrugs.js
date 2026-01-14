@@ -13,8 +13,9 @@ const controller = new AntiDrugsController(model, view);
 
 const AntiDrugs = {
     TRIGGERS, SLOPE_SIGNALS, ENVIRONMENT_RULES, SLOPE_STEPS, UI_LABELS,
-    openSlopeModal: (state) => controller.openSlopeModal(state),
+    openSlopeModal: (state, selectedAddictionId) => controller.openSlopeModal(state, selectedAddictionId),
     closeSlopeModal: () => controller.closeSlopeModal(),
+    onAddictionChange: (addictionId) => controller.onAddictionChange(addictionId),
     logWithSignal: (signal) => controller.logWithSignal(signal),
     confirmSlope: () => controller.confirmSlope(),
     completeStep: (stepKey) => controller.completeStep(stepKey),

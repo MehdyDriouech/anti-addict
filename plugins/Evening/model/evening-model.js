@@ -5,7 +5,8 @@
 export class EveningModel {
     constructor() {
         this.data = {
-            exposed: false,
+            exposed: false, // Pour compatibilité rétroactive
+            exposures: {}, // Expositions par addiction : { [addictionId]: boolean }
             helped: '',
             gratitude: ''
         };
@@ -16,7 +17,8 @@ export class EveningModel {
      */
     reset() {
         this.data = {
-            exposed: false,
+            exposed: false, // Pour compatibilité rétroactive
+            exposures: {},
             helped: '',
             gratitude: ''
         };
@@ -29,17 +31,48 @@ export class EveningModel {
     loadExisting(existing) {
         if (existing) {
             this.data = { ...existing };
+            // Migration : si exposed existe mais pas exposures, créer exposures
+            if (this.data.exposed !== undefined && !this.data.exposures) {
+                this.data.exposures = {};
+                // Si une addiction était stockée, on peut essayer de la récupérer
+                // Sinon, on initialise vide
+            }
+            // S'assurer que exposures existe
+            if (!this.data.exposures) {
+                this.data.exposures = {};
+            }
         } else {
             this.reset();
         }
     }
 
     /**
-     * Définit l'exposition
-     * @param {boolean} value
+     * Définit l'exposition pour une addiction spécifique
+     * @param {string} addictionId - ID de l'addiction
+     * @param {boolean} value - Valeur de l'exposition
      */
-    setExposed(value) {
-        this.data.exposed = value;
+    setExposed(addictionId, value) {
+        if (!this.data.exposures) {
+            this.data.exposures = {};
+        }
+        this.data.exposures[addictionId] = value;
+        
+        // Pour compatibilité rétroactive, mettre à jour exposed si c'est la première addiction
+        if (Object.keys(this.data.exposures).length === 1) {
+            this.data.exposed = value;
+        }
+    }
+
+    /**
+     * Récupère l'exposition pour une addiction
+     * @param {string} addictionId - ID de l'addiction
+     * @returns {boolean} Exposition pour cette addiction
+     */
+    getExposed(addictionId) {
+        if (!this.data.exposures) {
+            return false;
+        }
+        return this.data.exposures[addictionId] || false;
     }
 
     /**
