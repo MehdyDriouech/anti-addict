@@ -9,6 +9,9 @@
 ### Caractéristiques principales
 
 - 🔒 **100% Privé** : Toutes les données restent sur votre appareil
+- 🔐 **Verrouillage par PIN** : Protection de vos données sensibles avec code PIN
+- 🔑 **Chiffrement local** : Données sensibles chiffrées avec AES-GCM-256
+- 💾 **IndexedDB** : Stockage robuste et performant pour grandes quantités de données
 - 📱 **PWA** : Installable sur mobile et desktop
 - 🌍 **Multi-langue** : Français, Anglais, Arabe (avec support RTL)
 - 🌓 **Thèmes** : Mode clair et sombre
@@ -22,18 +25,18 @@
 L'application supporte actuellement **8 addictions** réparties en 3 catégories :
 
 ### Addictions numériques (Digital)
-- 🔞 **Contenu adulte**
-- 📱 **Réseaux sociaux**
-- 🎮 **Jeux vidéo**
+- 🔞 **Contenu adulte** (porn) - Risque élevé
+- 📱 **Réseaux sociaux** (social_media) - Risque faible
+- 🎮 **Jeux vidéo** (gaming) - Risque faible
 
 ### Addictions aux substances (Substance)
-- 🚬 **Cigarette**
-- 🍷 **Alcool**
-- 💊 **Substances**
+- 🚬 **Cigarette** - Risque moyen
+- 🍷 **Alcool** - Risque moyen
+- 💊 **Substances** (drugs) - Risque élevé
 
 ### Addictions comportementales (Behavior)
-- 🍔 **Nourriture compulsive**
-- 🛒 **Achats compulsifs**
+- 🍔 **Nourriture compulsive** (food) - Risque faible
+- 🛒 **Achats compulsifs** (shopping) - Risque faible
 
 ### Fonctionnalités multi-addictions
 
@@ -263,10 +266,16 @@ antiaddictv2/
 │   ├── core/
 │   │   ├── app.js              # Orchestration principale
 │   │   ├── router.js           # Navigation SPA
-│   │   ├── storage.js          # Gestion localStorage + migrations
+│   │   ├── storage.js          # Gestion IndexedDB/localStorage + migrations
+│   │   ├── store.js            # API centralisée Store.update()
+│   │   ├── analytics.js        # AnalyticsService pour insights
+│   │   ├── security.js         # SecurityService (chiffrement, PIN)
+│   │   ├── lock.js             # Gestion verrouillage/déverrouillage
 │   │   ├── i18n.js             # Internationalisation
 │   │   ├── utils.js            # Utilitaires (dates, stats)
 │   │   ├── styles.css          # Styles globaux + thèmes
+│   │   ├── storage/            # Drivers de stockage (IndexedDB, localStorage)
+│   │   ├── security/           # Services de sécurité
 │   │   └── features/           # Features core (MVC)
 │   │       ├── Checkin/        # Check-in quotidien
 │   │       ├── Craving/        # Protocole 90 secondes
@@ -339,25 +348,35 @@ Pour changer de langue :
 
 - **HTML5** : Structure sémantique
 - **CSS3** : Styles avec variables CSS, thèmes, responsive design
-- **JavaScript Vanilla** : Aucun framework, code pur JS
+- **JavaScript Vanilla (ES6 Modules)** : Aucun framework, code pur JS
 - **Service Worker** : Cache offline et stratégie "Cache First"
 - **Web App Manifest** : Installation PWA
-- **localStorage** : Stockage local des données
+- **IndexedDB** : Stockage local robuste et performant
+- **localStorage** : Fallback pour compatibilité
+- **Web Crypto API** : Chiffrement AES-GCM-256 et dérivation PBKDF2
 - **JSON** : Format d'import/export
 
 ## 📊 Gestion des données
 
 ### Stockage local
 
-Toutes les données sont stockées dans le `localStorage` du navigateur sous la clé `revenir_state_v1`. Aucune donnée n'est envoyée à un serveur externe.
+L'application utilise **IndexedDB** comme système de stockage principal pour une meilleure performance et capacité. Les données sont automatiquement migrées depuis `localStorage` si nécessaire. Aucune donnée n'est envoyée à un serveur externe.
+
+### Sécurité et chiffrement
+
+- **Verrouillage par PIN** : Protégez vos données sensibles avec un code PIN
+- **Chiffrement AES-GCM-256** : Les données sensibles (événements, journal, etc.) sont chiffrées au repos
+- **Clé dérivée PBKDF2** : Le PIN est transformé en clé de chiffrement (jamais stocké en clair)
+- **Mode verrouillé** : Accès restreint aux fonctionnalités d'urgence uniquement
+- **Déverrouillage** : Accès complet après saisie du PIN
 
 ### Structure des données
 
-Le state de l'application suit un schéma versionné (actuellement v3) :
+Le state de l'application suit un schéma versionné (actuellement v5) :
 
 ```javascript
 {
-  schemaVersion: 3,
+  schemaVersion: 5,
   profile: {
     lang: 'fr',
     religion: 'none',
@@ -368,11 +387,12 @@ Le state de l'application suit un schéma versionné (actuellement v3) :
     discreetMode: false,
     notifications: false,
     lowTextMode: false,
-    theme: 'dark'
+    theme: 'dark',
+    pinEnabled: false // Verrouillage par PIN
   },
   addictions: [],
   checkins: [],
-  events: [],
+  events: [], // Chiffré si PIN activé
   // ... autres champs
 }
 ```
@@ -382,6 +402,7 @@ Le state de l'application suit un schéma versionné (actuellement v3) :
 - **Export** : Génère un fichier JSON avec toutes vos données
 - **Import** : Restaure vos données depuis un fichier JSON
 - **Migration automatique** : Les anciennes versions sont automatiquement migrées vers le schéma actuel
+- **Migration IndexedDB** : Migration automatique depuis localStorage vers IndexedDB
 
 ## 🎯 Utilisation
 
@@ -395,9 +416,30 @@ Le state de l'application suit un schéma versionné (actuellement v3) :
 ### Navigation
 
 - **🏠 Aujourd'hui** : Écran d'accueil avec actions rapides
-- **🆘 Craving maintenant** : Protocole 90 secondes
+- **🆘 Craving maintenant** : Protocole 90 secondes (accessible même verrouillé)
+- **🆘 SOS** : Mode SOS avancé (accessible même verrouillé)
 - **📝 Check-in** : Check-in quotidien détaillé
-- **⚙️ Réglages** : Configuration de l'application
+- **⚙️ Réglages** : Configuration de l'application (verrouillage PIN, thème, langue, etc.)
+- **🔒 Verrouillage** : Icône de verrouillage dans le header pour verrouiller/déverrouiller rapidement
+
+### Verrouillage par PIN
+
+L'application peut être verrouillée avec un code PIN pour protéger vos données sensibles :
+
+1. **Définir un PIN** : 
+   - Lors de l'onboarding (optionnel)
+   - Ou dans les Réglages → Sécurité → "Définir un code PIN"
+
+2. **Verrouiller l'application** :
+   - Cliquez sur l'icône 🔒 dans le header
+   - L'application affichera une vue verrouillée avec uniquement les fonctionnalités d'urgence accessibles
+
+3. **Déverrouiller** :
+   - Cliquez sur l'icône 🔓 dans le header
+   - Entrez votre code PIN
+   - Accès complet restauré
+
+**Note** : Les fonctionnalités d'urgence (Urgence Tentation et SOS) restent accessibles même lorsque l'application est verrouillée.
 
 ### Menu Outils
 
@@ -421,13 +463,16 @@ Accédez au menu "🧰 Mes outils" depuis l'écran d'accueil pour :
 #### ⚙️ Section CONFIG
 - ⚙️ **Config** : Configuration de l'addiction actuelle (déclencheurs, règles)
 
-## 🔐 Confidentialité
+## 🔐 Confidentialité et Sécurité
 
 - ✅ **100% Offline** : Aucune connexion Internet requise
-- ✅ **Données locales** : Tout est stocké sur votre appareil
+- ✅ **Données locales** : Tout est stocké sur votre appareil (IndexedDB)
+- ✅ **Chiffrement local** : Données sensibles chiffrées avec AES-GCM-256
+- ✅ **Verrouillage par PIN** : Protection supplémentaire de vos données
 - ✅ **Pas de tracking** : Aucun analytics, aucune télémétrie
 - ✅ **Pas de compte** : Aucune inscription nécessaire
 - ✅ **Open Source** : Code source disponible et auditable
+- ✅ **Lazy Crypto** : Chiffrement/déchiffrement à la demande pour performance optimale
 
 ## 🛠️ Développement
 
@@ -441,12 +486,18 @@ Accédez au menu "🧰 Mes outils" depuis l'écran d'accueil pour :
 
 L'application suit une architecture **modulaire MVC** :
 
-- **core/app.js** : Orchestration principale, rendu des écrans
-- **core/router.js** : Navigation SPA basée sur hash
-- **core/storage.js** : Abstraction localStorage + migrations
+- **core/app.js** : Orchestration principale, rendu des écrans, filtre console
+- **core/router.js** : Navigation SPA basée sur hash avec protection des routes
+- **core/storage.js** : Abstraction stockage (IndexedDB/localStorage) + migrations
+- **core/store.js** : API centralisée Store.update() pour cohérence des données
+- **core/analytics.js** : AnalyticsService pour insights locaux et agrégations
+- **core/security.js** : SecurityService pour chiffrement et gestion PIN
+- **core/lock.js** : Gestion du verrouillage/déverrouillage de l'application
 - **core/features/** : Features core avec architecture MVC
 - **plugins/** : Plugins modulaires avec architecture MVC
 - **core/i18n.js** : Système de traduction centralisé
+- **core/storage/** : Drivers de stockage (IndexedDBDriver, LocalStorageDriver)
+- **core/security/** : Services de sécurité (chiffrement, dérivation de clés)
 
 ### Créer un nouveau plugin
 
@@ -525,11 +576,25 @@ Le state de l'application est versionné et migré automatiquement. Structure ac
 
 ## 📝 Version
 
-**Version actuelle** : 3.1.0
+**Version actuelle** : 0.3.5
 
 ### Historique des versions
 
-- **v3.1.0** : 
+- **v0.3.5** : 
+  - Migration vers IndexedDB pour stockage robuste
+  - Système de verrouillage par PIN
+  - Chiffrement AES-GCM-256 des données sensibles
+  - API centralisée Store.update() pour cohérence des données
+  - AnalyticsService pour insights locaux
+  - Vue verrouillée avec accès aux fonctionnalités d'urgence uniquement
+  - Filtre console pour erreurs d'extensions navigateur
+
+- **v0.3.1** : 
+  - Architecture de stockage avec StorageDriver pattern
+  - Support IndexedDB et localStorage
+  - Migration automatique des données
+
+- **v0.3.0** : 
   - Support multi-addictions complet (8 addictions)
   - Sélection d'addiction dans les modales (pente, craving)
   - Dropdown automatique pour 3+ addictions
@@ -538,9 +603,9 @@ Le state de l'application est versionné et migré automatiquement. Structure ac
 
 - **v3.0.0** : Dashboard, thème clair, features avancées, architecture plugins MVC
 
-- **v2.0.0** : Intentions, règles, victoires, rituels, heatmap
+- **v0.2.0** : Intentions, règles, victoires, rituels, heatmap
 
-- **v1.0.0** : Version initiale avec check-in et protocole 90s
+- **v0.1.0** : Version initiale avec check-in et protocole 90s
 
 ## 🤝 Contribution
 
@@ -557,4 +622,3 @@ Application développée avec une approche bienveillante et respectueuse de la v
 ---
 
 **Note importante** : Cette application ne remplace pas un suivi médical ou thérapeutique professionnel. En cas de besoin, consultez un professionnel de santé.
-

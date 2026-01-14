@@ -44,6 +44,9 @@
                     <span class="logo-text" data-i18n="app_name">Revenir</span>
                 </div>
                 <div class="header-actions">
+                    <button class="btn btn-ghost btn-icon" id="lock-btn" data-action="toggle-lock" aria-label="Verrouiller/Déverrouiller">
+                        🔓
+                    </button>
                     <button class="btn btn-ghost btn-icon nav-link" data-route="settings" aria-label="Réglages">
                         ⚙️
                     </button>
@@ -153,6 +156,12 @@
     <script src="core/utils.js"></script>
     <script src="data/addictions-config.js"></script>
     <script src="core/storage.js"></script>
+    <script type="module" src="core/store.js"></script>
+    <script type="module" src="core/analytics.js"></script>
+    <script type="module" src="core/security.js"></script>
+    <script type="module" src="core/debug.js"></script>
+    <script type="module" src="core/debug/tests.js"></script>
+    <script src="core/lock.js"></script>
     <script src="core/i18n.js"></script>
     <script src="core/router.js"></script>
     
