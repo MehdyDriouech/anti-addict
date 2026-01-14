@@ -75,16 +75,38 @@ export class SpiritualView {
         const l = LABELS[lang] || LABELS.fr;
         const contextInfo = PLAYLIST_CONTEXTS[context];
         
+        // Labels pour les invocations selon la langue
+        const invocationLabels = {
+            fr: { title: 'Invocation', dua: 'Dua' },
+            en: { title: 'Invocation', dua: 'Dua' },
+            ar: { title: 'دعاء', dua: 'دعاء' }
+        };
+        const invLabels = invocationLabels[lang] || invocationLabels.fr;
+        
         this.playlistModalEl.innerHTML = `
             <div class="modal-content playlist-modal">
                 <button class="modal-close" onclick="Spiritual.closePlaylist()">×</button>
                 <h2>${contextInfo.emoji} ${contextInfo[lang] || contextInfo.fr}</h2>
                 <div class="spiritual-cards-carousel">
-                    ${cards.length === 0 ? `<p class="empty-message">${l.noCards}</p>` : cards.map((card, idx) => `
+                    ${cards.length === 0 ? `<p class="empty-message">${l.noCards}</p>` : cards.map((card, idx) => {
+                        // Générer la section invocation si présente
+                        const invocationSection = card.invocation ? `
+                            <div class="invocation-section">
+                                <h4 class="invocation-title">${invLabels.title}</h4>
+                                <p class="invocation-text">${card.invocation}</p>
+                                ${card.transliteration ? `<p class="invocation-transliteration">${card.transliteration}</p>` : ''}
+                                ${card.originalText ? `<p class="invocation-original" dir="rtl" lang="ar">${card.originalText}</p>` : ''}
+                            </div>
+                        ` : '';
+                        
+                        return `
                         <div class="spiritual-card ${idx === 0 ? 'active' : ''}" data-index="${idx}">
-                            <p class="card-text">"${card.text}"</p><cite class="card-ref">— ${card.ref}</cite>
+                            <p class="card-text">"${card.text}"</p>
+                            <cite class="card-ref">— ${card.ref}</cite>
+                            ${invocationSection}
                         </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </div>
                 ${cards.length > 1 ? `<button class="btn btn-secondary" onclick="Spiritual.nextCard()">${l.next} →</button>` : ''}
                 <button class="btn btn-ghost" onclick="Spiritual.closePlaylist(); Spiritual.open(state);">← ${l.back}</button>
@@ -98,11 +120,30 @@ export class SpiritualView {
     }
 
     nextCard() {
-        const cards = document.querySelectorAll('.spiritual-cards-carousel .spiritual-card');
+        // Chercher les cartes dans le modal playlist spécifiquement
+        const playlistModal = this.playlistModalEl;
+        if (!playlistModal) return;
+        
+        const cards = playlistModal.querySelectorAll('.spiritual-cards-carousel .spiritual-card');
         if (cards.length <= 1) return;
-        let activeIndex = 0;
-        cards.forEach((card, idx) => { if (card.classList.contains('active')) { activeIndex = idx; card.classList.remove('active'); } });
-        cards[(activeIndex + 1) % cards.length].classList.add('active');
+        
+        let activeIndex = -1;
+        // Trouver l'index de la carte active
+        cards.forEach((card, idx) => {
+            if (card.classList.contains('active')) {
+                activeIndex = idx;
+                card.classList.remove('active');
+            }
+        });
+        
+        // Si aucune carte active trouvée, prendre la première
+        if (activeIndex === -1) {
+            activeIndex = 0;
+        }
+        
+        // Activer la carte suivante (avec boucle)
+        const nextIndex = (activeIndex + 1) % cards.length;
+        cards[nextIndex].classList.add('active');
     }
 
     renderWidget(lang, dhikrCount) {
