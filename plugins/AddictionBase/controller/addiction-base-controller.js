@@ -23,6 +23,12 @@ export class AddictionBaseController {
      * Ouvre la modale de pente glissante
      */
     openSlopeModal(state) {
+        // Initialiser window.runtime si nécessaire
+        if (!window.runtime) window.runtime = {};
+        window.runtime.emergencyActive = true;
+        window.runtime.emergencySource = 'slope';
+        window.runtime.lastEmergencyEndedAt = null;
+        
         this.currentState = state;
         const lang = state.profile?.lang || 'fr';
         const stoppedCount = this.model.getStoppedSlopesCount(state);
@@ -44,6 +50,13 @@ export class AddictionBaseController {
      * Ferme la modale de pente
      */
     closeSlopeModal() {
+        // Unsetter flags runtime
+        if (window.runtime && window.runtime.emergencySource === 'slope') {
+            window.runtime.emergencyActive = false;
+            window.runtime.emergencySource = null;
+            window.runtime.lastEmergencyEndedAt = Date.now();
+        }
+        
         this.view.closeSlopeModal();
     }
 
@@ -79,6 +92,13 @@ export class AddictionBaseController {
             
             // Attendre un peu pour que l'utilisateur voie la mise à jour
             setTimeout(() => {
+                // Unsetter flags runtime
+                if (window.runtime && window.runtime.emergencySource === 'slope') {
+                    window.runtime.emergencyActive = false;
+                    window.runtime.emergencySource = null;
+                    window.runtime.lastEmergencyEndedAt = Date.now();
+                }
+                
                 this.closeSlopeModal();
                 
                 // Afficher un toast de confirmation

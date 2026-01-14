@@ -22,7 +22,14 @@ const Coaching = {
     closeInsights: () => coachingController.closeInsights(),
     addSuggestedRule: (trigger) => coachingController.addSuggestedRule(trigger),
     isWeeklyInsightAvailable: (state) => coachingController.isWeeklyInsightAvailable(state),
-    renderInsightsWidget: (state) => coachingController.renderWidget(state)
+    renderInsightsWidget: (state) => coachingController.renderWidget(state),
+    // Nouvelles méthodes V2
+    openCoaching: async (state) => await coachingController.openCoaching(state),
+    closeCoaching: () => coachingController.closeCoaching(),
+    canShowInsight: (state) => coachingController.canShowInsight(state),
+    getActiveInsightSummary: (state) => coachingController.getActiveInsightSummary(state),
+    dismissInsight: async (insightId) => await coachingController.dismissInsight(insightId),
+    markInsightUseful: async (insightId) => await coachingController.markInsightUseful(insightId)
 };
 
 window.Coaching = Coaching;
