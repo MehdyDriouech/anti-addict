@@ -17,6 +17,12 @@ export class CravingController {
      * @param {Object} state - State de l'application
      */
     render(state) {
+        // Initialiser window.runtime si nécessaire
+        if (!window.runtime) window.runtime = {};
+        window.runtime.emergencyActive = true;
+        window.runtime.emergencySource = 'craving';
+        window.runtime.lastEmergencyEndedAt = null;
+        
         // Initialiser avec la première addiction si disponible
         const activeAddictions = state.addictions || [];
         if (activeAddictions.length > 0 && !this.selectedAddictionId) {
@@ -193,6 +199,13 @@ export class CravingController {
                     draft.wins.positiveActionsCount = (draft.wins.positiveActionsCount || 0) + actionsDone;
                 }
             }, { reason: 'emergency_used' });
+        }
+        
+        // Unsetter flags runtime
+        if (window.runtime) {
+            window.runtime.emergencyActive = false;
+            window.runtime.emergencySource = null;
+            window.runtime.lastEmergencyEndedAt = Date.now();
         }
         
         // Message de succès

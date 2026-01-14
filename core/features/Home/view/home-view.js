@@ -104,7 +104,7 @@ export class HomeView {
             fr: {
                 lockedTitle: 'Application verrouillée',
                 lockedMessage: 'Déverrouille l\'application pour accéder à toutes les fonctionnalités',
-                urgencyButton: 'Urgence Tentation',
+                urgencyButton: 'Protocole Anti-Rechute',
                 sosButton: 'SOS'
             },
             en: {
@@ -195,38 +195,103 @@ export class HomeView {
 
     /**
      * Rend le widget de coaching
-     * @param {Object} insights - Insights hebdomadaires
+     * @param {Object} insights - Insights hebdomadaires (pour compatibilité)
      * @param {string} lang - Langue
      * @returns {string} HTML
      */
     renderCoachingWidget(insights, lang) {
+        const state = typeof window !== 'undefined' ? window.state : null;
+        if (!state) return '';
+        
+        // Vérifier canShowInsight AVANT affichage
+        if (typeof Coaching !== 'undefined' && Coaching.canShowInsight) {
+            if (!Coaching.canShowInsight(state)) return '';
+        }
+        
+        // Récupérer summary O(1) (pas de génération, lit depuis state.coaching.insights)
+        let summary = null;
+        if (typeof Coaching !== 'undefined' && Coaching.getActiveInsightSummary) {
+            summary = Coaching.getActiveInsightSummary(state);
+        }
+        
+        if (!summary || !summary.hasInsight) {
+            // Fallback vers ancien format si disponible (compatibilité)
+            if (insights && insights.topTriggers && insights.topTriggers.length > 0) {
+                const labels = {
+                    fr: { coachingInsight: 'Insight de la semaine', topTrigger: 'Déclencheur principal', riskyTime: 'Moment risqué' },
+                    en: { coachingInsight: 'Weekly insight', topTrigger: 'Top trigger', riskyTime: 'Risky time' },
+                    ar: { coachingInsight: 'رؤية الأسبوع', topTrigger: 'المحفز الأساسي', riskyTime: 'وقت خطر' }
+                };
+                const l = labels[lang] || labels.fr;
+                
+                const topTriggerObj = insights.topTriggers[0];
+                const topTrigger = topTriggerObj ? topTriggerObj.trigger : '-';
+                const riskyHourObj = insights.riskHours && insights.riskHours.topHours && insights.riskHours.topHours[0];
+                const riskyHour = riskyHourObj ? `${riskyHourObj.hour}h` : '-';
+                
+                return `
+                    <div class="card coaching-widget" onclick="Router.navigateTo('coaching')">
+                        <div class="coaching-header">
+                            <span class="coaching-icon">🧠</span>
+                            <span class="coaching-title">${l.coachingInsight}</span>
+                        </div>
+                        <div class="coaching-insights">
+                            <div class="insight-item">
+                                <span class="insight-label">${l.topTrigger}:</span>
+                                <span class="insight-value">${topTrigger}</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">${l.riskyTime}:</span>
+                                <span class="insight-value">${riskyHour}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            return '';
+        }
+        
+        // Afficher widget avec nouveau format
         const labels = {
-            fr: { coachingInsight: 'Insight de la semaine', topTrigger: 'Déclencheur principal', riskyTime: 'Moment risqué' },
-            en: { coachingInsight: 'Weekly insight', topTrigger: 'Top trigger', riskyTime: 'Risky time' },
-            ar: { coachingInsight: 'رؤية الأسبوع', topTrigger: 'المحفز الأساسي', riskyTime: 'وقت خطر' }
+            fr: { coachingInsight: 'Insight de la semaine', view: 'Voir' },
+            en: { coachingInsight: 'Weekly insight', view: 'View' },
+            ar: { coachingInsight: 'رؤية الأسبوع', view: 'عرض' }
         };
         const l = labels[lang] || labels.fr;
         
-        const topTriggerObj = insights.topTriggers && insights.topTriggers[0];
-        const topTrigger = topTriggerObj ? topTriggerObj.trigger : '-';
-        const riskyHourObj = insights.riskHours && insights.riskHours[0];
-        const riskyHour = riskyHourObj ? `${riskyHourObj.hour}h` : '-';
+        // Récupérer le message traduit
+        let insightMessage = summary.messageKey;
+        if (typeof I18n !== 'undefined' && I18n.t) {
+            // Remplacer les placeholders si data existe
+            if (summary.data) {
+                const data = summary.data;
+                if (summary.messageKey === 'coaching.insight.weekly_summary') {
+                    insightMessage = typeof I18n.t === 'function' 
+                        ? I18n.t('coaching.insight.weekly_summary', { cravings: data.cravings || 0, wins: data.wins || 0 })
+                        : `Cette semaine: ${data.cravings || 0} urgences, ${data.wins || 0} victoires.`;
+                } else if (summary.messageKey === 'coaching.insight.avg_intensity') {
+                    insightMessage = typeof I18n.t === 'function'
+                        ? I18n.t('coaching.insight.avg_intensity', { avg: data.avgIntensity || 0 })
+                        : `Intensité moyenne: ${data.avgIntensity || 0}.`;
+                } else {
+                    insightMessage = I18n.t(summary.messageKey);
+                }
+            } else {
+                insightMessage = I18n.t(summary.messageKey);
+            }
+        }
         
         return `
-            <div class="card coaching-widget">
+            <div class="card coaching-widget" onclick="Router.navigateTo('coaching')">
                 <div class="coaching-header">
                     <span class="coaching-icon">🧠</span>
                     <span class="coaching-title">${l.coachingInsight}</span>
                 </div>
                 <div class="coaching-insights">
-                    <div class="insight-item">
-                        <span class="insight-label">${l.topTrigger}:</span>
-                        <span class="insight-value">${topTrigger}</span>
-                    </div>
-                    <div class="insight-item">
-                        <span class="insight-label">${l.riskyTime}:</span>
-                        <span class="insight-value">${riskyHour}</span>
-                    </div>
+                    <div class="insight-message">${insightMessage}</div>
+                    <button class="btn btn-small btn-ghost" onclick="event.stopPropagation(); Router.navigateTo('coaching')">
+                        ${l.view}
+                    </button>
                 </div>
             </div>
         `;

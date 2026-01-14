@@ -15,7 +15,8 @@ const routes = {
     'checkin': 'checkin',
     'settings': 'settings',
     'history': 'history',
-    'dashboard': 'dashboard'
+    'dashboard': 'dashboard',
+    'coaching': 'coaching'
 };
 
 // Callbacks enregistrés pour chaque route

@@ -263,8 +263,12 @@ function getDefaultState() {
         
         // V3: Coaching local
         coaching: {
-            lastWeeklyInsight: null,
-            insights: []
+            lastShownDate: null,
+            insights: [],
+            feedback: {
+                usefulCount: 0,
+                dismissedCount: 0
+            }
         },
         
         // V3: Journal par tags
@@ -389,6 +393,24 @@ function migrateState(state) {
             default:
                 // Version inconnue, on incrémente
                 currentState.schemaVersion++;
+        }
+    }
+    
+    // Migration post-schéma : corriger structure coaching si nécessaire
+    if (currentState.coaching) {
+        const defaultCoaching = getDefaultState().coaching;
+        // Migrer lastWeeklyInsight vers lastShownDate si nécessaire
+        if (currentState.coaching.lastWeeklyInsight && !currentState.coaching.lastShownDate) {
+            currentState.coaching.lastShownDate = currentState.coaching.lastWeeklyInsight;
+            delete currentState.coaching.lastWeeklyInsight;
+        }
+        // S'assurer que feedback existe
+        if (!currentState.coaching.feedback) {
+            currentState.coaching.feedback = defaultCoaching.feedback;
+        }
+        // S'assurer que insights est un tableau
+        if (!Array.isArray(currentState.coaching.insights)) {
+            currentState.coaching.insights = defaultCoaching.insights;
         }
     }
     
@@ -1294,7 +1316,7 @@ function addCoachingInsight(state, insight) {
         ...insight
     };
     state.coaching.insights.push(entry);
-    state.coaching.lastWeeklyInsight = getDateISO();
+    state.coaching.lastShownDate = getDateISO();
     saveState(state);
     return state;
 }

@@ -191,6 +191,15 @@ async function initApp() {
     
     console.log('[App] Initialisation...');
     
+    // Initialiser window.runtime pour flags d'urgence
+    if (!window.runtime) {
+        window.runtime = {
+            emergencyActive: false,
+            emergencySource: null,
+            lastEmergencyEndedAt: null
+        };
+    }
+    
     // Initialiser le driver de stockage (détecte IndexedDB et migre si nécessaire)
     // IMPORTANT: Doit être complété avant SecurityService.init() pour que le PIN soit chargé
     if (Storage.initStorageDriver) {

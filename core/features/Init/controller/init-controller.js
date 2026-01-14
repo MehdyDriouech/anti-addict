@@ -93,6 +93,13 @@ export class InitController {
                 await Settings.render(state);
             }
         });
+        
+        Router.onRoute('coaching', () => {
+            const state = typeof window !== 'undefined' ? window.state : null;
+            if (state && typeof Coaching !== 'undefined' && Coaching.openCoaching) {
+                Coaching.openCoaching(state);
+            }
+        });
     }
 
     /**
