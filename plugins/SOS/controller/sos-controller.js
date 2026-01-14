@@ -23,6 +23,12 @@ export class SOSController {
      * @param {Object} state - State de l'application
      */
     activate(state) {
+        // Initialiser window.runtime si nécessaire
+        if (!window.runtime) window.runtime = {};
+        window.runtime.emergencyActive = true;
+        window.runtime.emergencySource = 'sos';
+        window.runtime.lastEmergencyEndedAt = null;
+        
         this.model.activate(state);
         
         // Créer l'élément DOM si nécessaire
@@ -53,6 +59,13 @@ export class SOSController {
      * Désactive l'écran SOS
      */
     deactivate() {
+        // Unsetter flags runtime
+        if (window.runtime) {
+            window.runtime.emergencyActive = false;
+            window.runtime.emergencySource = null;
+            window.runtime.lastEmergencyEndedAt = Date.now();
+        }
+        
         this.model.deactivate();
         this.view.hide();
         
@@ -195,6 +208,14 @@ export class SOSController {
     confirmExit(state) {
         // Appeler confirmExit du model (qui sauvegarde en mode urgence)
         this.model.confirmExit(state);
+        
+        // Unsetter flags runtime
+        if (window.runtime) {
+            window.runtime.emergencyActive = false;
+            window.runtime.emergencySource = null;
+            window.runtime.lastEmergencyEndedAt = Date.now();
+        }
+        
         this.deactivate();
         
         // Mettre à jour le state global si nécessaire
