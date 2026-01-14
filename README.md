@@ -2,9 +2,9 @@
 
 > Application web progressive (PWA) pour le suivi et la gestion des addictions, avec un focus sur la confidentialité et le fonctionnement hors-ligne.
 
-## 📋 Description --- NOUVELLE ARCHITECTURE EN COURS
+## 📋 Description
 
-**Revenir** est une application web progressive (PWA) conçue pour aider à gérer et surmonter les addictions, avec un focus particulier sur la dépendance à la pornographie. L'application fonctionne entièrement hors-ligne, stocke toutes les données localement sur votre appareil, et ne nécessite aucune connexion Internet ni compte utilisateur.
+**Revenir** est une application web progressive (PWA) conçue pour aider à gérer et surmonter les addictions. L'application supporte **8 types d'addictions** (contenu adulte, cigarette, alcool, substances, réseaux sociaux, jeux vidéo, nourriture compulsive, achats compulsifs) et permet de suivre plusieurs addictions simultanément. L'application fonctionne entièrement hors-ligne, stocke toutes les données localement sur votre appareil, et ne nécessite aucune connexion Internet ni compte utilisateur.
 
 ### Caractéristiques principales
 
@@ -15,6 +15,32 @@
 - 📊 **Dashboard** : Vue d'ensemble de vos données et insights
 - 🧘 **Approche bienveillante** : Ton neutre, non culpabilisant
 - ⚡ **Offline-first** : Fonctionne sans connexion Internet
+- 🔄 **Multi-addictions** : Suivez plusieurs addictions simultanément avec sélection dynamique
+
+## 🎯 Addictions supportées
+
+L'application supporte actuellement **8 addictions** réparties en 3 catégories :
+
+### Addictions numériques (Digital)
+- 🔞 **Contenu adulte** (porn) - Risque élevé
+- 📱 **Réseaux sociaux** (social_media) - Risque faible
+- 🎮 **Jeux vidéo** (gaming) - Risque faible
+
+### Addictions aux substances (Substance)
+- 🚬 **Cigarette** - Risque moyen
+- 🍷 **Alcool** - Risque moyen
+- 💊 **Substances** (drugs) - Risque élevé
+
+### Addictions comportementales (Behavior)
+- 🍔 **Nourriture compulsive** (food) - Risque faible
+- 🛒 **Achats compulsifs** (shopping) - Risque faible
+
+### Fonctionnalités multi-addictions
+
+- **Sélection dynamique** : Changez d'addiction dans les modales sans les fermer
+- **Dropdown intelligent** : Avec 3+ addictions, un dropdown remplace les chips pour une meilleure lisibilité
+- **Compteurs séparés** : Chaque addiction a son propre compteur de pentes stoppées
+- **Configuration par addiction** : Déclencheurs, signaux et règles personnalisables par addiction
 
 ## ✨ Fonctionnalités
 
@@ -56,11 +82,13 @@
 - Suivi de l'efficacité
 - A/B testing de vos approches
 
-#### Features Anti-Porno spécifiques
-- **Plan Nuit** : Routine configurable avec checklist
-- **Pente glissante avancée** : Protocole en 3 étapes (Quitter/Eau/Mouvement)
-- **Check-in rapide** : "Téléphone au lit ?"
-- **Déclencheurs** : Identification et suivi des triggers
+#### Features Anti-Addictions spécifiques
+- **Pente glissante avancée** : Protocole en 3 étapes (Quitter/Eau/Mouvement) disponible pour toutes les addictions
+- **Sélection d'addiction** : Changez d'addiction dans les modales "pente" et "craving" sans fermer la modale
+- **Dropdown automatique** : Interface adaptative (chips pour 2 addictions, dropdown pour 3+)
+- **Configuration par addiction** : Déclencheurs, signaux de pente et règles personnalisables
+- **Plan Nuit** (AntiPorn) : Routine configurable avec checklist
+- **Check-in rapide** (AntiPorn) : "Téléphone au lit ?"
 
 ### Fonctionnalités V3
 
@@ -106,6 +134,97 @@
 - Widgets Insight, Règles, Heatmap
 - Accès rapide depuis le menu outils
 
+## 🏗️ Architecture Plugins
+
+L'application utilise une architecture **MVC (Model-View-Controller)** pour tous les plugins, garantissant une séparation claire des responsabilités et une maintenabilité optimale.
+
+### Structure d'un plugin
+
+Chaque plugin suit cette structure :
+
+```
+PluginName/
+├── model/              # Logique métier pure
+│   └── plugin-model.js
+├── view/               # Génération HTML et manipulation DOM
+│   └── plugin-view.js
+├── controller/         # Orchestration Model/View
+│   └── plugin-controller.js
+├── data/               # Constantes, traductions, configurations
+│   └── plugin-data.js
+└── plugin.js           # Point d'entrée du plugin
+```
+
+### Principes de séparation
+
+- **Model** : Logique métier, gestion des données, calculs. **PAS** de manipulation DOM.
+- **View** : Génération HTML, manipulation DOM, événements UI. **PAS** de logique métier.
+- **Controller** : Orchestration entre Model et View, gestion du cycle de vie.
+
+### Plugins d'addictions
+
+Tous les plugins d'addictions héritent de `AddictionBase` qui fournit :
+- Modèle de base pour la gestion des pentes, cravings, épisodes
+- Vue de base avec sélecteur d'addiction (chips ou dropdown)
+- Contrôleur de base avec gestion du changement d'addiction
+
+**Plugins disponibles** :
+- `AntiPorn` - Contenu adulte (avec features spécifiques : Plan Nuit, Check-in téléphone)
+- `AntiSmoke` - Cigarette
+- `AntiAlcohol` - Alcool
+- `AntiDrugs` - Substances
+- `AntiSocialMedia` - Réseaux sociaux
+- `AntiGaming` - Jeux vidéo
+- `AntiFood` - Nourriture compulsive
+- `AntiShopping` - Achats compulsifs
+
+### Plugins de fonctionnalités
+
+**Plugins disponibles** :
+- `Actions` - Bibliothèque d'actions (mouvement, calme, social, etc.)
+- `Calendar` - Calendrier de sobriété (habit tracker)
+- `Coaching` - Insights hebdomadaires automatiques
+- `Evening` - Rituels du soir avec checklist
+- `Experiments` - Mode expérimentation et A/B testing
+- `Heatmap` - Visualisation des moments à risque
+- `IfThen` - Règles "Si... Alors..." personnalisables
+- `Intentions` - Intentions quotidiennes générées
+- `Journal` - Journal de bord avec tags
+- `Programs` - Programmes guidés (14 et 30 jours)
+- `Relapse` - Mode accompagnement après épisode
+- `SOS` - Écran SOS avancé avec mode Low-Text
+- `Spiritual` - Features spirituelles (playlists, compteurs)
+- `Wins` - Victoires invisibles et temps gagné
+
+### Plugin de base
+
+- `AddictionBase` - Code partagé pour toutes les addictions (modèle, vue, contrôleur de base)
+
+## 🎛️ Features Core
+
+Les features core dans `app/core/features/` gèrent les fonctionnalités principales de l'application :
+
+### Features disponibles
+
+- **Checkin** : Check-in quotidien avec suivi de l'humeur, stress, envies, solitude
+- **Craving** : Protocole 90 secondes / Urgence tentation avec exercices de respiration guidés
+- **Dashboard** : Vue d'ensemble centralisée avec widgets et insights
+- **History** : Historique des événements et check-ins
+- **Home** : Écran d'accueil avec actions rapides et statistiques
+- **Init** : Initialisation de l'application et migration des données
+- **Onboarding** : Première configuration (sélection d'addictions, langue, préférences)
+- **Settings** : Réglages de l'application (thème, langue, notifications, etc.)
+- **Tools** : Menu outils avec accès rapide à toutes les fonctionnalités
+- **UI** : Composants UI réutilisables (modales, toasts, etc.)
+
+### Architecture MVC
+
+Chaque feature core suit également l'architecture MVC :
+- `model/` - Logique métier
+- `view/` - Rendu HTML
+- `controller/` - Orchestration
+- `data/` - Données et traductions
+
 ## 🚀 Installation
 
 ### Installation locale
@@ -141,35 +260,55 @@ antiaddictv2/
 ├── app/
 │   ├── index.html              # Point d'entrée principal
 │   ├── manifest.webmanifest    # Configuration PWA
-│   ├── sw.js                   # Service Worker (cache offline)
-│   ├── app.js                  # Logique principale
-│   ├── router.js               # Navigation SPA
-│   ├── storage.js              # Gestion localStorage + migrations
-│   ├── i18n.js                 # Internationalisation
-│   ├── utils.js                # Utilitaires (dates, stats)
-│   ├── styles.css              # Styles globaux + thèmes
+│   ├── core/
+│   │   ├── app.js              # Orchestration principale
+│   │   ├── router.js           # Navigation SPA
+│   │   ├── storage.js          # Gestion localStorage + migrations
+│   │   ├── i18n.js             # Internationalisation
+│   │   ├── utils.js            # Utilitaires (dates, stats)
+│   │   ├── styles.css          # Styles globaux + thèmes
+│   │   └── features/           # Features core (MVC)
+│   │       ├── Checkin/        # Check-in quotidien
+│   │       ├── Craving/        # Protocole 90 secondes
+│   │       ├── Dashboard/      # Vue d'ensemble
+│   │       ├── History/        # Historique
+│   │       ├── Home/           # Écran d'accueil
+│   │       ├── Init/          # Initialisation
+│   │       ├── Onboarding/     # Première configuration
+│   │       ├── Settings/       # Réglages
+│   │       ├── Tools/          # Menu outils
+│   │       └── UI/             # Composants UI
 │   ├── data/
+│   │   ├── addictions-config.js # Configuration des addictions
 │   │   ├── texts/              # Fichiers de traduction
 │   │   │   ├── strings.*.json  # Traductions UI
 │   │   │   ├── programs_*.json # Contenu programmes guidés
 │   │   │   └── spiritual_*.json # Cartes spirituelles
 │   │   └── pictures/           # Images et icônes
-│   └── features/               # Modules de fonctionnalités
-│       ├── actions.js          # Bibliothèque d'actions
-│       ├── antiporn.js         # Features anti-porno
-│       ├── calendar.js         # Calendrier sobriété
-│       ├── coaching.js         # Coaching local
-│       ├── evening.js          # Rituels du soir
-│       ├── experiments.js      # Mode expérimentation
-│       ├── heatmap.js          # Heatmap risques
-│       ├── ifthen.js           # Règles "si... alors..."
-│       ├── intentions.js       # Intentions quotidiennes
-│       ├── journal.js          # Journal de bord
-│       ├── programs.js         # Programmes guidés
-│       ├── relapse.js          # Mode après rechute
-│       ├── sos.js              # SOS avancé
-│       ├── spiritual.js        # Features spirituelles
-│       └── wins.js             # Victoires invisibles
+│   └── plugins/                # Plugins MVC (architecture modulaire)
+│       ├── AddictionBase/      # Base partagée pour toutes les addictions
+│       ├── AntiPorn/           # Plugin contenu adulte
+│       ├── AntiSmoke/          # Plugin cigarette
+│       ├── AntiAlcohol/        # Plugin alcool
+│       ├── AntiDrugs/          # Plugin substances
+│       ├── AntiSocialMedia/    # Plugin réseaux sociaux
+│       ├── AntiGaming/         # Plugin jeux vidéo
+│       ├── AntiFood/           # Plugin nourriture compulsive
+│       ├── AntiShopping/       # Plugin achats compulsifs
+│       ├── Actions/            # Bibliothèque d'actions
+│       ├── Calendar/           # Calendrier de sobriété
+│       ├── Coaching/           # Coaching local
+│       ├── Evening/            # Rituels du soir
+│       ├── Experiments/        # Mode expérimentation
+│       ├── Heatmap/            # Heatmap des risques
+│       ├── IfThen/             # Règles "si... alors..."
+│       ├── Intentions/          # Intentions quotidiennes
+│       ├── Journal/            # Journal de bord
+│       ├── Programs/           # Programmes guidés
+│       ├── Relapse/            # Mode après rechute
+│       ├── SOS/                # SOS avancé
+│       ├── Spiritual/          # Features spirituelles
+│       └── Wins/               # Victoires invisibles
 └── README.md                   # Ce fichier
 ```
 
@@ -262,16 +401,25 @@ Le state de l'application suit un schéma versionné (actuellement v3) :
 
 ### Menu Outils
 
-Accédez au menu "Mes outils" depuis l'écran d'accueil pour :
-- ⚠️ **Pente** : Protocole pente glissante
-- 🌙 **Rituel** : Rituel du soir
-- 📚 **Programmes** : Programmes guidés
-- 📊 **Dashboard** : Vue d'ensemble
-- 📝 **Journal** : Journal de bord
-- 📅 **Calendrier** : Calendrier de sobriété
-- 📊 **Heatmap** : Heatmap des risques
-- 🧪 **Expériences** : Mode expérimentation
-- ⚙️ **Config** : Configuration anti-porno
+Accédez au menu "🧰 Mes outils" depuis l'écran d'accueil pour :
+
+#### 🚨 Section URGENCE
+- ⚠️ **Pente** : Protocole pente glissante (disponible pour toutes les addictions)
+
+#### 💜 Section ACCOMPAGNEMENT
+- 🌙 **Rituel** : Rituel du soir avec checklist personnalisable
+- 📚 **Programmes** : Programmes guidés (14 et 30 jours)
+- 🤲 **Spirituel** : Features spirituelles (si activé)
+
+#### 📈 Section SUIVI
+- 📊 **Dashboard** : Vue d'ensemble avec widgets et insights
+- 📝 **Journal** : Journal de bord avec tags et recherche
+- 📅 **Calendrier** : Calendrier de sobriété (habit tracker)
+- 📊 **Heatmap** : Heatmap des risques et patterns
+- 🧪 **Expériences** : Mode expérimentation et A/B testing
+
+#### ⚙️ Section CONFIG
+- ⚙️ **Config** : Configuration de l'addiction actuelle (déclencheurs, règles)
 
 ## 🔐 Confidentialité
 
@@ -287,32 +435,111 @@ Accédez au menu "Mes outils" depuis l'écran d'accueil pour :
 
 - Navigateur moderne (Chrome, Firefox, Safari, Edge)
 - Serveur web local (optionnel, pour PWA)
+- Support des modules ES6
 
 ### Architecture
 
-L'application suit une architecture modulaire :
+L'application suit une architecture **modulaire MVC** :
 
-- **app.js** : Orchestration principale, rendu des écrans
-- **router.js** : Navigation SPA basée sur hash
-- **storage.js** : Abstraction localStorage + migrations
-- **features/** : Modules indépendants par fonctionnalité
-- **i18n.js** : Système de traduction centralisé
+- **core/app.js** : Orchestration principale, rendu des écrans
+- **core/router.js** : Navigation SPA basée sur hash
+- **core/storage.js** : Abstraction localStorage + migrations
+- **core/features/** : Features core avec architecture MVC
+- **plugins/** : Plugins modulaires avec architecture MVC
+- **core/i18n.js** : Système de traduction centralisé
 
-### Ajout d'une nouvelle fonctionnalité
+### Créer un nouveau plugin
 
-1. Créez un nouveau fichier dans `features/`
-2. Exportez vos fonctions via `window.NomModule = { ... }`
-3. Ajoutez le script dans `index.html`
-4. Intégrez dans `app.js` si nécessaire
+1. **Créer la structure** dans `app/plugins/NomPlugin/` :
+   ```
+   NomPlugin/
+   ├── model/
+   │   └── nom-plugin-model.js
+   ├── view/
+   │   └── nom-plugin-view.js
+   ├── controller/
+   │   └── nom-plugin-controller.js
+   ├── data/
+   │   └── nom-plugin-data.js
+   └── nom-plugin.js
+   ```
+
+2. **Implémenter le Model** : Logique métier pure, gestion des données
+3. **Implémenter la View** : Génération HTML, manipulation DOM
+4. **Implémenter le Controller** : Orchestration Model/View
+5. **Créer le point d'entrée** : `nom-plugin.js` qui exporte l'objet global
+6. **Ajouter dans `index.html`** : `<script type="module" src="plugins/NomPlugin/nom-plugin.js"></script>`
+
+### Ajouter une nouvelle addiction
+
+1. **Ajouter dans `data/addictions-config.js`** :
+   - Définir la configuration (triggers, slopeSignals, replacementActions)
+   - Spécifier le groupe (digital, substance, behavior) et le niveau de risque
+
+2. **Créer le plugin** dans `app/plugins/AntiNom/` :
+   - Hériter de `AddictionBase` pour le modèle et la vue
+   - Personnaliser les signaux de pente et les étapes dans `data/`
+   - Ajouter des features spécifiques si nécessaire
+
+3. **Ajouter les traductions** dans `data/texts/strings.*.json` :
+   - `addiction_nom` : Nom de l'addiction
+   - Labels spécifiques si nécessaire
+
+4. **Ajouter dans `index.html`** : Charger le plugin après `AddictionBase`
+
+### Créer une nouvelle feature core
+
+1. **Créer la structure** dans `app/core/features/NomFeature/` :
+   ```
+   NomFeature/
+   ├── model/
+   │   └── nom-feature-model.js
+   ├── view/
+   │   └── nom-feature-view.js
+   ├── controller/
+   │   └── nom-feature-controller.js
+   ├── data/
+   │   └── nom-feature-data.js
+   └── nom-feature.js
+   ```
+
+2. **Suivre l'architecture MVC** comme pour les plugins
+3. **Intégrer dans `core/app.js`** si nécessaire pour la navigation
+
+### Structure des données
+
+Le state de l'application est versionné et migré automatiquement. Structure actuelle (v3) :
+
+```javascript
+{
+  schemaVersion: 3,
+  profile: { lang, religion, spiritualEnabled, rtl },
+  settings: { discreetMode, notifications, lowTextMode, theme },
+  addictions: [], // Liste des addictions actives
+  addictionConfigs: {}, // Configuration par addiction
+  checkins: [], // Check-ins quotidiens
+  events: [], // Événements (cravings, episodes, wins, slopes)
+  // ... autres données spécifiques aux plugins
+}
+```
 
 ## 📝 Version
 
-**Version actuelle** : 3.0.0
+**Version actuelle** : 3.1.0
 
 ### Historique des versions
 
-- **v3.0.0** : Dashboard, thème clair, features avancées
+- **v3.1.0** : 
+  - Support multi-addictions complet (8 addictions)
+  - Sélection d'addiction dans les modales (pente, craving)
+  - Dropdown automatique pour 3+ addictions
+  - Architecture MVC pour tous les plugins
+  - Amélioration de l'interface utilisateur
+
+- **v3.0.0** : Dashboard, thème clair, features avancées, architecture plugins MVC
+
 - **v2.0.0** : Intentions, règles, victoires, rituels, heatmap
+
 - **v1.0.0** : Version initiale avec check-in et protocole 90s
 
 ## 🤝 Contribution
@@ -330,4 +557,3 @@ Application développée avec une approche bienveillante et respectueuse de la v
 ---
 
 **Note importante** : Cette application ne remplace pas un suivi médical ou thérapeutique professionnel. En cas de besoin, consultez un professionnel de santé.
-
