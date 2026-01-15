@@ -4,7 +4,7 @@
 
 import { SOSModel } from '../model/sos-model.js';
 import { SOSView } from '../view/sos-view.js';
-import { LABELS } from '../data/sos-data.js';
+import { LABELS, PRIORITY_ACTIONS } from '../data/sos-data.js';
 
 export class SOSController {
     constructor(model, view) {
@@ -37,7 +37,7 @@ export class SOSController {
         // Récupérer les données nécessaires
         const lang = state.profile.lang;
         const lowTextMode = this.model.getLowTextMode();
-        const actionsToShow = this.model.getSOSActions(state, lang, lowTextMode ? 4 : 6);
+        const actionsToShow = this.model.getSOSActions(state, lang, 1);
         
         // Carte spirituelle si activée
         let spiritualCard = null;
@@ -101,9 +101,33 @@ export class SOSController {
      */
     randomAction(state) {
         if (typeof Actions !== 'undefined') {
-            const action = Actions.getRandomAction(state, state.profile.lang, true);
+            // Obtenir une action aléatoire en priorisant les actions prioritaires
+            const lang = state.profile.lang;
+            const allActions = Actions.getAllActions(state, lang);
+            
+            // Actions prioritaires depuis PRIORITY_ACTIONS
+            const priorityActions = allActions.filter(a => PRIORITY_ACTIONS.includes(a.id));
+            
+            let action = null;
+            
+            // Prioriser les actions spécifiées
+            if (priorityActions.length > 0) {
+                action = priorityActions[Math.floor(Math.random() * priorityActions.length)];
+            } else {
+                // Sinon, prendre une action aléatoire (favoris ou toutes)
+                action = Actions.getRandomAction(state, lang, false);
+            }
+            
             if (action) {
+                // Mettre à jour la carte avec la nouvelle action
+                const lowTextMode = this.model.getLowTextMode();
+                this.view.updateActionCard(action, lowTextMode);
+                
+                // Exécuter l'action
                 Actions.executeAction(action.id, 'sos');
+                
+                // Mettre en évidence l'action
+                this.view.highlightAction(action.id);
                 
                 // Afficher l'action
                 if (typeof showToast === 'function') {
@@ -111,6 +135,21 @@ export class SOSController {
                 }
             }
         }
+    }
+
+    /**
+     * Vérifie si une action est déjà présente dans la carte
+     * @param {string} actionId - ID de l'action
+     * @returns {boolean}
+     */
+    isActionInCard(actionId) {
+        if (!this.view.sosScreenEl) return false;
+        
+        const card = this.view.sosScreenEl.querySelector('.sos-action-card');
+        if (!card) return false;
+        
+        const onclick = card.getAttribute('onclick');
+        return onclick && onclick.includes(`'${actionId}'`);
     }
 
     /**
@@ -186,7 +225,7 @@ export class SOSController {
         // Re-render l'écran
         const lang = state.profile.lang;
         const lowTextMode = this.model.getLowTextMode();
-        const actionsToShow = this.model.getSOSActions(state, lang, lowTextMode ? 4 : 6);
+        const actionsToShow = this.model.getSOSActions(state, lang, 1);
         
         let spiritualCard = null;
         if (state.profile.spiritualEnabled && state.profile.religion !== 'none') {

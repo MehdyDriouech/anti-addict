@@ -51,19 +51,19 @@ export class SOSView {
                     <p class="sos-main-message">${randomMessage}</p>
                 </div>
                 
-                <!-- Actions rapides -->
-                <div class="sos-actions">
-                    ${actionsToShow.map(action => `
-                        <button class="sos-action-btn ${lowTextMode ? 'large' : ''}" 
-                                onclick="SOS.executeAction('${action.id}')">
-                            <span class="action-emoji">${action.emoji}</span>
-                            ${!lowTextMode ? `<span class="action-name">${action.name}</span>` : ''}
+                <!-- Action rapide (carte unique) -->
+                ${actionsToShow.length > 0 ? `
+                    <div class="sos-action-card-container">
+                        <button class="sos-action-card ${lowTextMode ? 'large' : ''}" 
+                                onclick="SOS.executeAction('${actionsToShow[0].id}')">
+                            <span class="action-emoji">${actionsToShow[0].emoji}</span>
+                            ${!lowTextMode ? `<span class="action-name">${actionsToShow[0].name}</span>` : ''}
                         </button>
-                    `).join('')}
-                </div>
+                    </div>
+                ` : ''}
                 
                 <!-- Action aléatoire -->
-                <button class="btn btn-primary btn-large sos-random-btn" onclick="SOS.randomAction()">
+                <button class="btn btn-primary btn-large sos-random-btn" onclick="SOS.randomAction(window.state)">
                     🎲 ${l.randomAction}
                 </button>
                 
@@ -143,11 +143,11 @@ export class SOSView {
         const breathingEl = document.createElement('div');
         breathingEl.className = 'breathing-overlay';
         breathingEl.innerHTML = `
+            <button class="btn btn-ghost breathing-close-btn" onclick="this.parentElement.remove()">×</button>
             <div class="breathing-container">
                 <div class="breathing-circle"></div>
                 <p class="breathing-instruction">${labels.inhale}</p>
                 <p class="breathing-count">4</p>
-                <button class="btn btn-ghost" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
         
@@ -194,11 +194,57 @@ export class SOSView {
     }
 
     /**
+     * Met à jour la carte d'action unique
+     * @param {Object} newAction - Nouvelle action à afficher
+     * @param {boolean} lowTextMode - Mode low-text
+     */
+    updateActionCard(newAction, lowTextMode) {
+        if (!this.sosScreenEl || !newAction) return;
+        
+        const cardContainer = this.sosScreenEl.querySelector('.sos-action-card-container');
+        if (!cardContainer) return;
+        
+        const card = cardContainer.querySelector('.sos-action-card');
+        if (!card) return;
+        
+        // Mettre à jour le bouton de la carte
+        card.setAttribute('onclick', `SOS.executeAction('${newAction.id}')`);
+        card.className = `sos-action-card ${lowTextMode ? 'large' : ''}`;
+        
+        const emojiSpan = card.querySelector('.action-emoji');
+        const nameSpan = card.querySelector('.action-name');
+        
+        if (emojiSpan) {
+            emojiSpan.textContent = newAction.emoji;
+        } else {
+            const newEmojiSpan = document.createElement('span');
+            newEmojiSpan.className = 'action-emoji';
+            newEmojiSpan.textContent = newAction.emoji;
+            card.insertBefore(newEmojiSpan, card.firstChild);
+        }
+        
+        if (!lowTextMode) {
+            if (nameSpan) {
+                nameSpan.textContent = newAction.name;
+            } else {
+                const newNameSpan = document.createElement('span');
+                newNameSpan.className = 'action-name';
+                newNameSpan.textContent = newAction.name;
+                card.appendChild(newNameSpan);
+            }
+        } else if (nameSpan) {
+            nameSpan.remove();
+        }
+    }
+
+    /**
      * Highlight visuel d'une action exécutée
      * @param {string} actionId - ID de l'action
      */
     highlightAction(actionId) {
-        const btn = document.querySelector(`[onclick*="${actionId}"]`);
+        if (!this.sosScreenEl) return;
+        
+        const btn = this.sosScreenEl.querySelector(`[onclick*="'${actionId}'"]`);
         if (btn) {
             btn.classList.add('executed');
             setTimeout(() => btn.classList.remove('executed'), 1000);

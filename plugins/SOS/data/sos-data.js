@@ -29,12 +29,40 @@ export const EMERGENCY_MESSAGES = {
 
 // Actions SOS prioritaires (sous-ensemble des actions)
 export const PRIORITY_ACTIONS = [
+    // Actions prioritaires existantes (6)
     'leave_room',
     'cold_water',
     'breathing_446',
     'walk_2min',
     'call_friend',
-    'pushups'
+    'pushups',
+    // Mouvement (6)
+    'squats',
+    'stretch',
+    'jump_jacks',
+    'run_spot',
+    'stairs',
+    'dance',
+    // Calme/Physique (4)
+    'drink_water',
+    'shower',
+    'wash_hands',
+    'meditate_2min',
+    // Social (3)
+    'text_someone',
+    'go_public',
+    'talk_mirror',
+    // Diversion (3)
+    'read_book',
+    'play_music',
+    'hobby',
+    // Tech (3)
+    'close_app',
+    'phone_out_bedroom',
+    'airplane_mode',
+    // Mental (2)
+    'gratitude',
+    'urge_surf'
 ];
 
 // Labels de traduction

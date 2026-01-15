@@ -14,37 +14,41 @@ export class SOSModel {
      * Récupère les actions pour le SOS
      * @param {Object} state - State de l'application
      * @param {string} lang - Langue
-     * @param {number} count - Nombre d'actions à retourner
+     * @param {number} count - Nombre d'actions à retourner (par défaut 1 pour la carte unique)
      * @returns {Array} Liste d'actions
      */
-    getSOSActions(state, lang, count = 6) {
-        // D'abord les favoris
-        let actions = [];
-        
-        if (typeof Actions !== 'undefined') {
-            const favorites = Actions.getFavoriteActions(state, lang);
-            actions = [...favorites];
-            
-            // Compléter avec des actions prioritaires
-            if (actions.length < count) {
-                const allActions = Actions.getAllActions(state, lang);
-                const priority = allActions.filter(a => 
-                    PRIORITY_ACTIONS.includes(a.id) && !a.favorite
-                );
-                actions = [...actions, ...priority];
-            }
-            
-            // Compléter avec des actions aléatoires
-            if (actions.length < count) {
-                const allActions = Actions.getAllActions(state, lang);
-                const remaining = allActions.filter(a => 
-                    !actions.some(existing => existing.id === a.id)
-                ).sort(() => Math.random() - 0.5);
-                actions = [...actions, ...remaining];
-            }
+    getSOSActions(state, lang, count = 1) {
+        if (typeof Actions === 'undefined') {
+            return [];
         }
         
-        return actions.slice(0, count);
+        const allActions = Actions.getAllActions(state, lang);
+        
+        // Actions prioritaires depuis PRIORITY_ACTIONS
+        const priorityActions = allActions.filter(a => 
+            PRIORITY_ACTIONS.includes(a.id)
+        );
+        
+        // Si on a des actions prioritaires, en prendre une au hasard
+        if (priorityActions.length > 0) {
+            const randomPriority = priorityActions[Math.floor(Math.random() * priorityActions.length)];
+            return [randomPriority];
+        }
+        
+        // Sinon, prendre parmi les favoris s'il y en a
+        const favorites = Actions.getFavoriteActions(state, lang);
+        if (favorites.length > 0) {
+            const randomFavorite = favorites[Math.floor(Math.random() * favorites.length)];
+            return [randomFavorite];
+        }
+        
+        // Sinon, prendre une action aléatoire parmi toutes les actions
+        if (allActions.length > 0) {
+            const randomAction = allActions[Math.floor(Math.random() * allActions.length)];
+            return [randomAction];
+        }
+        
+        return [];
     }
 
     /**
