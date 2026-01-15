@@ -2,18 +2,40 @@
  * auto-lock.js - Gestion du verrouillage automatique après inactivité
  */
 
+import { getServices } from './serviceHelper.js';
+
 let inactivityTimer = null;
 let autoLockEnabled = false;
 let autoLockDelay = 60000; // 1 minute par défaut (en millisecondes)
 let autoLockOnTabBlur = false; // Verrouiller au changement d'onglet
 let isInitialized = false;
 let eventListenersAttached = false;
+let securityService = null;
+let routerService = null;
+
+/**
+ * Initialise les services (peut être appelé de manière asynchrone)
+ */
+async function initAutoLockServices() {
+    if (!securityService || !routerService) {
+        try {
+            const { security, router } = await getServices(['security', 'router']);
+            securityService = security || (typeof window !== 'undefined' ? window.Security : null);
+            routerService = router || (typeof window !== 'undefined' ? window.Router : null);
+        } catch (error) {
+            console.warn('[AutoLock] Erreur lors de l\'initialisation des services:', error);
+            securityService = typeof window !== 'undefined' ? window.Security : null;
+            routerService = typeof window !== 'undefined' ? window.Router : null;
+        }
+    }
+}
 
 /**
  * Initialise le système de verrouillage automatique
  * @param {Object} state - State de l'application
  */
-function initAutoLock(state) {
+async function initAutoLock(state) {
+    await initAutoLockServices();
     if (!state || !state.settings) {
         console.warn('[AutoLock] State invalide, utilisation des valeurs par défaut');
         autoLockEnabled = false;
@@ -28,8 +50,8 @@ function initAutoLock(state) {
     autoLockOnTabBlur = autoLockConfig.autoLockOnTabBlur || false;
 
     // Vérifier que le PIN est activé avant de démarrer
-    if (autoLockEnabled && typeof window.Security !== 'undefined' && window.Security.isEnabled) {
-        const pinEnabled = window.Security.isEnabled();
+    if (autoLockEnabled && securityService?.isEnabled) {
+        const pinEnabled = securityService.isEnabled();
         if (!pinEnabled) {
             console.warn('[AutoLock] PIN non activé, désactivation du verrouillage automatique');
             autoLockEnabled = false;
@@ -80,15 +102,15 @@ function handleVisibilityChange() {
         // Si autoLockOnTabBlur est activé, verrouiller immédiatement
         if (autoLockOnTabBlur) {
             // Vérifier que le PIN est activé et que l'app n'est pas déjà verrouillée
-            if (window.Security && 
-                window.Security.isEnabled && 
-                window.Security.isEnabled() &&
-                window.Security.lock &&
-                window.Security.isLocked &&
-                !window.Security.isLocked()) {
+            if (securityService && 
+                securityService.isEnabled && 
+                securityService.isEnabled() &&
+                securityService.lock &&
+                securityService.isLocked &&
+                !securityService.isLocked()) {
                 
                 console.log('[AutoLock] Verrouillage automatique au changement d\'onglet');
-                window.Security.lock();
+                securityService.lock();
                 
                 // Mettre à jour l'UI
                 if (typeof updateLockIcon === 'function') {
@@ -99,8 +121,10 @@ function handleVisibilityChange() {
                 }
                 
                 // Toujours rediriger vers home pour afficher la vue verrouillée
-                if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
-                    window.Router.navigateTo('home', true); // force=true pour forcer le re-render
+                if (routerService?.navigateTo) {
+                    routerService.navigateTo('home', true); // force=true pour forcer le re-render
+                } else if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
+                    window.Router.navigateTo('home', true);
                 }
                 
                 // Afficher un toast informatif
@@ -129,12 +153,12 @@ function resetTimer() {
     if (!autoLockEnabled) return;
     
     // Ne pas réinitialiser si l'app est déjà verrouillée
-    if (window.Security && window.Security.isLocked && window.Security.isLocked()) {
+    if (securityService?.isLocked && securityService.isLocked()) {
         return;
     }
 
     // Ne pas réinitialiser si le PIN n'est pas activé
-    if (window.Security && window.Security.isEnabled && !window.Security.isEnabled()) {
+    if (securityService?.isEnabled && !securityService.isEnabled()) {
         return;
     }
 
@@ -154,13 +178,13 @@ function startTimer() {
     if (!autoLockEnabled) return;
 
     // Vérifier que le PIN est activé
-    if (window.Security && window.Security.isEnabled && !window.Security.isEnabled()) {
+    if (securityService?.isEnabled && !securityService.isEnabled()) {
         console.warn('[AutoLock] PIN non activé, arrêt du timer');
         return;
     }
 
     // Ne pas démarrer si déjà verrouillé
-    if (window.Security && window.Security.isLocked && window.Security.isLocked()) {
+    if (securityService?.isLocked && securityService.isLocked()) {
         return;
     }
 
@@ -168,12 +192,12 @@ function startTimer() {
 
     inactivityTimer = setTimeout(() => {
         // Vérifier à nouveau avant de verrouiller
-        if (window.Security && window.Security.lock && window.Security.isEnabled && window.Security.isEnabled()) {
-            const isLocked = window.Security.isLocked && window.Security.isLocked();
+        if (securityService?.lock && securityService.isEnabled && securityService.isEnabled()) {
+            const isLocked = securityService.isLocked && securityService.isLocked();
             
             if (!isLocked) {
                 console.log('[AutoLock] Verrouillage automatique après inactivité');
-                window.Security.lock();
+                securityService.lock();
                 
                 // Mettre à jour l'UI
                 if (typeof updateLockIcon === 'function') {
@@ -184,8 +208,10 @@ function startTimer() {
                 }
                 
                 // Toujours rediriger vers home pour afficher la vue verrouillée
-                if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
-                    window.Router.navigateTo('home', true); // force=true pour forcer le re-render
+                if (routerService?.navigateTo) {
+                    routerService.navigateTo('home', true); // force=true pour forcer le re-render
+                } else if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
+                    window.Router.navigateTo('home', true);
                 }
                 
                 // Afficher un toast informatif
@@ -232,7 +258,7 @@ function updateConfig(enabled, delay) {
     // Redémarrer si activé
     if (autoLockEnabled) {
         // Vérifier que le PIN est activé
-        if (window.Security && window.Security.isEnabled && window.Security.isEnabled()) {
+        if (securityService?.isEnabled && securityService.isEnabled()) {
             startTimer();
         } else {
             console.warn('[AutoLock] PIN non activé, impossible d\'activer le verrouillage automatique');

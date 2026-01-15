@@ -4,11 +4,34 @@
 
 import { CheckinModel } from '../model/checkin-model.js';
 import { CheckinView } from '../view/checkin-view.js';
+import { getServices } from '../../../Utils/serviceHelper.js';
 
 export class CheckinController {
     constructor() {
         this.model = new CheckinModel();
         this.view = new CheckinView();
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new CheckinModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[CheckinController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     /**

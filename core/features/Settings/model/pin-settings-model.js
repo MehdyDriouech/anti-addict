@@ -3,13 +3,17 @@
  */
 
 export class PinSettingsModel {
+    constructor(services = {}) {
+        this.security = services.security || (typeof window !== 'undefined' ? window.Security : null);
+    }
+
     /**
      * Vérifie si un PIN est défini
      * @returns {Promise<boolean>}
      */
     async hasPin() {
-        if (window.Security && window.Security.hasPin) {
-            return await window.Security.hasPin();
+        if (this.security?.hasPin) {
+            return await this.security.hasPin();
         }
         return false;
     }
@@ -19,8 +23,8 @@ export class PinSettingsModel {
      * @returns {boolean}
      */
     isEnabled() {
-        if (window.Security && window.Security.isEnabled) {
-            return window.Security.isEnabled();
+        if (this.security?.isEnabled) {
+            return this.security.isEnabled();
         }
         return false;
     }
@@ -30,8 +34,8 @@ export class PinSettingsModel {
      * @returns {boolean}
      */
     isLocked() {
-        if (window.Security && window.Security.isLocked) {
-            return window.Security.isLocked();
+        if (this.security?.isLocked) {
+            return this.security.isLocked();
         }
         return false;
     }
@@ -46,8 +50,8 @@ export class PinSettingsModel {
             return false;
         }
 
-        if (window.Security && window.Security.enable) {
-            return await window.Security.enable(pin);
+        if (this.security?.enable) {
+            return await this.security.enable(pin);
         }
         return false;
     }
@@ -63,8 +67,8 @@ export class PinSettingsModel {
             return false;
         }
 
-        if (window.Security && window.Security.changePin) {
-            return await window.Security.changePin(oldPin, newPin);
+        if (this.security?.changePin) {
+            return await this.security.changePin(oldPin, newPin);
         }
         return false;
     }
@@ -75,8 +79,8 @@ export class PinSettingsModel {
      * @returns {Promise<boolean>}
      */
     async disablePin(pin) {
-        if (window.Security && window.Security.disable) {
-            return await window.Security.disable(pin);
+        if (this.security?.disable) {
+            return await this.security.disable(pin);
         }
         return false;
     }

@@ -21,6 +21,12 @@ import { Dashboard } from './features/Dashboard/dashboard.js';
 import { Commitments } from './features/Commitments/commitments.js';
 
 // ============================================
+// SERVICE CONTAINER
+// ============================================
+import { registerServices } from './Services/ServiceRegistry.js';
+import container from './Services/ServiceContainer.js';
+
+// ============================================
 // STATE GLOBAL
 // ============================================
 let state = null;
@@ -29,10 +35,13 @@ let state = null;
 // INITIALISATION
 // ============================================
 
+import { ConsoleErrorFilter } from './Utils/ConsoleErrorFilter.js';
+
 /**
  * Filtre console pour ignorer les erreurs d'extensions de navigateur
  * Ces erreurs proviennent d'extensions mal écrites qui observent les mutations DOM
  * et ne sont pas critiques pour le fonctionnement de l'application.
+ * @deprecated Utiliser ConsoleErrorFilter à la place
  */
 function setupConsoleFilter() {
     // Sauvegarder les fonctions originales
@@ -257,9 +266,44 @@ function setupConsoleFilter() {
  */
 async function initApp() {
     // Configurer le filtre console en premier pour ignorer les erreurs d'extensions
-    setupConsoleFilter();
+    const errorFilter = new ConsoleErrorFilter();
+    errorFilter.setup();
     
     console.log('[App] Initialisation...');
+    
+    // ============================================
+    // INITIALISER LE SERVICE CONTAINER
+    // ============================================
+    // Enregistrer tous les services AVANT toute autre initialisation
+    await registerServices();
+    
+    // Exposer les services sur window.* pour compatibilité avec le code existant
+    try {
+        const storage = await container.get('storage');
+        if (storage && !window.Storage) {
+            window.Storage = storage;
+        }
+        
+        const security = await container.get('security');
+        if (security && !window.Security) {
+            window.Security = security;
+        }
+        
+        const store = await container.get('store');
+        if (store && !window.Store) {
+            window.Store = {
+                update: store.update,
+                registerHook: store.registerHook || (() => {})
+            };
+        }
+        
+        const analytics = await container.get('analytics');
+        if (analytics && !window.Analytics) {
+            window.Analytics = analytics;
+        }
+    } catch (error) {
+        console.warn('[App] Erreur lors de l\'exposition des services:', error);
+    }
     
     // Initialiser window.runtime pour flags d'urgence
     if (!window.runtime) {

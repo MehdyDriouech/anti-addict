@@ -5,6 +5,11 @@
 import { ADDICTION_ICONS } from '../data/settings-data.js';
 
 export class SettingsModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.i18n = services.i18n || (typeof window !== 'undefined' ? window.I18n : null);
+    }
+
     /**
      * Récupère l'icône d'une addiction
      * @param {string} addictionId - ID de l'addiction
@@ -37,7 +42,7 @@ export class SettingsModel {
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
         state.settings.theme = newTheme;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         this.applyTheme(newTheme);
         
         return newTheme;
@@ -52,8 +57,8 @@ export class SettingsModel {
     async updateLanguage(state, lang) {
         state.profile.lang = lang;
         state.profile.rtl = lang === 'ar';
-        Storage.saveState(state);
-        await I18n.initI18n(state.profile.lang, state.profile.religion);
+        this.storage?.saveState(state);
+        await (this.i18n?.initI18n || (typeof I18n !== 'undefined' ? I18n.initI18n : () => {}))(state.profile.lang, state.profile.religion);
     }
 
     /**
@@ -65,8 +70,8 @@ export class SettingsModel {
     async updateReligion(state, religion) {
         state.profile.religion = religion;
         state.profile.spiritualEnabled = religion !== 'none';
-        Storage.saveState(state);
-        await I18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
+        this.storage?.saveState(state);
+        await (this.i18n?.loadSpiritualCards || (typeof I18n !== 'undefined' ? I18n.loadSpiritualCards : () => {}))(state.profile.lang, state.profile.religion);
     }
 
     /**
@@ -101,7 +106,7 @@ export class SettingsModel {
             state.addictions = state.addictions.filter(a => a.id !== addictionId);
         }
         
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         return true;
     }
 
@@ -191,7 +196,7 @@ export class SettingsModel {
         }
         
         state.settings.autoLock.enabled = enabled;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         
         // Mettre à jour le module auto-lock
         if (typeof window.AutoLock !== 'undefined' && window.AutoLock.updateConfig) {
@@ -213,7 +218,7 @@ export class SettingsModel {
         }
         
         state.settings.autoLock.delay = delay;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         
         // Mettre à jour le module auto-lock
         if (typeof window.AutoLock !== 'undefined' && window.AutoLock.updateConfig) {
@@ -241,7 +246,7 @@ export class SettingsModel {
         }
         
         state.settings.autoLock.autoLockOnTabBlur = enabled;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         
         // Réinitialiser le module auto-lock pour appliquer le changement
         if (typeof window.AutoLock !== 'undefined' && window.AutoLock.init) {

@@ -5,6 +5,11 @@
 import { ONBOARDING_DEFAULTS } from '../data/onboarding-data.js';
 
 export class OnboardingModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.i18n = services.i18n || (typeof window !== 'undefined' ? window.I18n : null);
+    }
+
     /**
      * Vérifie si l'onboarding est nécessaire
      * @param {Object} state - State de l'application
@@ -55,10 +60,10 @@ export class OnboardingModel {
             state.profile.rtl = lang === 'ar';
             
             // Sauvegarder
-            Storage.saveState(state);
+            this.storage?.saveState(state);
             
             // Recharger i18n
-            await I18n.initI18n(state.profile.lang, state.profile.religion);
+            await (this.i18n?.initI18n || (typeof I18n !== 'undefined' ? I18n.initI18n : () => {}))(state.profile.lang, state.profile.religion);
             
             return true;
         } catch (error) {

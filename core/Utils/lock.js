@@ -2,14 +2,34 @@
  * lock.js - Gestion du verrouillage de l'application
  */
 
+import { getServices } from './serviceHelper.js';
+
+let securityService = null;
+
+/**
+ * Initialise les services (peut être appelé de manière asynchrone)
+ */
+async function initLockServices() {
+    if (!securityService) {
+        try {
+            const { security } = await getServices(['security']);
+            securityService = security || (typeof window !== 'undefined' ? window.Security : null);
+        } catch (error) {
+            console.warn('[Lock] Erreur lors de l\'initialisation des services:', error);
+            securityService = typeof window !== 'undefined' ? window.Security : null;
+        }
+    }
+}
+
 /**
  * Met à jour l'icône de verrouillage dans le header
  */
-function updateLockIcon() {
+async function updateLockIcon() {
+    await initLockServices();
     const lockBtn = document.getElementById('lock-btn');
     if (!lockBtn) return;
 
-    if (window.Security && window.Security.isLocked && window.Security.isLocked()) {
+    if (securityService?.isLocked && securityService.isLocked()) {
         lockBtn.textContent = '🔒';
         lockBtn.title = 'Déverrouiller';
     } else {
@@ -21,11 +41,12 @@ function updateLockIcon() {
 /**
  * Met à jour la visibilité du menu du bas selon l'état de verrouillage
  */
-function updateBottomNavVisibility() {
+async function updateBottomNavVisibility() {
+    await initLockServices();
     const bottomNav = document.querySelector('nav.nav');
     if (!bottomNav) return;
 
-    if (window.Security && window.Security.isLocked && window.Security.isLocked()) {
+    if (securityService?.isLocked && securityService.isLocked()) {
         // Masquer le menu du bas quand verrouillé
         bottomNav.style.display = 'none';
     } else {
@@ -56,7 +77,8 @@ function updateLockIconVisibility() {
  * Bascule le verrouillage de l'application
  */
 async function toggleAppLock() {
-    if (!window.Security) {
+    await initLockServices();
+    if (!securityService) {
         console.warn('[Lock] SecurityService not available');
         return;
     }
@@ -75,8 +97,8 @@ async function toggleAppLock() {
         return;
     }
 
-    const isLocked = window.Security.isLocked && window.Security.isLocked();
-    const isEnabled = window.Security.isEnabled && window.Security.isEnabled();
+    const isLocked = securityService.isLocked && securityService.isLocked();
+    const isEnabled = securityService.isEnabled && securityService.isEnabled();
 
     if (!isEnabled) {
         // PIN non activé, ouvrir les réglages
@@ -99,9 +121,9 @@ async function toggleAppLock() {
         await showUnlockModal();
     } else {
         // Verrouiller
-        window.Security.lock();
-        updateLockIcon();
-        updateBottomNavVisibility();
+        securityService.lock();
+        await updateLockIcon();
+        await updateBottomNavVisibility();
         
         // Toujours rediriger vers home pour afficher la vue verrouillée
         if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
@@ -198,14 +220,15 @@ async function showUnlockModal() {
  * @private
  */
 async function handleUnlockPin(l, lang) {
+    await initLockServices();
     const pinInput = document.getElementById('unlock-pin-input');
     if (!pinInput) return;
 
     const pin = pinInput.value.trim();
     const errorEl = document.getElementById('unlock-error');
 
-    if (window.Security && window.Security.unlock) {
-        const success = await window.Security.unlock(pin);
+    if (securityService?.unlock) {
+        const success = await securityService.unlock(pin);
         if (success) {
             // Fermer le modal immédiatement
             if (typeof UI !== 'undefined') {
@@ -214,10 +237,10 @@ async function handleUnlockPin(l, lang) {
             
             // CORRECTION: Ordre d'exécution optimisé
             // 1. Mettre à jour l'icône de verrouillage
-            updateLockIcon();
+            await updateLockIcon();
             
             // 2. Afficher le menu du bas AVANT d'attacher les listeners
-            updateBottomNavVisibility();
+            await updateBottomNavVisibility();
             
             // 3. Attendre que le DOM soit mis à jour (le menu doit être visible)
             await new Promise(resolve => setTimeout(resolve, 10));
@@ -284,13 +307,14 @@ function isEmergencyRoute(route) {
  * @param {string} route - Route à vérifier
  * @returns {boolean}
  */
-function canAccessRoute(route) {
-    if (!window.Security || !window.Security.isEnabled || !window.Security.isLocked) {
+async function canAccessRoute(route) {
+    await initLockServices();
+    if (!securityService || !securityService.isEnabled || !securityService.isLocked) {
         return true; // Pas de sécurité activée
     }
 
-    const isEnabled = window.Security.isEnabled();
-    const isLocked = window.Security.isLocked();
+    const isEnabled = securityService.isEnabled();
+    const isLocked = securityService.isLocked();
 
     if (!isEnabled || !isLocked) {
         return true; // Pas verrouillé

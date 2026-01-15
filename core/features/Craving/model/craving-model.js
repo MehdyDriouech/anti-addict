@@ -5,7 +5,7 @@
 import { PROTOCOL_DURATION, BREATHING_DURATION, BREATHING_PHASES, DEFAULT_INTENSITY } from '../data/craving-data.js';
 
 export class CravingModel {
-    constructor() {
+    constructor(services = {}) {
         this.protocolInterval = null;
         this.protocolSeconds = 0;
         this.protocolRunning = false;
@@ -19,6 +19,8 @@ export class CravingModel {
         this.breathingRunning = false;
         
         this.currentIntensity = DEFAULT_INTENSITY;
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.dateService = services.dateService || null;
     }
 
     /**

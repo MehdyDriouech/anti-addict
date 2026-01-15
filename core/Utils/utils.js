@@ -2,14 +2,19 @@
  * utils.js - Fonctions utilitaires pour l'application Haven
  * 
  * Helpers pour:
- * - Gestion des dates
+ * - Gestion des dates (délégué à DateService)
  * - Calculs statistiques
  * - Matching des règles si-alors
  * - Génération de la heatmap
  */
 
 // ============================================
-// DATES
+// IMPORT DATE SERVICE
+// ============================================
+import DateService, { TIME_BUCKET_LABELS, DAY_LABELS } from './DateService.js';
+
+// ============================================
+// DATES (Délégation à DateService)
 // ============================================
 
 /**
@@ -17,7 +22,7 @@
  * @returns {string}
  */
 function todayISO() {
-    return new Date().toISOString().split('T')[0];
+    return DateService.todayISO();
 }
 
 /**
@@ -26,8 +31,7 @@ function todayISO() {
  * @returns {Date}
  */
 function parseISODate(isoDate) {
-    const [year, month, day] = isoDate.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    return DateService.parseISODate(isoDate);
 }
 
 /**
@@ -36,9 +40,7 @@ function parseISODate(isoDate) {
  * @returns {string}
  */
 function daysAgoISO(daysAgo) {
-    const date = new Date();
-    date.setDate(date.getDate() - daysAgo);
-    return date.toISOString().split('T')[0];
+    return DateService.daysAgoISO(daysAgo);
 }
 
 /**
@@ -48,10 +50,7 @@ function daysAgoISO(daysAgo) {
  * @returns {number}
  */
 function daysBetween(date1, date2) {
-    const d1 = parseISODate(date1);
-    const d2 = parseISODate(date2);
-    const diffTime = Math.abs(d2 - d1);
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return DateService.daysBetween(date1, date2);
 }
 
 /**
@@ -60,7 +59,7 @@ function daysBetween(date1, date2) {
  * @returns {number}
  */
 function getDayOfWeek(isoDate) {
-    return parseISODate(isoDate).getDay();
+    return DateService.getDayOfWeek(isoDate);
 }
 
 /**
@@ -69,7 +68,7 @@ function getDayOfWeek(isoDate) {
  * @returns {number} Heure (0-23)
  */
 function getHourFromTimestamp(timestamp) {
-    return new Date(timestamp).getHours();
+    return DateService.getHourFromTimestamp(timestamp);
 }
 
 /**
@@ -78,38 +77,8 @@ function getHourFromTimestamp(timestamp) {
  * @returns {string} morning|noon|afternoon|evening|night|late
  */
 function getTimeBucket(hour) {
-    if (hour >= 5 && hour < 9) return 'morning';      // 5h-9h
-    if (hour >= 9 && hour < 12) return 'noon';        // 9h-12h
-    if (hour >= 12 && hour < 17) return 'afternoon';  // 12h-17h
-    if (hour >= 17 && hour < 21) return 'evening';    // 17h-21h
-    if (hour >= 21 && hour < 24) return 'night';      // 21h-00h
-    return 'late';                                     // 00h-5h
+    return DateService.getTimeBucket(hour);
 }
-
-/**
- * Labels des créneaux horaires pour l'UI
- */
-const TIME_BUCKET_LABELS = {
-    morning: { fr: 'Matin', en: 'Morning', ar: 'صباح' },
-    noon: { fr: 'Midi', en: 'Noon', ar: 'ظهر' },
-    afternoon: { fr: 'Après-midi', en: 'Afternoon', ar: 'بعد الظهر' },
-    evening: { fr: 'Soir', en: 'Evening', ar: 'مساء' },
-    night: { fr: 'Nuit', en: 'Night', ar: 'ليل' },
-    late: { fr: 'Tard', en: 'Late', ar: 'متأخر' }
-};
-
-/**
- * Labels des jours de la semaine
- */
-const DAY_LABELS = {
-    0: { fr: 'Dim', en: 'Sun', ar: 'أحد' },
-    1: { fr: 'Lun', en: 'Mon', ar: 'إثن' },
-    2: { fr: 'Mar', en: 'Tue', ar: 'ثلا' },
-    3: { fr: 'Mer', en: 'Wed', ar: 'أرب' },
-    4: { fr: 'Jeu', en: 'Thu', ar: 'خمي' },
-    5: { fr: 'Ven', en: 'Fri', ar: 'جمع' },
-    6: { fr: 'Sam', en: 'Sat', ar: 'سبت' }
-};
 
 // ============================================
 // FILTRES ET REQUÊTES

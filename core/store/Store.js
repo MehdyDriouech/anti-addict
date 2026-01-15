@@ -8,6 +8,8 @@
  * - Persist via StorageDriver
  */
 
+import { SENSITIVE_DOMAINS } from '../config/SensitiveDomainsConfig.js';
+
 // Queue d'écritures pour sérialisation
 let writeQueue = [];
 let isWriting = false;
@@ -46,16 +48,18 @@ async function sealSensitiveDomains(draft, options) {
     if (isLocked && !isEmergency) {
         // En mode verrouillé (sans urgence), ne pas sauvegarder les domaines sensibles
         // Retirer les domaines sensibles du draft pour éviter leur sauvegarde
-        const sensitiveDomains = ['events', 'journal', 'addictions', 'addictionConfigs', 'history', 'sos'];
-        sensitiveDomains.forEach(domain => {
-            if (draft[domain] !== undefined) {
-                delete draft[domain];
+        SENSITIVE_DOMAINS.forEach(domainConfig => {
+            if (domainConfig.removeWhenLocked) {
+                if (draft[domainConfig.key] !== undefined) {
+                    delete draft[domainConfig.key];
+                }
+            } else if (domainConfig.subKey && draft[domainConfig.key]) {
+                // Pour calendar, retirer seulement cleanDays
+                if (domainConfig.key === 'calendar' && domainConfig.subKey === 'cleanDays') {
+                    draft.calendar.cleanDays = [];
+                }
             }
         });
-        // Pour calendar, retirer seulement cleanDays
-        if (draft.calendar && draft.calendar.cleanDays) {
-            draft.calendar.cleanDays = [];
-        }
         return;
     }
 
@@ -81,25 +85,24 @@ async function sealSensitiveDomains(draft, options) {
             return; // Pas d'IndexedDB ou pas de support domains
         }
 
-        // Domaines sensibles à chiffrer
-        const sensitiveDomains = {
-            events: draft.events,
-            journal: draft.journal,
-            addictions: draft.addictions,
-            addictionConfigs: draft.addictionConfigs,
-            calendar: draft.calendar ? { cleanDays: draft.calendar.cleanDays || [] } : null,
-            history: draft.history,
-            sos: draft.sos
-        };
-
-        // Chiffrer et sauvegarder chaque domaine
-        for (const [domainKey, value] of Object.entries(sensitiveDomains)) {
+        // Chiffrer et sauvegarder chaque domaine sensible
+        for (const domainConfig of SENSITIVE_DOMAINS) {
+            if (!domainConfig.encrypt) continue;
+            
+            const domainKey = domainConfig.key;
+            let value = draft[domainKey];
+            
+            // Gérer les sous-clés (comme calendar.cleanDays)
+            if (domainConfig.subKey && domainKey === 'calendar' && draft.calendar) {
+                value = { cleanDays: draft.calendar.cleanDays || [] };
+            }
+            
             if (value !== undefined && value !== null) {
                 try {
                     await window.Security.setDomain(domainKey, value);
                     
                     // Retirer du draft pour éviter double stockage
-                    if (domainKey === 'calendar') {
+                    if (domainConfig.subKey && domainKey === 'calendar') {
                         // Pour calendar, on garde milestones dans state, on retire seulement cleanDays
                         if (draft.calendar) {
                             draft.calendar.cleanDays = [];

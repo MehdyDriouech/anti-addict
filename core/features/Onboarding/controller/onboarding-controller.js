@@ -4,12 +4,35 @@
 
 import { OnboardingModel } from '../model/onboarding-model.js';
 import { OnboardingView } from '../view/onboarding-view.js';
+import { getServices } from '../../../Utils/serviceHelper.js';
 
 export class OnboardingController {
     constructor() {
         this.model = new OnboardingModel();
         this.view = new OnboardingView();
         this.currentStep = 'main'; // 'main' ou 'pin'
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, i18n } = await getServices(['storage', 'i18n']);
+            
+            if (this.model && (!this.model.storage || !this.model.i18n)) {
+                this.model = new OnboardingModel({ storage, i18n });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[OnboardingController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     /**
@@ -126,7 +149,7 @@ export class OnboardingController {
             return { id, goal };
         });
 
-        Storage.saveState(state);
+        this.model.storage?.saveState(state);
         await I18n.initI18n(state.profile.lang, state.profile.religion);
 
         // Passer à l'étape PIN

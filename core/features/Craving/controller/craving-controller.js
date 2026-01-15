@@ -4,12 +4,35 @@
 
 import { CravingModel } from '../model/craving-model.js';
 import { CravingView } from '../view/craving-view.js';
+import { getServices } from '../../../Utils/serviceHelper.js';
 
 export class CravingController {
     constructor() {
         this.model = new CravingModel();
         this.view = new CravingView();
         this.selectedAddictionId = null; // Addiction sélectionnée par l'utilisateur
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new CravingModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[CravingController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     /**
@@ -58,7 +81,7 @@ export class CravingController {
         this.view.render(state, suggestedActions, state.profile.lang, this.selectedAddictionId);
         
         // Logger le craving avec l'addiction sélectionnée
-        Storage.addEvent(state, 'craving', this.selectedAddictionId);
+        this.model.storage?.addEvent(state, 'craving', this.selectedAddictionId);
     }
 
     /**
@@ -142,7 +165,7 @@ export class CravingController {
         }
         
         // Logger le craving si pas encore fait (en mode urgence, même verrouillé)
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.model.dateService?.todayISO() || (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
         const existingCraving = state.events && state.events.find ? state.events.find(e => 
             e.type === 'craving' && 
             e.date === todayISO && 
@@ -153,7 +176,7 @@ export class CravingController {
             if (typeof window !== 'undefined' && window.Store && window.Store.update) {
                 window.Store.update((draft) => {
                     if (!draft.events) draft.events = [];
-                    const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                    const todayISO = this.model.dateService?.todayISO() || (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
                     draft.events.push({
                         ts: Date.now(),
                         date: todayISO,
@@ -162,7 +185,7 @@ export class CravingController {
                     });
                 }, { reason: 'emergency_used' });
             } else {
-                Storage.addEvent(state, 'craving', this.selectedAddictionId);
+                this.model.storage?.addEvent(state, 'craving', this.selectedAddictionId);
             }
         }
         
@@ -173,7 +196,7 @@ export class CravingController {
         if (typeof window !== 'undefined' && window.Store && window.Store.update) {
             window.Store.update((draft) => {
                 if (!draft.events) draft.events = [];
-                const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                const todayISO = this.model.dateService?.todayISO() || (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
                 draft.events.push({
                     ts: Date.now(),
                     date: todayISO,
@@ -183,7 +206,7 @@ export class CravingController {
                 });
             }, { reason: 'emergency_used' });
         } else {
-            Storage.addEvent(state, 'win', this.selectedAddictionId, this.model.getIntensity());
+            this.model.storage?.addEvent(state, 'win', this.selectedAddictionId, this.model.getIntensity());
         }
         
         // Incrémenter les victoires invisibles (en mode urgence)

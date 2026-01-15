@@ -6,6 +6,7 @@ import { SettingsModel } from '../model/settings-model.js';
 import { SettingsView } from '../view/settings-view.js';
 import { PinSettingsModel } from '../model/pin-settings-model.js';
 import { PinSettingsView } from '../view/pin-settings-view.js';
+import { getServices } from '../../../Utils/serviceHelper.js';
 
 export class SettingsController {
     constructor() {
@@ -13,6 +14,32 @@ export class SettingsController {
         this.view = new SettingsView();
         this.pinModel = new PinSettingsModel();
         this.pinView = new PinSettingsView();
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, security, i18n } = await getServices(['storage', 'security', 'i18n']);
+            
+            if (this.model && (!this.model.storage || !this.model.i18n)) {
+                this.model = new SettingsModel({ storage, i18n });
+            }
+            
+            if (this.pinModel && !this.pinModel.security) {
+                this.pinModel = new PinSettingsModel({ security });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[SettingsController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     /**
@@ -259,7 +286,7 @@ export class SettingsController {
      */
     async toggleSpiritualCards(state, enabled) {
         state.profile.spiritualEnabled = enabled;
-        Storage.saveState(state);
+        this.model.storage?.saveState(state);
         
         if (enabled && state.profile.religion !== 'none') {
             await I18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
@@ -315,7 +342,7 @@ export class SettingsController {
                 window.state = result.state;
             }
             Storage.saveState(result.state);
-            await I18n.initI18n(result.state.profile.lang, result.state.profile.religion);
+            await (this.model.i18n?.initI18n || (typeof I18n !== 'undefined' ? I18n.initI18n : () => {}))(result.state.profile.lang, result.state.profile.religion);
             if (typeof Init !== 'undefined' && Init.applyTranslations) {
                 Init.applyTranslations();
             }
@@ -475,10 +502,10 @@ export class SettingsController {
                 this.openSetPinModal();
             } else {
                 // Activer le verrouillage
-                if (window.Security && window.Security.enable) {
+                if (this.pinModel.security?.enable) {
                     // Le PIN est déjà défini, on active juste le verrouillage
                     // (on doit déverrouiller d'abord si verrouillé)
-                    if (window.Security.isLocked && window.Security.isLocked()) {
+                    if (this.pinModel.security.isLocked && this.pinModel.isLocked()) {
                         // Demander le PIN pour déverrouiller
                         this.showUnlockModal();
                     }
