@@ -51,6 +51,17 @@ function setupConsoleFilter() {
         // Normaliser pour recherche case-insensitive
         const combinedLower = combined.toLowerCase();
         
+        // Vérifier le nom de l'erreur et le nom du constructeur pour détecter les erreurs typées
+        // Cela capture FrameIsBrowserFrameError et autres erreurs typées des extensions
+        if (error) {
+            const errorName = (error.name || '').toString().toLowerCase();
+            const constructorName = (error.constructor?.name || '').toString().toLowerCase();
+            if (errorName.includes('frameisbrowserframeerror') || 
+                constructorName.includes('frameisbrowserframeerror')) {
+                return true;
+            }
+        }
+        
         // FILTRE AGRESSIF 1: Détecter "deref" dans n'importe quel contexte
         // "deref" est très spécifique aux extensions et apparaît souvent seul
         // Détecter toutes les variantes : "deref", ".deref()", "reading 'deref'", etc.
@@ -97,8 +108,20 @@ function setupConsoleFilter() {
             return true;
         }
         
+        // Détecter FrameIsBrowserFrameError et les erreurs de frames de navigateur
+        // Cette erreur se produit quand une extension tente d'injecter un content script
+        // dans un frame de navigateur (chrome://, about:, etc.)
+        if (combinedLower.includes('frameisbrowserframeerror') ||
+            combinedLower.includes('is a browser frame') ||
+            (combinedLower.includes('frame') && combinedLower.includes('browser frame'))) {
+            return true;
+        }
+        
         // Détecter les erreurs spécifiques des extensions
+        // Amélioration : détecter toutes les variantes de "disconnected port"
         if (combinedLower.includes('attempting to use a disconnected port object') ||
+            combinedLower.includes('disconnected port object') ||
+            combinedLower.includes('disconnected port') ||
             combinedLower.includes('error in event handler') ||
             combinedLower.includes('called encrypt() without a session key') ||
             combinedLower.includes('extension context invalidated') ||
