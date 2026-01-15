@@ -3,7 +3,20 @@
  */
 
 export class ProgramsModel {
-    constructor() { this.programData = null; this.currentState = null; }
+    constructor(services = {}) { 
+        this.programData = null; 
+        this.currentState = null;
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.dateService = services.dateService || null;
+    }
+
+    /**
+     * Helper pour obtenir la date ISO du jour
+     * @returns {string}
+     */
+    getDateISO() {
+        return this.dateService?.todayISO() || (this.storage?.getDateISO ? this.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
+    }
 
     setState(state) { this.currentState = state; }
     getState() { return this.currentState; }
@@ -31,8 +44,8 @@ export class ProgramsModel {
         const lang = state.profile.lang;
         this.programData = await this.loadProgram(programId, lang);
         if (!this.programData) return false;
-        state.programs.active = { id: programId, startDate: Storage.getDateISO(), currentDay: 1 };
-        Storage.saveState(state);
+        state.programs.active = { id: programId, startDate: this.getDateISO(), currentDay: 1 };
+        this.storage?.saveState(state);
         return true;
     }
 
@@ -46,22 +59,22 @@ export class ProgramsModel {
         const daysSinceStart = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
         const currentDay = Math.min(daysSinceStart, this.programData.meta.duration);
         state.programs.active.currentDay = currentDay;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         return currentDay;
     }
 
     completeProgram(state) {
         if (!state.programs.active) return;
-        state.programs.history.push({ id: state.programs.active.id, startDate: state.programs.active.startDate, endDate: Storage.getDateISO(), completed: true });
+        state.programs.history.push({ id: state.programs.active.id, startDate: state.programs.active.startDate, endDate: this.getDateISO(), completed: true });
         state.programs.active = null;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     abandonProgram(state) {
         if (!state.programs.active) return;
-        state.programs.history.push({ id: state.programs.active.id, startDate: state.programs.active.startDate, endDate: Storage.getDateISO(), completed: false });
+        state.programs.history.push({ id: state.programs.active.id, startDate: state.programs.active.startDate, endDate: this.getDateISO(), completed: false });
         state.programs.active = null;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     switchProgram(state, programId) {
@@ -84,7 +97,7 @@ export class ProgramsModel {
     completeDay(state, day, exerciseData) {
         if (!state.programs.active) return false;
         const programId = state.programs.active.id;
-        Storage.saveProgramDayProgress(state, programId, day, { completed: true, exerciseData });
+        this.storage?.saveProgramDayProgress(state, programId, day, { completed: true, exerciseData });
         return true;
     }
 

@@ -5,12 +5,13 @@
 import { CONDITION_MAP, TRIGGER_TAGS } from '../data/relapse-data.js';
 
 export class RelapseModel {
-    constructor() {
+    constructor(services = {}) {
         this.data = {
             when: 'now',
             trigger: null,
             change: ''
         };
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
     }
 
     reset() {
@@ -40,7 +41,7 @@ export class RelapseModel {
      */
     saveEpisode(state, addictionId = null) {
         const effectiveAddiction = addictionId || state.addictions?.[0] || 'porn';
-        Storage.addEvent(state, 'episode', effectiveAddiction, null, {
+        this.storage?.addEvent(state, 'episode', effectiveAddiction, null, {
             when: this.data.when,
             trigger: this.data.trigger,
             change: this.data.change

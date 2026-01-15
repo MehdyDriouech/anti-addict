@@ -4,11 +4,34 @@
 
 import { WinsModel } from '../model/wins-model.js';
 import { WinsView } from '../view/wins-view.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class WinsController {
     constructor(model, view) {
         this.model = model;
         this.view = view;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage } = await getServices(['storage']);
+            
+            if (this.model && !this.model.storage) {
+                this.model = new WinsModel({ storage });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[WinsController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     /**

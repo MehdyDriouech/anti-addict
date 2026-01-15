@@ -3,10 +3,11 @@
  */
 
 export class JournalModel {
-    constructor() {
+    constructor(services = {}) {
         this.editingEntryId = null;
         this.activeTagFilter = null;
         this.selectedTags = [];
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
     }
 
     reset() {
@@ -76,7 +77,7 @@ export class JournalModel {
             state.journal.entries.push(entry);
         }
         
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         this.reset();
         return entry;
     }
@@ -84,7 +85,7 @@ export class JournalModel {
     deleteEntry(state, entryId) {
         if (!state.journal?.entries) return;
         state.journal.entries = state.journal.entries.filter(e => e.id !== entryId);
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     getEntryById(state, entryId) {

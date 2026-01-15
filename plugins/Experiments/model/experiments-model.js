@@ -5,6 +5,10 @@
 import { EXPERIMENT_TEMPLATES } from '../data/experiments-data.js';
 
 export class ExperimentsModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+    }
+
     calculateBaseline(state, startDate) {
         const start = Utils.parseISODate(startDate);
         const baselineStart = new Date(start);
@@ -91,7 +95,7 @@ export class ExperimentsModel {
             results: null
         };
         
-        Storage.saveExperiment(state, experiment);
+        this.storage?.saveExperiment(state, experiment);
         return experiment;
     }
 
@@ -102,7 +106,7 @@ export class ExperimentsModel {
         experiment.results = this.calculateResults(state, experiment);
         experiment.active = false;
         
-        Storage.saveExperiment(state, experiment);
+        this.storage?.saveExperiment(state, experiment);
         return experiment;
     }
 
@@ -122,7 +126,7 @@ export class ExperimentsModel {
         const deleted = state.experiments[index];
         state.experiments.splice(index, 1);
         
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         return deleted;
     }
 }

@@ -5,6 +5,10 @@
 import { MINUTES_PER_WIN } from '../data/wins-data.js';
 
 export class WinsModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+    }
+
     /**
      * Récupère les compteurs de victoires invisibles
      * @param {Object} state - State de l'application
@@ -29,14 +33,14 @@ export class WinsModel {
         const effectiveAddiction = addictionId || state.addictions?.[0] || 'porn';
         
         // Incrémenter les compteurs
-        Storage.incrementWins(state, {
+        this.storage?.incrementWins(state, {
             resistedCravings: 1,
             minutesSaved: MINUTES_PER_WIN,
             positiveActions: withAction ? 1 : 0
         });
         
         // Ajouter un événement "win"
-        Storage.addEvent(state, 'win', effectiveAddiction, null, { withAction });
+        this.storage?.addEvent(state, 'win', effectiveAddiction, null, { withAction });
         
         return state;
     }

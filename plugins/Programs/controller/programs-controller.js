@@ -5,9 +5,36 @@
 import { ProgramsModel } from '../model/programs-model.js';
 import { ProgramsView } from '../view/programs-view.js';
 import { LABELS } from '../data/programs-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class ProgramsController {
-    constructor(model, view) { this.model = model; this.view = view; this.urgeSurfingInterval = null; }
+    constructor(model, view) { 
+        this.model = model; 
+        this.view = view; 
+        this.urgeSurfingInterval = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new ProgramsModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[ProgramsController] Erreur lors de l\'initialisation des services:', error);
+        }
+    }
 
     setState(state) { this.model.setState(state); }
 
@@ -113,7 +140,7 @@ export class ProgramsController {
                 const lang = state?.profile?.lang || 'fr';
                 const l = LABELS[lang] || LABELS.fr;
                 btnEl.textContent = l.exerciseCompleted;
-                if (state) Storage.incrementWins(state, { positiveActions: 1 });
+                if (state) this.model.storage?.incrementWins(state, { positiveActions: 1 });
             }
         }, 1000);
     }

@@ -5,6 +5,10 @@
 import { NEUTRAL_INTENTIONS } from '../data/intentions-data.js';
 
 export class IntentionsModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+    }
+
     /**
      * Vérifie si une nouvelle intention a déjà été montrée aujourd'hui
      * @param {Object} state - State de l'application
@@ -93,7 +97,7 @@ export class IntentionsModel {
         
         // Générer et sauvegarder
         const intention = this.generateNewIntention(state);
-        Storage.addIntention(state, intention);
+        this.storage?.addIntention(state, intention);
         
         return intention;
     }
@@ -120,7 +124,7 @@ export class IntentionsModel {
         
         if (intention) {
             intention.engaged = true;
-            Storage.saveState(state);
+            this.storage?.saveState(state);
         }
     }
 }

@@ -5,9 +5,10 @@
 import { PRIORITY_ACTIONS } from '../data/sos-data.js';
 
 export class SOSModel {
-    constructor() {
+    constructor(services = {}) {
         this.sosActive = false;
         this.lowTextMode = false;
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
     }
 
     /**
@@ -82,7 +83,7 @@ export class SOSModel {
                 });
             }, { reason: 'emergency_used' });
         } else {
-            Storage.addEvent(state, 'craving', effectiveAddiction, null, { context: 'sos' });
+            this.storage?.addEvent(state, 'craving', effectiveAddiction, null, { context: 'sos' });
         }
     }
 
@@ -100,7 +101,7 @@ export class SOSModel {
     toggleLowText(state) {
         this.lowTextMode = !this.lowTextMode;
         state.settings.lowTextMode = this.lowTextMode;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     /**
@@ -118,7 +119,7 @@ export class SOSModel {
                 draft.wins.minutesSavedEstimate = (draft.wins.minutesSavedEstimate || 0) + 15;
             }, { reason: 'emergency_used' });
         } else {
-            Storage.incrementWins(state, { resistedCravings: 1, minutesSaved: 15 });
+            this.storage?.incrementWins(state, { resistedCravings: 1, minutesSaved: 15 });
         }
     }
 

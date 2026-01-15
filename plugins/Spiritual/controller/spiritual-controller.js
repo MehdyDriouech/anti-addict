@@ -4,9 +4,35 @@
 
 import { SpiritualModel } from '../model/spiritual-model.js';
 import { SpiritualView } from '../view/spiritual-view.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class SpiritualController {
-    constructor(model, view) { this.model = model; this.view = view; }
+    constructor(model, view) { 
+        this.model = model; 
+        this.view = view;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new SpiritualModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[SpiritualController] Erreur lors de l\'initialisation des services:', error);
+        }
+    }
 
     open(state) {
         if (!this.model.isEnabled(state)) return;

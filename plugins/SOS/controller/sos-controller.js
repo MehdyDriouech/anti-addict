@@ -5,6 +5,7 @@
 import { SOSModel } from '../model/sos-model.js';
 import { SOSView } from '../view/sos-view.js';
 import { LABELS, PRIORITY_ACTIONS } from '../data/sos-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class SOSController {
     constructor(model, view) {
@@ -16,6 +17,28 @@ export class SOSController {
         this.breathingCycle = 0;
         this.breathingTotalSeconds = 60;
         this.breathingRunning = false;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage } = await getServices(['storage']);
+            
+            if (this.model && !this.model.storage) {
+                this.model = new SOSModel({ storage });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[SOSController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     /**
@@ -198,7 +221,7 @@ export class SOSController {
                     
                     setTimeout(() => {
                         breathingEl.remove();
-                        Storage.incrementWins(state, { positiveActions: 1 });
+                        this.model.storage?.incrementWins(state, { positiveActions: 1 });
                     }, 2000);
                 } else {
                     const current = phases[phase];
