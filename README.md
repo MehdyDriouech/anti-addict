@@ -662,7 +662,7 @@ Le state de l'application est versionné et migré automatiquement. Structure ac
   - Architecture MVC pour tous les plugins
   - Amélioration de l'interface utilisateur
 
-- **v3.0.0** : Dashboard, thème clair, features avancées, architecture plugins MVC
+- **v0.2.5** : Dashboard, thème clair, features avancées, architecture plugins MVC
 
 - **v0.2.0** : Intentions, règles, victoires, rituels, heatmap
 
@@ -683,3 +683,4 @@ Application développée avec une approche bienveillante et respectueuse de la v
 ---
 
 **Note importante** : Cette application ne remplace pas un suivi médical ou thérapeutique professionnel. En cas de besoin, consultez un professionnel de santé.
+
