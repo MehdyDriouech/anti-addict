@@ -1,5 +1,5 @@
 /**
- * app.js - Point d'entrée principal de l'application Revenir V5
+ * app.js - Point d'entrée principal de l'application Haven V5
  * 
  * Ce fichier a été refactorisé pour utiliser l'architecture MVC avec features séparées.
  * Toutes les fonctionnalités ont été extraites dans app/core/features/
@@ -18,6 +18,7 @@ import { Home } from './features/Home/home.js';
 import { Onboarding } from './features/Onboarding/onboarding.js';
 import { Init } from './features/Init/init.js';
 import { Dashboard } from './features/Dashboard/dashboard.js';
+import { Commitments } from './features/Commitments/commitments.js';
 
 // ============================================
 // STATE GLOBAL
@@ -239,6 +240,11 @@ async function initApp() {
     
     // Initialiser l'application via la feature Init
     await Init.init(state);
+    
+    // Initialiser le verrouillage automatique après que Security soit prêt
+    if (window.AutoLock && window.AutoLock.init) {
+        window.AutoLock.init(state);
+    }
     
     // Mettre à jour l'icône de verrouillage après initialisation
     if (window.updateLockIcon) {

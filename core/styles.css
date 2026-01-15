@@ -1,5 +1,5 @@
 /**
- * styles.css - Styles pour l'application Revenir
+ * styles.css - Styles pour l'application Haven
  * 
  * Design: Dark mode, mobile-first, responsive, RTL-ready
  * Typographie: Outfit (moderne, lisible)
@@ -903,12 +903,18 @@ html[dir="rtl"] .form-select {
     width: 52px;
     height: 28px;
     cursor: pointer;
+    z-index: 0;
+    flex-shrink: 0;
+    margin-left: auto;
+    isolation: isolate;
 }
 
 .toggle input {
     opacity: 0;
     width: 0;
     height: 0;
+    position: absolute;
+    pointer-events: none;
 }
 
 .toggle-slider {
@@ -920,6 +926,7 @@ html[dir="rtl"] .form-select {
     background: var(--bg-tertiary);
     border-radius: var(--radius-full);
     transition: all var(--transition-fast);
+    z-index: 0;
 }
 
 .toggle-slider::before {
@@ -1271,6 +1278,8 @@ html[dir="rtl"] .toggle input:checked + .toggle-slider::before {
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: background var(--transition-fast);
+    position: relative;
+    overflow: visible;
 }
 
 .settings-item:last-child {
@@ -1316,6 +1325,7 @@ html[dir="rtl"] .toggle input:checked + .toggle-slider::before {
 .settings-item-right {
     color: var(--text-muted);
     font-size: 1.25rem;
+    flex-shrink: 0;
 }
 
 /* ============================================
@@ -6089,4 +6099,133 @@ html[dir="rtl"] .locked-actions .btn {
 
 html[dir="rtl"] .locked-actions .btn-text {
     text-align: center;
+}
+
+/* ============================================
+   COMMITMENTS MODAL
+   ============================================ */
+.commitments-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.commitments-header {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.commitments-header h2 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: var(--space-md);
+}
+
+.commitments-empty {
+    text-align: center;
+    padding: var(--space-xl) var(--space-md);
+}
+
+.commitments-empty .empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-md);
+    opacity: 0.5;
+}
+
+.commitments-empty h3 {
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+}
+
+.commitments-empty p {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.commitments-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.commitment-card {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.commitment-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.commitment-header {
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.commitment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.commitment-program {
+    color: var(--accent-primary);
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.commitment-day {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    background: var(--bg-card);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+}
+
+.commitment-date {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-left: auto;
+}
+
+.commitment-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.commitment-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.commitment-section h4 {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.commitment-text {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+html[dir="rtl"] .commitment-date {
+    margin-left: 0;
+    margin-right: auto;
 }

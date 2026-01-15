@@ -101,6 +101,10 @@ export class ToolsView {
                                 <span class="tool-icon">📚</span>
                                 <span class="tool-label">${getLabel('programs')}</span>
                             </button>
+                            <button class="tool-card priority-support" onclick="Tools.closeDrawer(); typeof Commitments !== 'undefined' && Commitments.openModal(window.state)">
+                                <span class="tool-icon">💪</span>
+                                <span class="tool-label">${typeof I18n !== 'undefined' ? I18n.t('my_commitments') : 'Mes engagements'}</span>
+                            </button>
                             <button class="tool-card priority-support" onclick="Tools.closeDrawer(); Router.navigateTo('coaching')">
                                 <span class="tool-icon">🧠</span>
                                 <span class="tool-label">${typeof I18n !== 'undefined' ? I18n.t('coaching') : 'Coaching'}</span>

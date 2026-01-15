@@ -1,5 +1,5 @@
 /**
- * storage.js - Gestion du stockage localStorage pour l'application Revenir
+ * storage.js - Gestion du stockage localStorage pour l'application Haven
  * 
  * Fonctionnalités:
  * - Sauvegarde/chargement du state dans localStorage
@@ -193,7 +193,11 @@ function getDefaultState() {
             discreetMode: false,
             notifications: false,
             lowTextMode: false,  // V3: Mode icônes
-            theme: 'dark'  // Theme: 'dark' ou 'light'
+            theme: 'dark',  // Theme: 'dark' ou 'light'
+            autoLock: {  // V4: Verrouillage automatique
+                enabled: false,
+                delay: 60000  // 1 minute par défaut (en millisecondes)
+            }
         },
         
         // Journaux
@@ -436,7 +440,8 @@ function migrateV0ToV1(state) {
         addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
         settings: {
             discreetMode: state.settings?.discreetMode ?? defaultState.settings.discreetMode,
-            notifications: state.settings?.notifications ?? defaultState.settings.notifications
+            notifications: state.settings?.notifications ?? defaultState.settings.notifications,
+            autoLock: state.settings?.autoLock || defaultState.settings.autoLock
         },
         checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
         events: Array.isArray(state.events) ? state.events : defaultState.events
@@ -458,7 +463,11 @@ function migrateV1ToV2(state) {
         // Conserver les données existantes
         profile: state.profile || defaultState.profile,
         addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
-        settings: state.settings || defaultState.settings,
+        settings: {
+            ...defaultState.settings,
+            ...(state.settings || {}),
+            autoLock: state.settings?.autoLock || defaultState.settings.autoLock
+        },
         checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
         events: Array.isArray(state.events) ? state.events : defaultState.events,
         
@@ -487,7 +496,11 @@ function migrateV3ToV4(state) {
         // Conserver toutes les données existantes
         profile: state.profile || defaultState.profile,
         addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
-        settings: state.settings || defaultState.settings,
+        settings: {
+            ...defaultState.settings,
+            ...state.settings,
+            autoLock: state.settings?.autoLock || defaultState.settings.autoLock
+        },
         checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
         events: Array.isArray(state.events) ? state.events : defaultState.events,
         eveningRituals: Array.isArray(state.eveningRituals) ? state.eveningRituals : defaultState.eveningRituals,
@@ -540,7 +553,11 @@ function migrateV4ToV5(state) {
         // Conserver toutes les données existantes
         profile: state.profile || defaultState.profile,
         addictions: Array.isArray(state.addictions) ? state.addictions : defaultState.addictions,
-        settings: state.settings || defaultState.settings,
+        settings: {
+            ...defaultState.settings,
+            ...state.settings,
+            autoLock: state.settings?.autoLock || defaultState.settings.autoLock
+        },
         checkins: Array.isArray(state.checkins) ? state.checkins : defaultState.checkins,
         events: Array.isArray(state.events) ? state.events : defaultState.events,
         eveningRituals: Array.isArray(state.eveningRituals) ? state.eveningRituals : defaultState.eveningRituals,
@@ -586,11 +603,12 @@ function migrateV2ToV3(state) {
         phoneBedCheckins: state.antiporn?.phoneBedCheckins || []
     };
     
-    // Étendre settings avec lowTextMode
+    // Étendre settings avec lowTextMode et autoLock
     const settings = {
         ...defaultState.settings,
         ...state.settings,
-        lowTextMode: state.settings?.lowTextMode ?? false
+        lowTextMode: state.settings?.lowTextMode ?? false,
+        autoLock: state.settings?.autoLock || defaultState.settings.autoLock
     };
     
     return {
@@ -725,9 +743,9 @@ function validateImportedState(data) {
 /**
  * Exporte le state en fichier JSON téléchargeable
  * @param {Object} state - Le state à exporter
- * @param {Object} options - Options d'export { anonymized, snapshot }
+ * @param {Object} options - Options d'export { anonymized, snapshot, encrypt }
  */
-function exportState(state, options = {}) {
+async function exportState(state, options = {}) {
     try {
         let dataToExport = { ...state };
         
@@ -741,14 +759,56 @@ function exportState(state, options = {}) {
             dataToExport = createSnapshot(dataToExport, options.snapshot);
         }
         
-        const dataStr = JSON.stringify(dataToExport, null, 2);
+        // V4: Chiffrement avec PIN si disponible
+        let finalData;
+        let isEncrypted = false;
+        
+        // Vérifier si un PIN est défini et si le chiffrement est demandé
+        const shouldEncrypt = options.encrypt !== false; // Par défaut, chiffrer si PIN disponible
+        if (shouldEncrypt && typeof Security !== 'undefined' && Security.hasPin) {
+            const hasPin = await Security.hasPin();
+            if (hasPin) {
+                try {
+                    // S'assurer que l'app n'est pas verrouillée pour pouvoir chiffrer
+                    if (Security.isLockedMode && Security.isLockedMode()) {
+                        throw new Error('Application verrouillée. Déverrouillez d\'abord pour exporter.');
+                    }
+                    
+                    // Chiffrer les données
+                    const encrypted = await Security.encrypt(dataToExport);
+                    
+                    // Créer wrapper avec métadonnées
+                    finalData = {
+                        version: 2,
+                        encrypted: true,
+                        encryption: encrypted,
+                        metadata: {
+                            exportDate: getDateISO(),
+                            hasPassword: true
+                        }
+                    };
+                    isEncrypted = true;
+                } catch (encryptError) {
+                    console.warn('[Storage] Erreur lors du chiffrement, export en clair:', encryptError);
+                    // En cas d'erreur, exporter en clair
+                    finalData = dataToExport;
+                }
+            } else {
+                finalData = dataToExport;
+            }
+        } else {
+            finalData = dataToExport;
+        }
+        
+        const dataStr = JSON.stringify(finalData, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
         const suffix = options.anonymized ? '-anon' : options.snapshot ? `-${options.snapshot}d` : '';
+        const encryptedSuffix = isEncrypted ? '-encrypted' : '';
         const link = document.createElement('a');
         link.href = url;
-        link.download = `revenir-backup${suffix}-${getDateISO()}.json`;
+        link.download = `revenir-backup${suffix}${encryptedSuffix}-${getDateISO()}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -838,7 +898,7 @@ function createSnapshot(state, days) {
 /**
  * Importe un state depuis un fichier JSON
  * @param {File} file - Le fichier à importer
- * @returns {Promise<Object>} Le résultat de la validation
+ * @returns {Promise<Object>} Le résultat de la validation ou { needsPassword: true, encryptedData: ... }
  */
 function importState(file) {
     return new Promise((resolve, reject) => {
@@ -847,7 +907,27 @@ function importState(file) {
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                const validation = validateImportedState(data);
+                
+                // Vérifier si le fichier est chiffré (nouveau format v2)
+                if (data.version === 2 && data.encrypted === true && data.encryption) {
+                    // Fichier chiffré, retourner un objet spécial pour demander le PIN
+                    resolve({
+                        needsPassword: true,
+                        encryptedData: data.encryption,
+                        metadata: data.metadata || {}
+                    });
+                    return;
+                }
+                
+                // Fichier non chiffré (ancien format ou export sans PIN)
+                // Si c'est un format v2 non chiffré, extraire les données directement
+                let dataToValidate = data;
+                if (data.version === 2 && data.encrypted === false) {
+                    // Format v2 non chiffré (peut contenir les données directement ou dans un champ data)
+                    dataToValidate = data.data || data;
+                }
+                
+                const validation = validateImportedState(dataToValidate);
                 resolve(validation);
             } catch (error) {
                 resolve({ valid: false, errors: ['Fichier JSON invalide'], state: null });
@@ -860,6 +940,64 @@ function importState(file) {
         
         reader.readAsText(file);
     });
+}
+
+/**
+ * Déchiffre et importe des données chiffrées
+ * @param {Object} encryptedData - Données chiffrées (format Security.encrypt)
+ * @param {string} pin - PIN pour déchiffrer
+ * @returns {Promise<Object>} Le résultat de la validation
+ */
+async function decryptAndImport(encryptedData, pin) {
+    try {
+        // Vérifier que Security est disponible
+        if (typeof Security === 'undefined' || !Security.decrypt) {
+            return { valid: false, errors: ['Service de sécurité non disponible'], state: null };
+        }
+        
+        // Vérifier le PIN d'abord
+        if (!Security.verifyPin) {
+            return { valid: false, errors: ['Service de sécurité non disponible'], state: null };
+        }
+        
+        const isValidPin = await Security.verifyPin(pin);
+        if (!isValidPin) {
+            return { valid: false, errors: ['PIN incorrect'], state: null, needsPassword: true };
+        }
+        
+        // Déverrouiller temporairement pour pouvoir déchiffrer
+        const wasLocked = Security.isLockedMode && Security.isLockedMode();
+        if (wasLocked) {
+            const unlocked = await Security.unlock(pin);
+            if (!unlocked) {
+                return { valid: false, errors: ['Impossible de déverrouiller avec ce PIN'], state: null, needsPassword: true };
+            }
+        }
+        
+        try {
+            // Déchiffrer les données
+            const decryptedData = await Security.decrypt(encryptedData);
+            
+            // Parser le JSON déchiffré
+            let parsedData;
+            if (typeof decryptedData === 'string') {
+                parsedData = JSON.parse(decryptedData);
+            } else {
+                parsedData = decryptedData;
+            }
+            
+            // Valider les données déchiffrées
+            const validation = validateImportedState(parsedData);
+            
+            return validation;
+        } catch (decryptError) {
+            console.error('[Storage] Erreur lors du déchiffrement:', decryptError);
+            return { valid: false, errors: ['Erreur de déchiffrement. PIN incorrect ou données corrompues.'], state: null, needsPassword: true };
+        }
+    } catch (error) {
+        console.error('[Storage] Erreur lors du déchiffrement et import:', error);
+        return { valid: false, errors: ['Erreur lors du déchiffrement'], state: null };
+    }
 }
 
 /**
@@ -1502,6 +1640,7 @@ window.Storage = {
     getDefaultState,
     exportState,
     importState,
+    decryptAndImport,
     validateImportedState,
     
     // Storage Driver (nouveau)

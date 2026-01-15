@@ -1,5 +1,5 @@
 /**
- * utils.js - Fonctions utilitaires pour l'application Revenir
+ * utils.js - Fonctions utilitaires pour l'application Haven
  * 
  * Helpers pour:
  * - Gestion des dates

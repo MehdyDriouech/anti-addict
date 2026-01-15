@@ -68,7 +68,7 @@ export class SettingsView {
             </div>
             
             <!-- Section Sécurité PIN -->
-            ${await this.pinView.renderSection(hasPin, pinEnabled, state.profile.lang)}
+            ${await this.pinView.renderSection(hasPin, pinEnabled, state.profile.lang, state)}
             
             <!-- Section Spirituel -->
             <div class="settings-section">
@@ -183,7 +183,7 @@ export class SettingsView {
                 <div class="settings-title">${I18n.t('about')}</div>
                 <div class="about-content">
                     <p class="about-description">
-                        Revenir est une application web progressive (PWA) pour le suivi et la gestion des addictions, 
+                        Haven est une application web progressive (PWA) pour le suivi et la gestion des addictions, 
                         avec un focus sur la confidentialité et le fonctionnement hors-ligne. 
                         100% privée, toutes les données restent sur votre appareil.
                     </p>
@@ -216,4 +216,5 @@ export class SettingsView {
             </div>
         `;
     }
+
 }

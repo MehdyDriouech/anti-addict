@@ -121,18 +121,45 @@ export class SettingsModel {
     /**
      * Exporte les données
      * @param {Object} state - State de l'application
+     * @param {Object} options - Options d'export { encrypt }
+     * @returns {Promise<void>}
      */
-    exportData(state) {
-        Storage.exportState(state);
+    async exportData(state, options = {}) {
+        try {
+            await Storage.exportState(state, options);
+        } catch (error) {
+            console.error('[SettingsModel] Erreur lors de l\'export:', error);
+            throw error;
+        }
     }
 
     /**
      * Importe les données
      * @param {File} file - Fichier à importer
-     * @returns {Promise<Object>} Résultat de l'import
+     * @returns {Promise<Object>} Résultat de l'import (peut contenir needsPassword: true)
      */
     async importData(file) {
-        return await Storage.importState(file);
+        try {
+            return await Storage.importState(file);
+        } catch (error) {
+            console.error('[SettingsModel] Erreur lors de l\'import:', error);
+            return { valid: false, errors: ['Erreur lors de la lecture du fichier'], state: null };
+        }
+    }
+
+    /**
+     * Déchiffre et importe des données chiffrées
+     * @param {Object} encryptedData - Données chiffrées
+     * @param {string} pin - PIN pour déchiffrer
+     * @returns {Promise<Object>} Résultat de l'import
+     */
+    async decryptAndImportData(encryptedData, pin) {
+        try {
+            return await Storage.decryptAndImport(encryptedData, pin);
+        } catch (error) {
+            console.error('[SettingsModel] Erreur lors du déchiffrement:', error);
+            return { valid: false, errors: ['Erreur lors du déchiffrement'], state: null };
+        }
     }
 
     /**
@@ -142,5 +169,55 @@ export class SettingsModel {
     clearData() {
         Storage.clearAllData();
         return Storage.getDefaultState();
+    }
+
+    /**
+     * Active/désactive le verrouillage automatique
+     * @param {Object} state - State de l'application
+     * @param {boolean} enabled - Activé ou non
+     * @returns {Promise<boolean>} Succès
+     */
+    async toggleAutoLock(state, enabled) {
+        // Vérifier que le PIN est activé si on active le verrouillage automatique
+        if (enabled && typeof window.Security !== 'undefined' && window.Security.hasPin) {
+            const hasPin = await window.Security.hasPin();
+            if (!hasPin) {
+                return false; // PIN non défini
+            }
+        }
+
+        if (!state.settings.autoLock) {
+            state.settings.autoLock = { enabled: false, delay: 60000 };
+        }
+        
+        state.settings.autoLock.enabled = enabled;
+        Storage.saveState(state);
+        
+        // Mettre à jour le module auto-lock
+        if (typeof window.AutoLock !== 'undefined' && window.AutoLock.updateConfig) {
+            window.AutoLock.updateConfig(enabled, state.settings.autoLock.delay);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Met à jour le délai de verrouillage automatique
+     * @param {Object} state - State de l'application
+     * @param {number} delay - Délai en millisecondes
+     * @returns {Promise<void>}
+     */
+    async updateAutoLockDelay(state, delay) {
+        if (!state.settings.autoLock) {
+            state.settings.autoLock = { enabled: false, delay: 60000 };
+        }
+        
+        state.settings.autoLock.delay = delay;
+        Storage.saveState(state);
+        
+        // Mettre à jour le module auto-lock
+        if (typeof window.AutoLock !== 'undefined' && window.AutoLock.updateConfig) {
+            window.AutoLock.updateConfig(state.settings.autoLock.enabled, delay);
+        }
     }
 }

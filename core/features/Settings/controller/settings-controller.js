@@ -175,13 +175,14 @@ export class SettingsController {
      * Exporte les données
      * @param {Object} state - State de l'application
      */
-    exportData(state) {
+    async exportData(state) {
         try {
-            this.model.exportData(state);
+            await this.model.exportData(state);
             if (typeof UI !== 'undefined') {
                 UI.showToast(I18n.t('export_success'), 'success');
             }
         } catch (error) {
+            console.error('[SettingsController] Erreur export:', error);
             if (typeof UI !== 'undefined') {
                 UI.showToast(I18n.t('import_error'), 'error');
             }
@@ -205,6 +206,13 @@ export class SettingsController {
         
         const file = input.files[0];
         const result = await this.model.importData(file);
+        
+        // Vérifier si le fichier est chiffré et nécessite un PIN
+        if (result.needsPassword) {
+            // Afficher la modale pour demander le PIN
+            await this.showPasswordModal(result.encryptedData, state, input);
+            return;
+        }
         
         if (result.valid) {
             // Mettre à jour le state global
@@ -231,6 +239,125 @@ export class SettingsController {
         
         // Reset l'input
         input.value = '';
+    }
+
+    /**
+     * Affiche une modale pour demander le PIN pour déchiffrer les données
+     * @param {Object} encryptedData - Données chiffrées
+     * @param {Object} state - State de l'application
+     * @param {HTMLInputElement} input - Input file (pour reset après import)
+     */
+    async showPasswordModal(encryptedData, state, input) {
+        const lang = state.profile.lang || 'fr';
+        
+        const html = `
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: var(--space-md);">
+                ${I18n.t('import_password_prompt')}
+            </p>
+            <div class="form-group">
+                <label class="form-label">${I18n.t('import_password_placeholder')}</label>
+                <input type="password" 
+                       id="import-pin-input" 
+                       class="form-input" 
+                       inputmode="numeric" 
+                       pattern="[0-9]*"
+                       maxlength="10"
+                       placeholder="1234"
+                       autofocus>
+            </div>
+            <div id="import-pin-error" class="error-message" style="display: none;"></div>
+        `;
+        
+        const labels = {
+            fr: { title: I18n.t('import_password_required'), validate: 'Valider', cancel: 'Annuler' },
+            en: { title: I18n.t('import_password_required'), validate: 'Validate', cancel: 'Cancel' },
+            ar: { title: I18n.t('import_password_required'), validate: 'التحقق', cancel: 'إلغاء' }
+        };
+        const l = labels[lang] || labels.fr;
+        
+        if (typeof UI !== 'undefined') {
+            UI.showModal(l.title, html, async () => {
+                const pinInput = document.getElementById('import-pin-input');
+                const errorEl = document.getElementById('import-pin-error');
+                
+                if (!pinInput) return;
+                
+                const pin = pinInput.value.trim();
+                
+                // Masquer l'erreur précédente
+                if (errorEl) {
+                    errorEl.style.display = 'none';
+                }
+                
+                if (!pin) {
+                    if (errorEl) {
+                        errorEl.textContent = I18n.t('import_password_placeholder') + ' requis';
+                        errorEl.style.display = 'block';
+                    }
+                    return;
+                }
+                
+                // Déchiffrer et importer
+                const decryptResult = await this.model.decryptAndImportData(encryptedData, pin);
+                
+                if (decryptResult.valid) {
+                    // Succès : fermer la modale et importer
+                    UI.closeModal('dynamic-modal');
+                    
+                    // Mettre à jour le state global
+                    if (typeof window !== 'undefined') {
+                        window.state = decryptResult.state;
+                    }
+                    Storage.saveState(decryptResult.state);
+                    await I18n.initI18n(decryptResult.state.profile.lang, decryptResult.state.profile.religion);
+                    if (typeof Init !== 'undefined' && Init.applyTranslations) {
+                        Init.applyTranslations();
+                    }
+                    if (typeof UI !== 'undefined') {
+                        UI.showToast(I18n.t('import_success'), 'success');
+                    }
+                    this.render(decryptResult.state);
+                    if (typeof Home !== 'undefined' && Home.render) {
+                        Home.render(decryptResult.state);
+                    }
+                    
+                    // Reset l'input
+                    if (input) input.value = '';
+                } else {
+                    // Erreur : afficher le message
+                    if (errorEl) {
+                        const errorMsg = decryptResult.errors && decryptResult.errors.length > 0 
+                            ? decryptResult.errors[0] 
+                            : I18n.t('import_password_incorrect');
+                        errorEl.textContent = errorMsg;
+                        errorEl.style.display = 'block';
+                    }
+                    
+                    // Si c'est une erreur de PIN, permettre une nouvelle tentative
+                    if (decryptResult.needsPassword) {
+                        // Garder la modale ouverte, vider le champ
+                        pinInput.value = '';
+                        pinInput.focus();
+                    }
+                }
+            }, true, 'dynamic-modal', l.validate);
+            
+            // Focus sur l'input après ouverture de la modale
+            setTimeout(() => {
+                const pinInput = document.getElementById('import-pin-input');
+                if (pinInput) {
+                    pinInput.focus();
+                    // Permettre Enter pour valider
+                    pinInput.addEventListener('keypress', async (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const validateBtn = document.querySelector('.modal-footer .btn-primary');
+                            if (validateBtn) validateBtn.click();
+                        }
+                    });
+                }
+            }, 100);
+        }
     }
 
     /**
@@ -600,6 +727,98 @@ export class SettingsController {
                     Onboarding.show();
                 }
             }, true);
+        }
+    }
+
+    /**
+     * Active/désactive le verrouillage automatique
+     * @param {Object} state - State de l'application
+     * @param {boolean} enabled - Activé ou non
+     */
+    async toggleAutoLock(state, enabled) {
+        const success = await this.model.toggleAutoLock(state, enabled);
+        
+        if (!success && enabled) {
+            // Échec : probablement PIN non défini
+            const checkbox = document.getElementById('toggle-auto-lock');
+            if (checkbox) checkbox.checked = false;
+            
+            if (typeof UI !== 'undefined') {
+                const lang = state.profile.lang || 'fr';
+                const msg = lang === 'fr' ? 'Active d\'abord le verrouillage PIN dans les réglages' :
+                           lang === 'en' ? 'Enable PIN lock in settings first' :
+                           'قم بتفعيل قفل PIN في الإعدادات أولاً';
+                UI.showToast(msg, 'info');
+            }
+            return;
+        }
+        
+        this.render(state);
+        
+        if (typeof UI !== 'undefined') {
+            const lang = state.profile.lang || 'fr';
+            const msg = enabled 
+                ? (lang === 'fr' ? 'Verrouillage automatique activé' :
+                   lang === 'en' ? 'Auto-lock enabled' :
+                   'تم تفعيل القفل التلقائي')
+                : (lang === 'fr' ? 'Verrouillage automatique désactivé' :
+                   lang === 'en' ? 'Auto-lock disabled' :
+                   'تم تعطيل القفل التلقائي');
+            UI.showToast(msg, 'success');
+        }
+    }
+
+    /**
+     * Ouvre le modal pour choisir le délai de verrouillage automatique
+     * @param {Object} state - State de l'application
+     */
+    openAutoLockDelayModal(state) {
+        const lang = state.profile.lang || 'fr';
+        const currentDelay = state.settings?.autoLock?.delay || 60000;
+        
+        const delayOptions = [
+            { value: 30000, label: I18n.t('auto_lock_delay_30s') },
+            { value: 60000, label: I18n.t('auto_lock_delay_1min') },
+            { value: 120000, label: I18n.t('auto_lock_delay_2min') },
+            { value: 300000, label: I18n.t('auto_lock_delay_5min') },
+            { value: 600000, label: I18n.t('auto_lock_delay_10min') }
+        ];
+        
+        const html = `
+            <div class="form-group">
+                <div class="checkbox-group">
+                    ${delayOptions.map(option => `
+                        <label class="checkbox-item">
+                            <input type="radio" name="auto-lock-delay" value="${option.value}" ${currentDelay === option.value ? 'checked' : ''}>
+                            <span>${option.label}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        const labels = {
+            fr: { title: I18n.t('auto_lock_delay'), save: 'Enregistrer', cancel: 'Annuler' },
+            en: { title: I18n.t('auto_lock_delay'), save: 'Save', cancel: 'Cancel' },
+            ar: { title: I18n.t('auto_lock_delay'), save: 'حفظ', cancel: 'إلغاء' }
+        };
+        const l = labels[lang] || labels.fr;
+        
+        if (typeof UI !== 'undefined') {
+            UI.showModal(l.title, html, async () => {
+                const selected = document.querySelector('input[name="auto-lock-delay"]:checked');
+                if (selected) {
+                    const delay = parseInt(selected.value, 10);
+                    await this.model.updateAutoLockDelay(state, delay);
+                    UI.closeModal('dynamic-modal');
+                    this.render(state);
+                    
+                    const successMsg = lang === 'fr' ? 'Délai mis à jour' :
+                                     lang === 'en' ? 'Delay updated' :
+                                     'تم تحديث التأخير';
+                    UI.showToast(successMsg, 'success');
+                }
+            }, true, 'dynamic-modal', l.save);
         }
     }
 }

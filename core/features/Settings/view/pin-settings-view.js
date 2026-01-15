@@ -8,9 +8,10 @@ export class PinSettingsView {
      * @param {boolean} hasPin - Si un PIN est défini
      * @param {boolean} isEnabled - Si le verrouillage est activé
      * @param {string} lang - Langue
+     * @param {Object} state - State de l'application
      * @returns {string} HTML
      */
-    renderSection(hasPin, isEnabled, lang) {
+    renderSection(hasPin, isEnabled, lang, state = null) {
         const labels = {
             fr: {
                 title: 'Sécurité',
@@ -80,6 +81,36 @@ export class PinSettingsView {
                             <div class="settings-item-right">›</div>
                         </div>
                     `}
+                    ${state ? `
+                    <div class="settings-item">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon">🔒</div>
+                            <div class="settings-item-text">
+                                <span class="settings-item-title">${I18n.t('auto_lock_enabled')}</span>
+                                <span class="settings-item-value">${I18n.t('auto_lock_description')}</span>
+                            </div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" 
+                                   id="toggle-auto-lock" 
+                                   ${state.settings?.autoLock?.enabled ? 'checked' : ''} 
+                                   onchange="toggleAutoLock(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    ${state.settings?.autoLock?.enabled ? `
+                    <div class="settings-item" onclick="openAutoLockDelayModal()">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon">⏱️</div>
+                            <div class="settings-item-text">
+                                <span class="settings-item-title">${I18n.t('auto_lock_delay')}</span>
+                                <span class="settings-item-value">${this.getAutoLockDelayLabel(state.settings?.autoLock?.delay || 60000)}</span>
+                            </div>
+                        </div>
+                        <div class="settings-item-right">›</div>
+                    </div>
+                    ` : ''}
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -247,5 +278,23 @@ export class PinSettingsView {
         if (errorEl) {
             errorEl.style.display = 'none';
         }
+    }
+
+    /**
+     * Obtient le label du délai de verrouillage automatique
+     * @param {number} delay - Délai en millisecondes
+     * @returns {string} Label traduit
+     */
+    getAutoLockDelayLabel(delay) {
+        const delays = {
+            30000: I18n.t('auto_lock_delay_30s'),
+            60000: I18n.t('auto_lock_delay_1min'),
+            120000: I18n.t('auto_lock_delay_2min'),
+            300000: I18n.t('auto_lock_delay_5min'),
+            600000: I18n.t('auto_lock_delay_10min'),
+            0: I18n.t('auto_lock_disabled')
+        };
+        
+        return delays[delay] || `${Math.round(delay / 1000)}s`;
     }
 }

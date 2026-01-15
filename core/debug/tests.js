@@ -1,5 +1,5 @@
 /**
- * Tests fonctionnels pour l'application Revenir
+ * Tests fonctionnels pour l'application Haven
  * 
  * Ce fichier contient une suite de tests à exécuter dans le navigateur
  * pour valider toutes les fonctionnalités de l'application.

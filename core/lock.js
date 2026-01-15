@@ -103,17 +103,9 @@ async function toggleAppLock() {
         updateLockIcon();
         updateBottomNavVisibility();
         
-        // Rediriger vers home si on est sur une route protégée
-        if (typeof Router !== 'undefined') {
-            const currentRoute = Router.getCurrentRoute();
-            if (currentRoute && !isEmergencyRoute(currentRoute)) {
-                Router.navigateTo('home');
-            }
-        }
-        
-        // Re-render la home pour afficher la vue verrouillée
-        if (typeof Home !== 'undefined' && Home.render && window.state) {
-            Home.render(window.state);
+        // Toujours rediriger vers home pour afficher la vue verrouillée
+        if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
+            window.Router.navigateTo('home', true); // force=true pour forcer le re-render
         }
         
         const state = window.state;
@@ -253,6 +245,11 @@ async function handleUnlockPin(l, lang) {
             if (currentRoute === 'home' && typeof Home !== 'undefined' && Home.render && window.state) {
                 console.log('[Lock] Déverrouillage - Étape 4: Re-render home');
                 Home.render(window.state);
+            }
+            
+            // Réinitialiser le timer de verrouillage automatique après déverrouillage
+            if (typeof window.AutoLock !== 'undefined' && window.AutoLock.resetAfterUnlock) {
+                window.AutoLock.resetAfterUnlock();
             }
             
             const successMsg = lang === 'fr' ? 'Application déverrouillée' :

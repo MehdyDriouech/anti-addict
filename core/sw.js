@@ -1,5 +1,5 @@
 /**
- * sw.js - Service Worker pour l'application Revenir (PWA)
+ * sw.js - Service Worker pour l'application Haven (PWA)
  * 
  * Fonctionnalités:
  * - Cache des ressources statiques pour fonctionnement offline
@@ -50,6 +50,7 @@ const STATIC_ASSETS = [
     './plugins/AntiGaming/antigaming.js',
     './plugins/AntiFood/antifood.js',
     './plugins/AntiShopping/antishopping.js',
+    './plugins/AntiGambling/antigambling.js',
     
     // Icônes
     './data/pictures/icon.svg',
