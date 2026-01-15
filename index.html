@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#0a0a0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Revenir - Application anti-addictions privacy-first">
+    <meta name="description" content="Haven - Application anti-addictions privacy-first">
     
     <!-- Titre neutre pour mode discret -->
-    <title>Revenir</title>
+    <title>Haven</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -41,7 +41,7 @@
             <div class="header-content">
                 <div class="logo">
                     <div class="logo-icon">🌟</div>
-                    <span class="logo-text" data-i18n="app_name">Revenir</span>
+                    <span class="logo-text" data-i18n="app_name">Haven</span>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-ghost btn-icon" id="lock-btn" data-action="toggle-lock" aria-label="Verrouiller/Déverrouiller">
@@ -162,6 +162,7 @@
     <script type="module" src="core/debug.js"></script>
     <script type="module" src="core/debug/tests.js"></script>
     <script src="core/lock.js"></script>
+    <script src="core/auto-lock.js"></script>
     <script src="core/i18n.js"></script>
     <script src="core/router.js"></script>
     
@@ -197,6 +198,7 @@
     <script type="module" src="plugins/AntiGaming/antigaming.js"></script>
     <script type="module" src="plugins/AntiFood/antifood.js"></script>
     <script type="module" src="plugins/AntiShopping/antishopping.js"></script>
+    <script type="module" src="plugins/AntiGambling/antigambling.js"></script>
     
     <!-- ============================================
          CORE FEATURES (MVC Architecture)
@@ -254,7 +256,7 @@
         ">
             <div>
                 <h1 style="font-size: 3rem; margin-bottom: 1rem;">🌟</h1>
-                <h2 style="margin-bottom: 1rem;">Revenir</h2>
+                <h2 style="margin-bottom: 1rem;">Haven</h2>
                 <p style="color: #a0a0b0;">
                     Cette application nécessite JavaScript pour fonctionner.
                     <br><br>

@@ -1,10 +1,12 @@
-# Revenir - Application de Gestion des Addictions
+# Haven - Application de Gestion des Addictions
 
-> Application web progressive (PWA) pour le suivi et la gestion des addictions, avec un focus sur la confidentialité et le fonctionnement hors-ligne.
+> A steady point in the storm
+
+Application web progressive (PWA) pour le suivi et la gestion des addictions, avec un focus sur la confidentialité et le fonctionnement hors-ligne.
 
 ## 📋 Description
 
-**Revenir** est une application web progressive (PWA) conçue pour aider à gérer et surmonter les addictions. L'application supporte **8 types d'addictions** (contenu adulte, cigarette, alcool, substances, réseaux sociaux, jeux vidéo, nourriture compulsive, achats compulsifs) et permet de suivre plusieurs addictions simultanément. L'application fonctionne entièrement hors-ligne, stocke toutes les données localement sur votre appareil, et ne nécessite aucune connexion Internet ni compte utilisateur.
+**Haven** est une application web progressive (PWA) conçue pour aider à gérer et surmonter les addictions. L'application supporte **9 types d'addictions** (contenu adulte, cigarette, alcool, substances, réseaux sociaux, jeux vidéo, nourriture compulsive, achats compulsifs, jeu d'argent) et permet de suivre plusieurs addictions simultanément. L'application fonctionne entièrement hors-ligne, stocke toutes les données localement sur votre appareil, et ne nécessite aucune connexion Internet ni compte utilisateur.
 
 ### Caractéristiques principales
 
@@ -22,7 +24,7 @@
 
 ## 🎯 Addictions supportées
 
-L'application supporte actuellement **8 addictions** réparties en 3 catégories :
+L'application supporte actuellement **9 addictions** réparties en 3 catégories :
 
 ### Addictions numériques (Digital)
 - 🔞 **Contenu adulte** (porn) - Risque élevé
@@ -37,6 +39,7 @@ L'application supporte actuellement **8 addictions** réparties en 3 catégories
 ### Addictions comportementales (Behavior)
 - 🍔 **Nourriture compulsive** (food) - Risque faible
 - 🛒 **Achats compulsifs** (shopping) - Risque faible
+- 🎰 **Jeu d'argent** (gambling) - Risque moyen/élevé
 
 ### Fonctionnalités multi-addictions
 
@@ -60,6 +63,12 @@ L'application supporte actuellement **8 addictions** réparties en 3 catégories
 #### Intentions quotidiennes
 - Intentions générées quotidiennement pour guider votre journée
 - Engagement actionnable avec suivi
+
+#### Mes engagements
+- Visualisation centralisée de tous les engagements
+- Engagements depuis les programmes guidés (jours 14 et 30)
+- Engagements depuis les intentions quotidiennes
+- Affichage avec date, programme, et contenu de l'engagement
 
 #### Règles "Si... Alors..."
 - Création de règles personnalisées pour automatiser vos réponses
@@ -180,6 +189,7 @@ Tous les plugins d'addictions héritent de `AddictionBase` qui fournit :
 - `AntiGaming` - Jeux vidéo
 - `AntiFood` - Nourriture compulsive
 - `AntiShopping` - Achats compulsifs
+- `AntiGambling` - Jeu d'argent
 
 ### Plugins de fonctionnalités
 
@@ -210,6 +220,7 @@ Les features core dans `app/core/features/` gèrent les fonctionnalités princip
 ### Features disponibles
 
 - **Checkin** : Check-in quotidien avec suivi de l'humeur, stress, envies, solitude
+- **Commitments** : Modale "Mes engagements" pour visualiser tous les engagements pris dans les programmes et intentions
 - **Craving** : Protocole 90 secondes / Urgence tentation avec exercices de respiration guidés
 - **Dashboard** : Vue d'ensemble centralisée avec widgets et insights
 - **History** : Historique des événements et check-ins
@@ -278,6 +289,7 @@ antiaddictv2/
 │   │   ├── security/           # Services de sécurité
 │   │   └── features/           # Features core (MVC)
 │   │       ├── Checkin/        # Check-in quotidien
+│   │       ├── Commitments/    # Mes engagements
 │   │       ├── Craving/        # Protocole 90 secondes
 │   │       ├── Dashboard/      # Vue d'ensemble
 │   │       ├── History/        # Historique
@@ -304,6 +316,7 @@ antiaddictv2/
 │       ├── AntiGaming/         # Plugin jeux vidéo
 │       ├── AntiFood/           # Plugin nourriture compulsive
 │       ├── AntiShopping/       # Plugin achats compulsifs
+│       ├── AntiGambling/       # Plugin jeu d'argent
 │       ├── Actions/            # Bibliothèque d'actions
 │       ├── Calendar/           # Calendrier de sobriété
 │       ├── Coaching/           # Coaching local
@@ -449,6 +462,7 @@ Accédez au menu "🧰 Mes outils" depuis l'écran d'accueil pour :
 - ⚠️ **Pente** : Protocole pente glissante (disponible pour toutes les addictions)
 
 #### 💜 Section ACCOMPAGNEMENT
+- 💪 **Mes engagements** : Visualisation de tous vos engagements
 - 🌙 **Rituel** : Rituel du soir avec checklist personnalisable
 - 📚 **Programmes** : Programmes guidés (14 et 30 jours)
 - 🤲 **Spirituel** : Features spirituelles (si activé)
