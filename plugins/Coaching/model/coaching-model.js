@@ -5,6 +5,19 @@
 import { CORRELATION_THRESHOLDS, DAY_PERIODS, RULE_SUGGESTIONS, PREDEFINED_ADVICE } from '../data/coaching-data.js';
 
 export class CoachingModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.dateService = services.dateService || null;
+    }
+
+    /**
+     * Helper pour obtenir la date ISO du jour
+     * @returns {string}
+     */
+    getDateISO() {
+        return this.dateService?.todayISO() || (this.storage?.getDateISO ? this.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
+    }
+
     computeTopTriggers(events, count = 3) {
         const triggerCounts = {};
         events.forEach(event => {
@@ -173,7 +186,7 @@ export class CoachingModel {
                                         draft.coaching.insights = [];
                                     }
                                     draft.coaching.insights.push(best);
-                                    draft.coaching.lastShownDate = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                                    draft.coaching.lastShownDate = this.getDateISO();
                                     
                                     // Si insight de type habit ou transition, mettre à jour activeAnchor
                                     if (best.anchor) {
@@ -189,7 +202,7 @@ export class CoachingModel {
                                     state.coaching.insights = [];
                                 }
                                 state.coaching.insights.push(best);
-                                state.coaching.lastShownDate = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                                state.coaching.lastShownDate = this.getDateISO();
                                 
                                 // Si insight de type habit ou transition, mettre à jour activeAnchor
                                 if (best.anchor) {
@@ -272,7 +285,7 @@ export class CoachingModel {
      */
     generateRetrospectiveInsights(weeklyAnalytics, dailyAnalytics, checkins) {
         const insights = [];
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
 
         if (!weeklyAnalytics) return insights;
 
@@ -328,7 +341,7 @@ export class CoachingModel {
      */
     generatePreventiveInsights(weeklyAnalytics, prevWeeklyAnalytics) {
         const insights = [];
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
 
         if (!weeklyAnalytics || !prevWeeklyAnalytics) return insights;
 
@@ -369,7 +382,7 @@ export class CoachingModel {
      */
     generatePrescriptiveInsights(state, weeklyAnalytics) {
         const insights = [];
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
 
         // Actions favorites ou suggestions de règles uniquement
         const hasFavoriteActions = state.sos?.favoriteActions && state.sos.favoriteActions.length > 0;
@@ -487,7 +500,7 @@ export class CoachingModel {
         }
         
         return {
-            date: Storage.getDateISO(), period: '7d',
+            date: this.getDateISO(), period: '7d',
             cravingsCount,
             episodesCount,
             winsCount,
@@ -704,7 +717,7 @@ export class CoachingModel {
      */
     async generateStabilizingInsights(state) {
         const insights = [];
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
 
         try {
             // Utiliser analytics summaries uniquement
@@ -801,7 +814,7 @@ export class CoachingModel {
         else if (hour >= 18 && hour < 22) context = 'evening';
         else context = 'evening'; // Nuit = evening pour simplifier
 
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
 
         // Générer ancrage selon contexte
         const anchorId = `anchor_${context}_${todayISO}_${Date.now()}`;
@@ -854,7 +867,7 @@ export class CoachingModel {
     async generateTransitionInsight(state) {
         const now = new Date();
         const hour = now.getHours();
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
 
         // Vérifier si on est dans un moment critique (fin de soirée: 20h-22h)
         const isEveningEnd = hour >= 20 && hour < 22;
@@ -977,7 +990,7 @@ export class CoachingModel {
      */
     shouldGenerateInsight(state) {
         const mode = state.coaching?.mode || 'stability';
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const todayISO = this.getDateISO();
         const lastShownDate = state.coaching?.lastShownDate;
 
         // Vérifier fréquence selon le mode

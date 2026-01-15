@@ -6,8 +6,8 @@ import { AddictionBaseModel } from '../../AddictionBase/model/addiction-base-mod
 import { CONTEXTUAL_TIPS } from '../data/antismoke-data.js';
 
 export class AntiSmokeModel extends AddictionBaseModel {
-    constructor() {
-        super('cigarette');
+    constructor(services = {}) {
+        super('cigarette', services);
     }
 
     /**

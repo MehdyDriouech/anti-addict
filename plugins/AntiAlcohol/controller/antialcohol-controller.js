@@ -5,6 +5,7 @@
 import { AntiAlcoholModel } from '../model/antialcohol-model.js';
 import { AntiAlcoholView } from '../view/antialcohol-view.js';
 import { SLOPE_STEPS } from '../data/antialcohol-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiAlcoholController {
     constructor(model, view) {
@@ -12,6 +13,28 @@ export class AntiAlcoholController {
         this.view = view;
         this.currentState = null;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiAlcoholModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiAlcoholController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     init() {
@@ -152,7 +175,7 @@ export class AntiAlcoholController {
             checkboxes.forEach(cb => { if (cb.checked) activeRules.push(cb.dataset.rule); });
             this.model.ensureAddictionConfig(this.currentState);
             this.currentState.addictionConfigs.alcohol.activeRules = activeRules;
-            Storage.saveState(this.currentState);
+            this.model.storage?.saveState(this.currentState);
             this.closeConfigModal();
             if (typeof showToast === 'function') showToast('Configuration sauvegardée');
         }

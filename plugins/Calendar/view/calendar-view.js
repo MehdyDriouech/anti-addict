@@ -5,9 +5,10 @@
 import { WEEKDAYS, MONTHS, LABELS, EVENT_ICONS } from '../data/calendar-data.js';
 
 export class CalendarView {
-    constructor() {
+    constructor(services = {}) {
         this.calendarModalEl = null;
         this.timelineModalEl = null;
+        this.dateService = services.dateService || null;
     }
 
     createCalendarModal() {
@@ -48,7 +49,7 @@ export class CalendarView {
 
     renderCalendarGrid(lang, monthData, currentYear, currentMonth) {
         const weekdays = WEEKDAYS[lang] || WEEKDAYS.fr;
-        const today = Storage.getDateISO();
+        const today = this.dateService?.todayISO() || (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]);
         
         let html = '<div class="calendar-weekdays">';
         weekdays.forEach(day => html += `<span class="weekday">${day}</span>`);

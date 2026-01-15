@@ -6,8 +6,8 @@ import { AddictionBaseModel } from '../../AddictionBase/model/addiction-base-mod
 import { CONTEXTUAL_TIPS } from '../data/antigaming-data.js';
 
 export class AntiGamingModel extends AddictionBaseModel {
-    constructor() {
-        super('gaming');
+    constructor(services = {}) {
+        super('gaming', services);
     }
 
     getRandomTips(lang = 'fr', count = 3) {

@@ -3,6 +3,7 @@
  */
 
 import { HELPED_SUGGESTIONS, LABELS, EXPOSURE_QUESTIONS } from '../data/evening-data.js';
+import { ADDICTION_ICONS } from '../../../core/features/Settings/data/settings-data.js';
 
 export class EveningView {
     constructor() {
@@ -147,6 +148,15 @@ export class EveningView {
         const questions = EXPOSURE_QUESTIONS[lang] || EXPOSURE_QUESTIONS.fr;
         const effectiveAddiction = addictionId || 'porn';
         return questions[effectiveAddiction] || questions.porn || LABELS[lang]?.exposed || LABELS.fr.exposed;
+    }
+
+    /**
+     * Récupère l'icône d'une addiction
+     * @param {string} addictionId - ID de l'addiction
+     * @returns {string} Icône
+     */
+    getAddictionIcon(addictionId) {
+        return ADDICTION_ICONS[addictionId] || '📋';
     }
 
     /**

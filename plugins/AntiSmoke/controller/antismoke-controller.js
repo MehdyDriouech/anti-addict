@@ -5,6 +5,7 @@
 import { AntiSmokeModel } from '../model/antismoke-model.js';
 import { AntiSmokeView } from '../view/antismoke-view.js';
 import { SLOPE_SIGNALS, SLOPE_STEPS, CONTEXTUAL_TIPS } from '../data/antismoke-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiSmokeController {
     constructor(model, view) {
@@ -12,6 +13,31 @@ export class AntiSmokeController {
         this.view = view;
         this.currentState = null;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     * Si le modèle n'a pas encore de services injectés, les injecte
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            // Si le modèle n'a pas encore de services, créer un nouveau modèle avec les services injectés
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiSmokeModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiSmokeController] Erreur lors de l\'initialisation des services:', error);
+            // Continuer sans services injectés (fallback vers window.*)
+        }
     }
 
     /**
@@ -209,7 +235,7 @@ export class AntiSmokeController {
             
             this.model.ensureAddictionConfig(this.currentState);
             this.currentState.addictionConfigs.cigarette.activeRules = activeRules;
-            Storage.saveState(this.currentState);
+            this.model.storage?.saveState(this.currentState);
             
             this.closeConfigModal();
             if (typeof showToast === 'function') {

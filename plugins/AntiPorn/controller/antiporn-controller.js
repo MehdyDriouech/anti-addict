@@ -4,12 +4,38 @@
 
 import { AntiPornModel } from '../model/antiporn-model.js';
 import { AntiPornView } from '../view/antiporn-view.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiPornController {
     constructor(model, view) { 
         this.model = model; 
         this.view = view;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     * Si le modèle n'a pas encore de services injectés, les injecte
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            // Si le modèle n'a pas encore de services, créer un nouveau modèle avec les services injectés
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiPornModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiPornController] Erreur lors de l\'initialisation des services:', error);
+            // Continuer sans services injectés (fallback vers window.*)
+        }
     }
 
     // Slope Modal
@@ -215,7 +241,7 @@ export class AntiPornController {
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         const monthLogs = (nightRoutine.logs || []).filter(log => log.date >= monthStart && log.completed).length;
-        const today = Storage.getDateISO();
+        const today = this.model.dateService?.todayISO() || (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
         const todayLog = (nightRoutine.logs || []).find(log => log.date === today);
         this.view.renderNightContent(lang, nightRoutine, monthLogs, todayLog, state, selectedAddictionId);
     }

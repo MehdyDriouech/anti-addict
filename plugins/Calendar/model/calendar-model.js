@@ -3,9 +3,19 @@
  */
 
 export class CalendarModel {
-    constructor() {
+    constructor(services = {}) {
         this.currentMonth = new Date().getMonth();
         this.currentYear = new Date().getFullYear();
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.dateService = services.dateService || null;
+    }
+
+    /**
+     * Helper pour obtenir la date ISO du jour
+     * @returns {string}
+     */
+    getDateISO() {
+        return this.dateService?.todayISO() || (this.storage?.getDateISO ? this.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
     }
 
     resetToCurrentMonth() {
@@ -99,7 +109,7 @@ export class CalendarModel {
         }
         
         return {
-            exportDate: Storage.getDateISO(),
+            exportDate: this.getDateISO(),
             events: state.events,
             cleanDays: state.calendar?.cleanDays || []
         };

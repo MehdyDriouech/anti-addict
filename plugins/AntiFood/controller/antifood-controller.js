@@ -5,6 +5,7 @@
 import { AntiFoodModel } from '../model/antifood-model.js';
 import { AntiFoodView } from '../view/antifood-view.js';
 import { SLOPE_STEPS } from '../data/antifood-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiFoodController {
     constructor(model, view) {
@@ -12,6 +13,28 @@ export class AntiFoodController {
         this.view = view;
         this.currentState = null;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiFoodModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiFoodController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     init() {
@@ -145,7 +168,7 @@ export class AntiFoodController {
             checkboxes.forEach(cb => { if (cb.checked) activeRules.push(cb.dataset.rule); });
             this.model.ensureAddictionConfig(this.currentState);
             this.currentState.addictionConfigs.food.activeRules = activeRules;
-            Storage.saveState(this.currentState);
+            this.model.storage?.saveState(this.currentState);
             this.closeConfigModal();
             if (typeof showToast === 'function') showToast('Configuration sauvegardée');
         }

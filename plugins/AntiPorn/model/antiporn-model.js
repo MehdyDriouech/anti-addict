@@ -6,8 +6,8 @@ import { AddictionBaseModel } from '../../AddictionBase/model/addiction-base-mod
 import { CONTEXTUAL_TIPS } from '../data/antiporn-data.js';
 
 export class AntiPornModel extends AddictionBaseModel {
-    constructor() {
-        super('porn');
+    constructor(services = {}) {
+        super('porn', services);
         this.slopeStep = 0;
         this.slopeStepsCompleted = { leave: false, water: false, move: false };
     }
@@ -51,20 +51,20 @@ export class AntiPornModel extends AddictionBaseModel {
     toggleNightRoutine(state, enabled) {
         if (!state.nightRoutine) state.nightRoutine = {};
         state.nightRoutine.enabled = enabled;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     addCustomNightItem(state, text) {
         if (!state.nightRoutine) state.nightRoutine = {};
         if (!state.nightRoutine.customChecklist) state.nightRoutine.customChecklist = [];
         state.nightRoutine.customChecklist.push(text);
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     removeCustomNightItem(state, index) {
         if (state.nightRoutine?.customChecklist) {
             state.nightRoutine.customChecklist.splice(index, 1);
-            Storage.saveState(state);
+            this.storage?.saveState(state);
         }
     }
 
@@ -73,12 +73,12 @@ export class AntiPornModel extends AddictionBaseModel {
         state.nightRoutine.checklist = checklist;
         state.nightRoutine.hour = hour;
         if (!state.nightRoutine.logs) state.nightRoutine.logs = [];
-        const today = Storage.getDateISO();
+        const today = this.dateService?.todayISO() || (this.storage?.getDateISO ? this.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
         const existingIdx = state.nightRoutine.logs.findIndex(l => l.date === today);
         const log = { date: today, checklist, completed: true };
         if (existingIdx >= 0) state.nightRoutine.logs[existingIdx] = log;
         else state.nightRoutine.logs.push(log);
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     // Phone Bed - utilise addictionConfigs au lieu de antiporn
@@ -87,13 +87,13 @@ export class AntiPornModel extends AddictionBaseModel {
         if (!state.addictionConfigs.porn.phoneBedCheckins) {
             state.addictionConfigs.porn.phoneBedCheckins = [];
         }
-        const today = Storage.getDateISO();
+        const today = this.dateService?.todayISO() || (this.storage?.getDateISO ? this.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
         const checkins = state.addictionConfigs.porn.phoneBedCheckins;
         const existingIdx = checkins.findIndex(c => c.date === today);
         const checkin = { date: today, phoneInBed };
         if (existingIdx >= 0) checkins[existingIdx] = checkin;
         else checkins.push(checkin);
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     getPhoneBedStats(state, days = 7) {

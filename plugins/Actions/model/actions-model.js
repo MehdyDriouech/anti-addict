@@ -5,6 +5,19 @@
 import { PREDEFINED_ACTIONS } from '../data/actions-data.js';
 
 export class ActionsModel {
+    constructor(services = {}) {
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.dateService = services.dateService || null;
+    }
+
+    /**
+     * Helper pour obtenir la date ISO du jour
+     * @returns {string}
+     */
+    getDateISO() {
+        return this.dateService?.todayISO() || (this.storage?.getDateISO ? this.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
+    }
+
     /**
      * Récupère toutes les actions (prédéfinies + personnalisées)
      * @param {Object} state - State de l'application
@@ -126,7 +139,7 @@ export class ActionsModel {
             }
         }
         
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         return state;
     }
 
@@ -142,10 +155,10 @@ export class ActionsModel {
             name: actionData.name,
             emoji: actionData.emoji || '⭐',
             favorite: false,
-            createdAt: Storage.getDateISO()
+            createdAt: this.getDateISO()
         };
         
-        Storage.addCustomAction(state, action);
+        this.storage?.addCustomAction(state, action);
         return action;
     }
 
@@ -160,7 +173,7 @@ export class ActionsModel {
             return false;
         }
         
-        Storage.deleteCustomAction(state, actionId);
+        this.storage?.deleteCustomAction(state, actionId);
         return true;
     }
 
@@ -177,7 +190,7 @@ export class ActionsModel {
         state.sos.recentActions.unshift({
             actionId,
             context,
-            date: Storage.getDateISO(),
+            date: this.getDateISO(),
             time: new Date().toISOString()
         });
         
@@ -185,6 +198,6 @@ export class ActionsModel {
         state.sos.recentActions = state.sos.recentActions.slice(0, 50);
         
         // Incrémenter les actions positives
-        Storage.incrementWins(state, { positiveActions: 1 });
+        this.storage?.incrementWins(state, { positiveActions: 1 });
     }
 }

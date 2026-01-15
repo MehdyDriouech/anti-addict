@@ -5,11 +5,37 @@
 import { CoachingModel } from '../model/coaching-model.js';
 import { CoachingView } from '../view/coaching-view.js';
 import { LABELS, COACHING_MODES } from '../data/coaching-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes (configurable)
 
 export class CoachingController {
-    constructor(model, view) { this.model = model; this.view = view; }
+    constructor(model, view) { 
+        this.model = model; 
+        this.view = view;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new CoachingModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[CoachingController] Erreur lors de l\'initialisation des services:', error);
+        }
+    }
 
     /**
      * Vérifie si un insight peut être affiché
@@ -220,9 +246,7 @@ export class CoachingController {
             if (newMode !== 'stability' && newMode !== 'guided') {
                 state.coaching.activeAnchor = null;
             }
-            if (typeof Storage !== 'undefined' && Storage.saveState) {
-                Storage.saveState(state);
-            }
+            this.model.storage?.saveState(state);
         }
     }
 
@@ -298,8 +322,8 @@ export class CoachingController {
         const suggestion = this.model.getRuleSuggestion(trigger);
         if (!suggestion) return;
         const lang = state.profile.lang;
-        const rule = { id: `rule_${Date.now()}`, ifCondition: suggestion.ifCondition[lang] || suggestion.ifCondition.fr, thenAction: suggestion.thenAction[lang] || suggestion.thenAction.fr, enabled: true, createdAt: Storage.getDateISO() };
-        Storage.saveIfThenRule(state, rule);
+        const rule = { id: `rule_${Date.now()}`, ifCondition: suggestion.ifCondition[lang] || suggestion.ifCondition.fr, thenAction: suggestion.thenAction[lang] || suggestion.thenAction.fr, enabled: true, createdAt: this.model.getDateISO() };
+        this.model.storage?.saveIfThenRule(state, rule);
         this.closeInsights();
         const l = LABELS[lang] || LABELS.fr;
         if (typeof showToast === 'function') showToast(l.ruleAdded);

@@ -5,12 +5,40 @@
 import { CalendarModel } from '../model/calendar-model.js';
 import { CalendarView } from '../view/calendar-view.js';
 import { LABELS } from '../data/calendar-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class CalendarController {
     constructor(model, view) {
         this.model = model;
         this.view = view;
         this.selectedTimelineAddictionId = null; // Addiction sélectionnée pour le filtre timeline
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new CalendarModel({ storage, dateService: date });
+            }
+            
+            // Injecter aussi dans la vue si nécessaire
+            if (this.view && !this.view.dateService) {
+                this.view.dateService = date;
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[CalendarController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     open(state) {
@@ -28,7 +56,7 @@ export class CalendarController {
 
     renderCalendar(state) {
         const lang = state.profile.lang;
-        const streak = Storage.calculateStreak(state);
+        const streak = this.model.storage?.calculateStreak(state) || (typeof Storage !== 'undefined' ? Storage.calculateStreak(state) : 0);
         const monthData = this.model.getMonthData(state);
         this.view.renderCalendarModal(lang, streak, this.model.getCurrentMonth(), this.model.getCurrentYear(), monthData);
     }
@@ -90,7 +118,7 @@ export class CalendarController {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `timeline-${Storage.getDateISO()}.json`;
+        link.download = `timeline-${this.model.getDateISO()}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -103,7 +131,7 @@ export class CalendarController {
 
     renderWidget(state) {
         const lang = state.profile.lang;
-        const streak = Storage.calculateStreak(state);
+        const streak = this.model.storage?.calculateStreak(state) || (typeof Storage !== 'undefined' ? Storage.calculateStreak(state) : 0);
         return this.view.renderWidget(lang, streak);
     }
 

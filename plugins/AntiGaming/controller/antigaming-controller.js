@@ -5,6 +5,7 @@
 import { AntiGamingModel } from '../model/antigaming-model.js';
 import { AntiGamingView } from '../view/antigaming-view.js';
 import { SLOPE_STEPS } from '../data/antigaming-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiGamingController {
     constructor(model, view) {
@@ -12,6 +13,28 @@ export class AntiGamingController {
         this.view = view;
         this.currentState = null;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiGamingModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiGamingController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     init() {
@@ -145,7 +168,7 @@ export class AntiGamingController {
             checkboxes.forEach(cb => { if (cb.checked) activeRules.push(cb.dataset.rule); });
             this.model.ensureAddictionConfig(this.currentState);
             this.currentState.addictionConfigs.gaming.activeRules = activeRules;
-            Storage.saveState(this.currentState);
+            this.model.storage?.saveState(this.currentState);
             this.closeConfigModal();
             if (typeof showToast === 'function') showToast('Configuration sauvegardée');
         }

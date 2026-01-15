@@ -5,6 +5,7 @@
 import { AntiSocialMediaModel } from '../model/antisocialmedia-model.js';
 import { AntiSocialMediaView } from '../view/antisocialmedia-view.js';
 import { SLOPE_STEPS } from '../data/antisocialmedia-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiSocialMediaController {
     constructor(model, view) {
@@ -12,6 +13,28 @@ export class AntiSocialMediaController {
         this.view = view;
         this.currentState = null;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiSocialMediaModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiSocialMediaController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     init() {
@@ -145,7 +168,7 @@ export class AntiSocialMediaController {
             checkboxes.forEach(cb => { if (cb.checked) activeRules.push(cb.dataset.rule); });
             this.model.ensureAddictionConfig(this.currentState);
             this.currentState.addictionConfigs.social_media.activeRules = activeRules;
-            Storage.saveState(this.currentState);
+            this.model.storage?.saveState(this.currentState);
             this.closeConfigModal();
             if (typeof showToast === 'function') showToast('Configuration sauvegardée');
         }

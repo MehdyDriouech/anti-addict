@@ -5,6 +5,7 @@
 import { AntiShoppingModel } from '../model/antishopping-model.js';
 import { AntiShoppingView } from '../view/antishopping-view.js';
 import { SLOPE_STEPS } from '../data/antishopping-data.js';
+import { getServices } from '../../../core/Utils/serviceHelper.js';
 
 export class AntiShoppingController {
     constructor(model, view) {
@@ -12,6 +13,28 @@ export class AntiShoppingController {
         this.view = view;
         this.currentState = null;
         this.currentSelectedAddiction = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                this.model = new AntiShoppingModel({ storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AntiShoppingController] Erreur lors de l\'initialisation des services:', error);
+        }
     }
 
     init() {
@@ -146,7 +169,7 @@ export class AntiShoppingController {
             checkboxes.forEach(cb => { if (cb.checked) activeRules.push(cb.dataset.rule); });
             this.model.ensureAddictionConfig(this.currentState);
             this.currentState.addictionConfigs.shopping.activeRules = activeRules;
-            Storage.saveState(this.currentState);
+            this.model.storage?.saveState(this.currentState);
             this.closeConfigModal();
             if (typeof showToast === 'function') showToast('Configuration sauvegardée');
         }

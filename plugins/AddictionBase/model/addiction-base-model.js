@@ -3,8 +3,11 @@
  */
 
 export class AddictionBaseModel {
-    constructor(addictionId) {
+    constructor(addictionId, services = {}) {
         this.addictionId = addictionId;
+        // Services injectés ou fallback vers window.* pour compatibilité
+        this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        this.dateService = services.dateService || null;
     }
 
     /**
@@ -15,28 +18,28 @@ export class AddictionBaseModel {
             signal,
             ...meta
         };
-        Storage.addEvent(state, 'slope', this.addictionId, null, eventMeta);
+        this.storage?.addEvent(state, 'slope', this.addictionId, null, eventMeta);
     }
 
     /**
      * Enregistre un craving
      */
     logCraving(state, intensity = 5, meta = {}) {
-        Storage.addEvent(state, 'craving', this.addictionId, intensity, meta);
+        this.storage?.addEvent(state, 'craving', this.addictionId, intensity, meta);
     }
 
     /**
      * Enregistre une rechute/épisode
      */
     logEpisode(state, meta = {}) {
-        Storage.addEvent(state, 'episode', this.addictionId, null, meta);
+        this.storage?.addEvent(state, 'episode', this.addictionId, null, meta);
     }
 
     /**
      * Enregistre une victoire
      */
     logWin(state, withAction = false, meta = {}) {
-        Storage.addEvent(state, 'win', this.addictionId, null, { withAction, ...meta });
+        this.storage?.addEvent(state, 'win', this.addictionId, null, { withAction, ...meta });
     }
 
     /**
@@ -68,7 +71,7 @@ export class AddictionBaseModel {
     incrementStoppedSlopes(state) {
         this.ensureAddictionConfig(state);
         state.addictionConfigs[this.addictionId].stoppedSlopes++;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         return state.addictionConfigs[this.addictionId].stoppedSlopes;
     }
 
@@ -103,7 +106,7 @@ export class AddictionBaseModel {
     saveCustomTriggers(state, triggers) {
         this.ensureAddictionConfig(state);
         state.addictionConfigs[this.addictionId].customTriggers = triggers;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
     }
 
     /**
@@ -119,7 +122,7 @@ export class AddictionBaseModel {
             triggers.push(trigger);
         }
         state.addictionConfigs[this.addictionId].customTriggers = triggers;
-        Storage.saveState(state);
+        this.storage?.saveState(state);
         return triggers;
     }
 

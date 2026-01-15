@@ -2,6 +2,8 @@
  * AddictionBase Controller - Orchestration partagée pour toutes les addictions
  */
 
+import { getServices } from '../../../core/Utils/serviceHelper.js';
+
 export class AddictionBaseController {
     constructor(model, view, slopeSignals, tips, slopeSteps) {
         this.model = model;
@@ -10,6 +12,34 @@ export class AddictionBaseController {
         this.tips = tips;
         this.slopeSteps = slopeSteps;
         this.currentState = null;
+        this.servicesInitialized = false;
+    }
+
+    /**
+     * Initialise les services (peut être appelé de manière asynchrone)
+     * Si le modèle n'a pas encore de services injectés, les injecte
+     */
+    async initServices() {
+        if (this.servicesInitialized) {
+            return;
+        }
+
+        try {
+            const { storage, date } = await getServices(['storage', 'date']);
+            
+            // Si le modèle n'a pas encore de services, les injecter
+            if (this.model && (!this.model.storage || !this.model.dateService)) {
+                // Créer un nouveau modèle avec les services injectés
+                const ModelClass = this.model.constructor;
+                const addictionId = this.model.addictionId;
+                this.model = new ModelClass(addictionId, { storage, dateService: date });
+            }
+            
+            this.servicesInitialized = true;
+        } catch (error) {
+            console.warn('[AddictionBaseController] Erreur lors de l\'initialisation des services:', error);
+            // Continuer sans services injectés (fallback vers window.*)
+        }
     }
 
     /**
