@@ -2,7 +2,7 @@
  * Coaching View - Rendu HTML
  */
 
-import { DAY_PERIODS, LABELS } from '../data/coaching-data.js';
+import { DAY_PERIODS, LABELS, COACHING_MODES } from '../data/coaching-data.js';
 
 export class CoachingView {
     constructor() { this.modalEl = null; }
@@ -91,6 +91,7 @@ export class CoachingView {
     }
 
     renderWidget(lang) {
+        // Méthode legacy - utiliser renderHomeWidget à la place
         const l = LABELS[lang] || LABELS.fr;
         return `<div class="insights-widget" onclick="Coaching.openInsights(state)"><span class="widget-icon">📊</span><span class="widget-text">${l.new}</span><span class="widget-badge">!</span></div>`;
     }
@@ -99,10 +100,12 @@ export class CoachingView {
      * Rend le modal coaching complet
      * @param {string} lang - Langue
      * @param {Object} screenData - { activeInsight, history, observations, actions }
+     * @param {Object} state - State de l'application (pour récupérer le mode)
      */
-    renderCoachingModal(lang, screenData) {
+    renderCoachingModal(lang, screenData, state) {
         const l = LABELS[lang] || LABELS.fr;
         const { activeInsight, history, observations, actions, personalizedAdvice } = screenData;
+        const currentMode = state?.coaching?.mode || 'stability';
         
         if (!this.modalEl) {
             this.createModalElement();
@@ -150,6 +153,18 @@ export class CoachingView {
             <div class="modal-content coaching-modal">
                 <button class="modal-close" onclick="Coaching.closeCoaching()">×</button>
                 <h2>🧠 ${this.getTranslation('coaching', {}, lang, { fr: 'Coaching', en: 'Coaching', ar: 'تدريب' })}</h2>
+                
+                <!-- Section Mode de coaching -->
+                <div class="coaching-mode-section">
+                    <h4>${this.getTranslation('coaching.mode.title', {}, lang, { fr: 'Mode de coaching', en: 'Coaching mode', ar: 'وضع التدريب' })}</h4>
+                    <div class="coaching-mode-display">
+                        <span class="coaching-mode-badge mode-${currentMode}">${COACHING_MODES[currentMode]?.[lang]?.name || currentMode}</span>
+                        <p class="coaching-mode-description">${COACHING_MODES[currentMode]?.[lang]?.description || ''}</p>
+                        <button class="btn btn-small btn-secondary" onclick="if (typeof Coaching !== 'undefined' && Coaching.openModeSelector) { Coaching.openModeSelector(window.state); }">
+                            ${this.getTranslation('coaching.mode.change', {}, lang, { fr: 'Changer de mode', en: 'Change mode', ar: 'تغيير الوضع' })}
+                        </button>
+                    </div>
+                </div>
                 
                 ${activeInsight ? `
                     <div class="coaching-insight-card">
@@ -353,6 +368,68 @@ export class CoachingView {
                 </div>
             `;
         }).join('');
+    }
+
+    /**
+     * Rend le sélecteur de mode de coaching
+     * @param {string} lang - Langue
+     * @param {string} currentMode - Mode actuel
+     * @returns {string} HTML du sélecteur
+     */
+    renderModeSelector(lang, currentMode) {
+        const modes = ['observer', 'stability', 'guided', 'silent'];
+        
+        return modes.map(mode => {
+            const modeData = COACHING_MODES[mode]?.[lang] || COACHING_MODES[mode]?.fr;
+            const isSelected = mode === currentMode;
+            
+            return `
+                <div class="coaching-mode-option ${isSelected ? 'selected' : ''}" 
+                     onclick="if (typeof Coaching !== 'undefined' && Coaching.changeCoachingMode) { Coaching.changeCoachingMode(window.state, '${mode}').then(() => { if (typeof Coaching !== 'undefined' && Coaching.openCoaching) { Coaching.openCoaching(window.state); } }); }">
+                    <div class="mode-option-header">
+                        <span class="mode-option-name">${modeData?.name || mode}</span>
+                        ${isSelected ? '<span class="mode-option-check">✓</span>' : ''}
+                    </div>
+                    <p class="mode-option-description">${modeData?.description || ''}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Rend le widget coaching pour Home selon le mode
+     * @param {Object} state - State de l'application
+     * @param {Object} insightSummary - Résumé de l'insight actif
+     * @returns {string} HTML du widget ou '' si ne doit pas s'afficher
+     */
+    renderHomeWidget(state, insightSummary) {
+        const mode = state?.coaching?.mode || 'stability';
+        const lang = state?.profile?.lang || 'fr';
+        
+        // Mode silent: ne pas afficher
+        if (mode === 'silent') {
+            return '';
+        }
+        
+        // Mode observer: très discret (icône seule)
+        if (mode === 'observer') {
+            if (!insightSummary || !insightSummary.hasInsight) {
+                return '';
+            }
+            return `<div class="coaching-widget observer-mode" onclick="if (typeof Coaching !== 'undefined' && Coaching.openCoaching) { Coaching.openCoaching(window.state); }" title="${this.getTranslation('coaching', {}, lang, { fr: 'Coaching', en: 'Coaching', ar: 'تدريب' })}">🧠</div>`;
+        }
+        
+        // Modes stability/guided: affichage normal mais discret
+        if (!insightSummary || !insightSummary.hasInsight) {
+            return '';
+        }
+        
+        const l = LABELS[lang] || LABELS.fr;
+        return `<div class="coaching-widget" onclick="if (typeof Coaching !== 'undefined' && Coaching.openCoaching) { Coaching.openCoaching(window.state); }">
+            <span class="widget-icon">🧠</span>
+            <span class="widget-text">${l.new}</span>
+            <span class="widget-badge">!</span>
+        </div>`;
     }
 
     /**

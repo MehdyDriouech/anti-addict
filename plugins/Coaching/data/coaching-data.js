@@ -177,6 +177,68 @@ export const PREDEFINED_ADVICE = {
     }
 };
 
+/**
+ * Coaching V2 - Modes de coaching
+ */
+export const COACHING_MODES = {
+    observer: {
+        fr: { 
+            name: 'Observer', 
+            description: 'Peu d\'interventions, surtout rétrospectif. Idéal pour utilisateurs autonomes.' 
+        },
+        en: { 
+            name: 'Observer', 
+            description: 'Few interventions, mostly retrospective. Ideal for autonomous users.' 
+        },
+        ar: { 
+            name: 'مراقب', 
+            description: 'تدخلات قليلة، معظمها استرجاعي. مثالي للمستخدمين المستقلين.' 
+        }
+    },
+    stability: {
+        fr: { 
+            name: 'Stabilité', 
+            description: 'Un ancrage à la fois, transitions prioritaires. Coaching discret mais structurant.' 
+        },
+        en: { 
+            name: 'Stability', 
+            description: 'One anchor at a time, transitions priority. Discrete but structuring coaching.' 
+        },
+        ar: { 
+            name: 'الاستقرار', 
+            description: 'مرساة واحدة في كل مرة، الأولوية للتحولات. تدريب متواضع ولكن منظم.' 
+        }
+    },
+    guided: {
+        fr: { 
+            name: 'Guidé', 
+            description: 'Plus de feedback, propositions plus fréquentes. Explications légèrement plus détaillées.' 
+        },
+        en: { 
+            name: 'Guided', 
+            description: 'More feedback, more frequent suggestions. Slightly more detailed explanations.' 
+        },
+        ar: { 
+            name: 'موجه', 
+            description: 'مزيد من التعليقات، اقتراحات أكثر تكرارًا. شروحات أكثر تفصيلاً قليلاً.' 
+        }
+    },
+    silent: {
+        fr: { 
+            name: 'Silencieux', 
+            description: 'Coaching quasi invisible. Uniquement si forte instabilité détectée. Aucun affichage spontané.' 
+        },
+        en: { 
+            name: 'Silent', 
+            description: 'Almost invisible coaching. Only if high instability detected. No spontaneous display.' 
+        },
+        ar: { 
+            name: 'صامت', 
+            description: 'تدريب شبه غير مرئي. فقط في حالة اكتشاف عدم استقرار شديد. لا عرض تلقائي.' 
+        }
+    }
+};
+
 export const LABELS = {
     fr: {
         title: '📊 Insights de la semaine', summary: 'Résumé', cravings: 'cravings', episodes: 'épisodes', wins: 'victoires', slopes: 'pentes',

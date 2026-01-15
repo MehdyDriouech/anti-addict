@@ -29,7 +29,9 @@ const Coaching = {
     canShowInsight: (state) => coachingController.canShowInsight(state),
     getActiveInsightSummary: (state) => coachingController.getActiveInsightSummary(state),
     dismissInsight: async (insightId) => await coachingController.dismissInsight(insightId),
-    markInsightUseful: async (insightId) => await coachingController.markInsightUseful(insightId)
+    markInsightUseful: async (insightId) => await coachingController.markInsightUseful(insightId),
+    changeCoachingMode: async (state, newMode) => await coachingController.changeCoachingMode(state, newMode),
+    openModeSelector: async (state) => await coachingController.openModeSelector(state)
 };
 
 window.Coaching = Coaching;

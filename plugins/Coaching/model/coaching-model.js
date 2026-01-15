@@ -120,53 +120,81 @@ export class CoachingModel {
         // Vérifier si on doit générer un nouvel insight
         let activeInsight = this.getActiveInsight(state);
         
-        if (!activeInsight && this.shouldGenerateNewInsight(state)) {
+        if (!activeInsight && this.shouldGenerateInsight(state)) {
             // Générer un nouvel insight depuis analytics summaries uniquement
             try {
                 if (window.Analytics && window.Analytics.getAnalytics) {
                     const weeklyAnalytics = await window.Analytics.getAnalytics('weekly');
                     if (weeklyAnalytics) {
                         const candidates = [];
+                        const mode = state.coaching?.mode || 'stability';
                         
-                        // Priorité 1 - Rétrospectif
+                        // Priorité 0 - Stabilizing (nouveau, priorité maximale)
+                        const stabilizingInsights = await this.generateStabilizingInsights(state);
+                        candidates.push(...stabilizingInsights);
+                        
+                        // Priorité 1 - Habit (si modes stability/guided)
+                        if (mode === 'stability' || mode === 'guided') {
+                            const habitInsight = this.generateHabitInsight(state);
+                            if (habitInsight) candidates.push(habitInsight);
+                            
+                            // Priorité 2 - Transition (si modes stability/guided)
+                            const transitionInsight = await this.generateTransitionInsight(state);
+                            if (transitionInsight) candidates.push(transitionInsight);
+                        }
+                        
+                        // Priorité 3 - Rétrospectif
                         const retroInsights = this.generateRetrospectiveInsights(weeklyAnalytics, null, state.checkins || []);
                         candidates.push(...retroInsights);
                         
-                        // Priorité 2 - Préventif
+                        // Priorité 4 - Préventif
                         const prevWeekDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
                         const prevWeeklyAnalytics = await window.Analytics.getAnalytics('weekly', prevWeekDate);
                         const prevInsights = this.generatePreventiveInsights(weeklyAnalytics, prevWeeklyAnalytics);
                         candidates.push(...prevInsights);
                         
-                        // Priorité 3 - Prescriptif (V1 restreinte)
-                        const prescInsights = this.generatePrescriptiveInsights(state, weeklyAnalytics);
-                        candidates.push(...prescInsights);
+                        // Priorité 5 - Prescriptif (V1 restreinte, seulement si guided)
+                        if (mode === 'guided') {
+                            const prescInsights = this.generatePrescriptiveInsights(state, weeklyAnalytics);
+                            candidates.push(...prescInsights);
+                        }
 
-                        // Sélectionner le meilleur
-                        const best = this.selectBestInsight(candidates);
+                        // Filtrer par mode puis sélectionner le meilleur
+                        const filteredByMode = this.selectInsightByMode(candidates, mode);
+                        const best = filteredByMode.length > 0 ? filteredByMode[0] : null;
                         if (best && best.confidence >= 0.6) {
                             // Sauvegarder l'insight via Store.update
                             if (typeof window !== 'undefined' && window.Store && window.Store.update) {
                                 await window.Store.update((draft) => {
                                     if (!draft.coaching) {
-                                        draft.coaching = { lastShownDate: null, insights: [], feedback: { usefulCount: 0, dismissedCount: 0 } };
+                                        draft.coaching = { mode: 'stability', lastShownDate: null, activeAnchor: null, insights: [], feedback: { useful: 0, dismissed: 0 } };
                                     }
                                     if (!draft.coaching.insights) {
                                         draft.coaching.insights = [];
                                     }
                                     draft.coaching.insights.push(best);
                                     draft.coaching.lastShownDate = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                                    
+                                    // Si insight de type habit ou transition, mettre à jour activeAnchor
+                                    if (best.anchor) {
+                                        draft.coaching.activeAnchor = best.anchor;
+                                    }
                                 });
                                 
                                 // Mettre à jour state local
                                 if (!state.coaching) {
-                                    state.coaching = { lastShownDate: null, insights: [], feedback: { usefulCount: 0, dismissedCount: 0 } };
+                                    state.coaching = { mode: 'stability', lastShownDate: null, activeAnchor: null, insights: [], feedback: { useful: 0, dismissed: 0 } };
                                 }
                                 if (!state.coaching.insights) {
                                     state.coaching.insights = [];
                                 }
                                 state.coaching.insights.push(best);
                                 state.coaching.lastShownDate = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+                                
+                                // Si insight de type habit ou transition, mettre à jour activeAnchor
+                                if (best.anchor) {
+                                    state.coaching.activeAnchor = best.anchor;
+                                }
                                 
                                 activeInsight = best;
                             }
@@ -382,22 +410,11 @@ export class CoachingModel {
      * Vérifie si un nouvel insight peut être généré
      * @param {Object} state - State de l'application
      * @returns {boolean}
+     * @deprecated Utiliser shouldGenerateInsight() à la place (respecte les modes)
      */
     shouldGenerateNewInsight(state) {
-        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
-        
-        // Vérifier cadence (1/jour)
-        if (state.coaching?.lastShownDate === todayISO) {
-            return false;
-        }
-
-        // Vérifier qu'il n'y a pas d'insight actif non dismissed
-        const activeInsight = this.getActiveInsight(state);
-        if (activeInsight && !activeInsight.dismissed) {
-            return false;
-        }
-
-        return true;
+        // Déléguer à shouldGenerateInsight pour respecter les modes
+        return this.shouldGenerateInsight(state);
     }
 
     /**
@@ -677,5 +694,360 @@ export class CoachingModel {
         }
 
         return advice;
+    }
+
+    /**
+     * Génère les insights stabilisants (lien instabilité ↔ urgences)
+     * Priorité: stabilizing > habit > transition > retrospective > preventive > prescriptive
+     * @param {Object} state - State de l'application
+     * @returns {Array} Insights de type 'stabilizing'
+     */
+    async generateStabilizingInsights(state) {
+        const insights = [];
+        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+
+        try {
+            // Utiliser analytics summaries uniquement
+            if (!window.Analytics || !window.Analytics.getAnalytics) {
+                return insights;
+            }
+
+            const weeklyAnalytics = await window.Analytics.getAnalytics('weekly');
+            if (!weeklyAnalytics) return insights;
+
+            // Analyser instabilité via check-ins de la semaine
+            // Calculer la date 7 jours en arrière
+            const todayDate = new Date();
+            const last7DaysDate = new Date(todayDate);
+            last7DaysDate.setDate(todayDate.getDate() - 6); // 6 jours pour avoir 7 jours au total
+            const last7Days = last7DaysDate.toISOString().split('T')[0];
+
+            const weekCheckins = (state.checkins || []).filter(c => c.date >= last7Days);
+            
+            if (weekCheckins.length < 3) return insights; // Pas assez de données
+
+            // Calculer instabilité moyenne (stress + solitude élevés)
+            const avgStress = weekCheckins.reduce((sum, c) => sum + (c.stress || 0), 0) / weekCheckins.length;
+            const avgSolitude = weekCheckins.reduce((sum, c) => sum + (c.solitude || 0), 0) / weekCheckins.length;
+            const totalCravings = weeklyAnalytics.totalCravings || 0;
+
+            // Détecter corrélation instabilité ↔ urgences
+            const instabilityScore = (avgStress >= 7 ? 1 : 0) + (avgSolitude >= 6 ? 1 : 0);
+            const hasHighCravings = totalCravings >= 3;
+
+            if (instabilityScore >= 1 && hasHighCravings) {
+                const confidence = Math.min(1.0, Math.max(0.6, (instabilityScore + totalCravings) / 10));
+                
+                let messageKey = 'coaching.insight.stabilizing.general';
+                let data = { instabilityScore, cravings: totalCravings };
+
+                if (avgStress >= 7) {
+                    messageKey = 'coaching.insight.stabilizing.stress';
+                    data = { stress: Math.round(avgStress), cravings: totalCravings };
+                }
+                if (avgSolitude >= 6) {
+                    // Si déjà stress, on garde stress. Sinon, on utilise solitude
+                    if (messageKey === 'coaching.insight.stabilizing.general') {
+                        messageKey = 'coaching.insight.stabilizing.solitude';
+                        data = { solitude: Math.round(avgSolitude), cravings: totalCravings };
+                    }
+                }
+
+                insights.push({
+                    id: `stabilizing_${todayISO}_${Date.now()}`,
+                    date: todayISO,
+                    type: 'stabilizing',
+                    scope: 'global',
+                    messageKey,
+                    confidence,
+                    evidence: {
+                        days: 7,
+                        sampleSize: weekCheckins.length
+                    },
+                    dismissed: false,
+                    data
+                });
+            }
+        } catch (error) {
+            console.warn('[Coaching] Erreur génération stabilizing insights:', error);
+        }
+
+        return insights;
+    }
+
+    /**
+     * Génère un insight de type 'habit' (proposition d'ancrage)
+     * Règles: Un seul ancrage actif à la fois, pas si activeAnchor < 7 jours
+     * @param {Object} state - State de l'application
+     * @returns {Object|null} Insight de type 'habit' ou null
+     */
+    generateHabitInsight(state) {
+        // Vérifier qu'il n'y a pas déjà un ancrage actif récent (< 7 jours)
+        const activeAnchor = state.coaching?.activeAnchor;
+        if (activeAnchor) {
+            const anchorDate = new Date(activeAnchor.suggestedAt);
+            const daysSinceAnchor = Math.floor((Date.now() - anchorDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysSinceAnchor < 7) {
+                return null; // Ancrage encore actif
+            }
+        }
+
+        // Déterminer le contexte (morning/day/evening)
+        const now = new Date();
+        const hour = now.getHours();
+        let context = 'day';
+        if (hour >= 6 && hour < 12) context = 'morning';
+        else if (hour >= 12 && hour < 18) context = 'day';
+        else if (hour >= 18 && hour < 22) context = 'evening';
+        else context = 'evening'; // Nuit = evening pour simplifier
+
+        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+
+        // Générer ancrage selon contexte
+        const anchorId = `anchor_${context}_${todayISO}_${Date.now()}`;
+        
+        const habitInsights = {
+            morning: {
+                messageKey: 'coaching.habit.morning.water',
+                data: { context: 'morning', action: 'water' }
+            },
+            day: {
+                messageKey: 'coaching.habit.day.pause',
+                data: { context: 'day', action: 'pause' }
+            },
+            evening: {
+                messageKey: 'coaching.habit.evening.closure',
+                data: { context: 'evening', action: 'closure' }
+            }
+        };
+
+        const insightData = habitInsights[context] || habitInsights.day;
+
+        return {
+            id: anchorId,
+            date: todayISO,
+            type: 'habit',
+            scope: 'global',
+            messageKey: insightData.messageKey,
+            confidence: 0.7,
+            evidence: {
+                days: 0,
+                sampleSize: 0
+            },
+            dismissed: false,
+            data: insightData.data,
+            anchor: {
+                id: anchorId,
+                type: 'anchor',
+                context,
+                suggestedAt: todayISO
+            }
+        };
+    }
+
+    /**
+     * Génère un insight de type 'transition' (fermeture d'un moment à risque)
+     * Priorité aux moments critiques (fin de soirée, après stress)
+     * @param {Object} state - State de l'application
+     * @returns {Object|null} Insight de type 'transition' ou null
+     */
+    async generateTransitionInsight(state) {
+        const now = new Date();
+        const hour = now.getHours();
+        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+
+        // Vérifier si on est dans un moment critique (fin de soirée: 20h-22h)
+        const isEveningEnd = hour >= 20 && hour < 22;
+        
+        // Vérifier si stress récent (check-in du jour avec stress élevé)
+        const todayCheckin = (state.checkins || []).find(c => c.date === todayISO);
+        const hasRecentStress = todayCheckin && todayCheckin.stress >= 7;
+
+        if (!isEveningEnd && !hasRecentStress) {
+            return null; // Pas de transition nécessaire
+        }
+
+        const transitionId = `transition_${todayISO}_${Date.now()}`;
+        
+        let messageKey = 'coaching.transition.evening';
+        let data = { context: 'evening' };
+
+        if (hasRecentStress) {
+            messageKey = 'coaching.transition.stress';
+            data = { context: 'stress', stress: todayCheckin.stress };
+        }
+
+        return {
+            id: transitionId,
+            date: todayISO,
+            type: 'transition',
+            scope: 'global',
+            messageKey,
+            confidence: 0.8,
+            evidence: {
+                days: 1,
+                sampleSize: 1
+            },
+            dismissed: false,
+            data,
+            anchor: {
+                id: transitionId,
+                type: 'transition',
+                context: data.context,
+                suggestedAt: todayISO
+            }
+        };
+    }
+
+    /**
+     * Filtre et sélectionne les insights selon le mode de coaching actif
+     * @param {Array} insights - Liste d'insights candidats
+     * @param {string} coachingMode - Mode de coaching ('observer' | 'stability' | 'guided' | 'silent')
+     * @returns {Array} Insights filtrés selon le mode
+     */
+    selectInsightByMode(insights, coachingMode) {
+        if (!insights || insights.length === 0) return [];
+
+        const mode = coachingMode || 'stability';
+
+        // Filtrer selon le mode
+        let allowedTypes = [];
+        
+        switch (mode) {
+            case 'observer':
+                // Observer: seulement retrospective, stabilizing
+                allowedTypes = ['retrospective', 'stabilizing'];
+                break;
+            case 'stability':
+                // Stability: stabilizing, habit, transition, retrospective (priorité)
+                allowedTypes = ['stabilizing', 'habit', 'transition', 'retrospective'];
+                break;
+            case 'guided':
+                // Guided: tous sauf prescriptive (priorité modérée)
+                allowedTypes = ['stabilizing', 'habit', 'transition', 'retrospective', 'preventive'];
+                break;
+            case 'silent':
+                // Silent: uniquement stabilizing avec forte instabilité (filtré après)
+                allowedTypes = ['stabilizing'];
+                break;
+            default:
+                // Par défaut: stability
+                allowedTypes = ['stabilizing', 'habit', 'transition', 'retrospective'];
+        }
+
+        // Filtrer par type autorisé
+        let filtered = insights.filter(insight => allowedTypes.includes(insight.type));
+
+        // Pour silent mode: vérifier que l'instabilité est très élevée
+        if (mode === 'silent') {
+            filtered = filtered.filter(insight => {
+                if (insight.type === 'stabilizing') {
+                    // Vérifier seuil strict d'instabilité
+                    const instabilityScore = insight.data?.instabilityScore || 0;
+                    const cravings = insight.data?.cravings || 0;
+                    return instabilityScore >= 2 && cravings >= 5;
+                }
+                return false;
+            });
+        }
+
+        // Trier par priorité: stabilizing > habit > transition > retrospective > preventive > prescriptive
+        const priorityOrder = {
+            'stabilizing': 1,
+            'habit': 2,
+            'transition': 3,
+            'retrospective': 4,
+            'preventive': 5,
+            'prescriptive': 6
+        };
+
+        filtered.sort((a, b) => {
+            const priorityDiff = (priorityOrder[a.type] || 99) - (priorityOrder[b.type] || 99);
+            if (priorityDiff !== 0) return priorityDiff;
+            return b.confidence - a.confidence;
+        });
+
+        return filtered;
+    }
+
+    /**
+     * Détermine si un insight peut être généré (respect mode + fréquence)
+     * @param {Object} state - State de l'application
+     * @returns {boolean}
+     */
+    shouldGenerateInsight(state) {
+        const mode = state.coaching?.mode || 'stability';
+        const todayISO = typeof Storage !== 'undefined' && Storage.getDateISO ? Storage.getDateISO() : new Date().toISOString().split('T')[0];
+        const lastShownDate = state.coaching?.lastShownDate;
+
+        // Vérifier fréquence selon le mode
+        if (lastShownDate) {
+            // Calculer jours écoulés depuis lastShownDate
+            const today = new Date(todayISO);
+            const lastShown = new Date(lastShownDate);
+            const daysSinceLastShown = Math.floor((today - lastShown) / (1000 * 60 * 60 * 24));
+
+            switch (mode) {
+                case 'silent':
+                    // Silent: exceptionnelle (max 1/14 jours)
+                    if (daysSinceLastShown < 14) return false;
+                    break;
+                case 'observer':
+                    // Observer: max 1/semaine
+                    if (daysSinceLastShown < 7) return false;
+                    break;
+                case 'stability':
+                    // Stability: max 1/3 jours
+                    if (daysSinceLastShown < 3) return false;
+                    break;
+                case 'guided':
+                    // Guided: max 1/jour
+                    if (daysSinceLastShown < 1) return false;
+                    break;
+            }
+        }
+
+        // Ne pas générer si activeAnchor < 7 jours (modes stability/guided uniquement)
+        if ((mode === 'stability' || mode === 'guided')) {
+            const activeAnchor = state.coaching?.activeAnchor;
+            if (activeAnchor) {
+                const anchorDate = new Date(activeAnchor.suggestedAt);
+                const daysSinceAnchor = Math.floor((Date.now() - anchorDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysSinceAnchor < 7) {
+                    return false; // Ancrage encore actif
+                }
+            }
+        }
+
+        // Ne pas générer si insight actif non dismissed
+        const activeInsight = this.getActiveInsight(state);
+        if (activeInsight && !activeInsight.dismissed) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Vérifie si le coaching est autorisé (pas d'urgence, pas post-urgence récent)
+     * @param {Object} state - State de l'application
+     * @returns {boolean}
+     */
+    isCoachingAllowed(state) {
+        // Vérifier si urgence active
+        if (window.runtime?.emergencyActive === true) {
+            return false;
+        }
+
+        // Vérifier cooldown post-urgence (5 minutes)
+        const COOLDOWN_MS = 5 * 60 * 1000;
+        if (window.runtime?.lastEmergencyEndedAt) {
+            const elapsed = Date.now() - window.runtime.lastEmergencyEndedAt;
+            if (elapsed < COOLDOWN_MS) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
