@@ -127,6 +127,8 @@
   "auto_lock_delay_10min": "10 minutes",
   "auto_lock_disabled": "Désactivé",
   "auto_lock_description": "Verrouille automatiquement l'application après une période d'inactivité",
+  "auto_lock_on_tab_blur": "Verrouiller au changement d'onglet",
+  "auto_lock_on_tab_blur_description": "Verrouille l'application dès que tu changes d'onglet",
   "appearance": "Apparence",
   "about": "À propos",
   "version": "Version",

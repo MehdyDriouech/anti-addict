@@ -127,6 +127,8 @@
   "auto_lock_delay_10min": "10 دقائق",
   "auto_lock_disabled": "معطّل",
   "auto_lock_description": "يقفل التطبيق تلقائياً بعد فترة من عدم النشاط",
+  "auto_lock_on_tab_blur": "قفل عند تغيير علامة التبويب",
+  "auto_lock_on_tab_blur_description": "يقفل التطبيق عند تغيير علامة التبويب",
   "appearance": "المظهر",
   "about": "حول",
   "version": "الإصدار",

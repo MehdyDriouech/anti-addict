@@ -127,6 +127,8 @@
   "auto_lock_delay_10min": "10 minutes",
   "auto_lock_disabled": "Disabled",
   "auto_lock_description": "Automatically locks the application after a period of inactivity",
+  "auto_lock_on_tab_blur": "Lock on tab change",
+  "auto_lock_on_tab_blur_description": "Locks the app when switching tabs",
   "appearance": "Appearance",
   "about": "About",
   "version": "Version",
