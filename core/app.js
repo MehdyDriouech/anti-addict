@@ -48,39 +48,71 @@ function setupConsoleFilter() {
         const errorMessage = (error?.message || '').toString();
         const combined = msg + ' ' + src + ' ' + errorStack + ' ' + errorMessage;
         
+        // Normaliser pour recherche case-insensitive
+        const combinedLower = combined.toLowerCase();
+        
         // FILTRE AGRESSIF 1: Détecter "deref" dans n'importe quel contexte
         // "deref" est très spécifique aux extensions et apparaît souvent seul
-        if (combined.includes('deref') || combined.includes('Cannot read properties of null (reading \'deref\')')) {
+        // Détecter toutes les variantes : "deref", ".deref()", "reading 'deref'", etc.
+        if (combinedLower.includes('deref') || 
+            combined.includes('Cannot read properties of null (reading \'deref\')') ||
+            combined.includes('Cannot read property \'deref\'') ||
+            combined.match(/\.deref\s*\(/)) {
             return true;
         }
         
         // FILTRE AGRESSIF 2: Détecter toutes les erreurs MutationObserver
         // Les extensions utilisent souvent MutationObserver et causent des erreurs
-        if (combined.includes('MutationObserver')) {
+        if (combinedLower.includes('mutationobserver')) {
             return true;
         }
         
-        // Détecter les URLs d'extensions Chrome
-        if (combined.includes('chrome-extension://') || 
-            combined.includes('moz-extension://') ||
-            combined.includes('safari-extension://')) {
+        // FILTRE AGRESSIF 3: Détecter les patterns d'extensions modernes
+        // WeakRef et FinalizationRegistry sont utilisés par les extensions modernes
+        if (combinedLower.includes('weakref') || 
+            combinedLower.includes('finalizationregistry')) {
+            return true;
+        }
+        
+        // Détecter les URLs d'extensions Chrome (plus agressif)
+        if (combinedLower.includes('chrome-extension://') || 
+            combinedLower.includes('moz-extension://') ||
+            combinedLower.includes('safari-extension://') ||
+            combinedLower.includes('extension://')) {
             return true;
         }
         
         // Détecter les erreurs dans content_script.js et background.js
         // Vérifier dans le message, la source ET la stack trace
-        if (combined.includes('content_script.js') || 
-            combined.includes('background.js') ||
-            combined.includes('content_script') ||
+        // Accepter aussi juste le nom de fichier sans chemin complet
+        if (combinedLower.includes('content_script.js') || 
+            combinedLower.includes('background.js') ||
+            combinedLower.includes('content_script') ||
+            combinedLower.includes('background_script') ||
+            // Détecter même si c'est juste le nom de fichier dans le message
+            msg.includes('content_script.js') ||
+            src.includes('content_script.js') ||
             errorStack.includes('content_script.js') ||
             errorStack.includes('background.js')) {
             return true;
         }
         
         // Détecter les erreurs spécifiques des extensions
-        if (combined.includes('Attempting to use a disconnected port object') ||
-            combined.includes('Error in event handler') ||
-            combined.includes('Called encrypt() without a session key')) {
+        if (combinedLower.includes('attempting to use a disconnected port object') ||
+            combinedLower.includes('error in event handler') ||
+            combinedLower.includes('called encrypt() without a session key') ||
+            combinedLower.includes('extension context invalidated') ||
+            combinedLower.includes('message port closed')) {
+            return true;
+        }
+        
+        // Détecter les patterns de stack trace typiques des extensions
+        // Souvent les extensions ont des stack traces avec leur ID dans l'URL
+        if (errorStack && (
+            /chrome-extension:\/\/[a-z]+\/content_script\.js/i.test(errorStack) ||
+            /moz-extension:\/\/[a-z]+\/content_script\.js/i.test(errorStack) ||
+            /at.*content_script\.js.*\d+:\d+/i.test(errorStack)
+        )) {
             return true;
         }
         
@@ -168,6 +200,20 @@ function setupConsoleFilter() {
         }
         return false;
     };
+    
+    // Intercepter aussi via addEventListener('error') pour capturer plus d'erreurs
+    // Cela capture les mêmes erreurs que window.onerror mais peut être plus fiable
+    window.addEventListener('error', function(event) {
+        const message = event.message || '';
+        const source = event.filename || event.source || '';
+        const error = event.error;
+        
+        if (isExtensionError(message, source, error)) {
+            event.preventDefault(); // Empêcher l'affichage de l'erreur
+            event.stopPropagation(); // Empêcher la propagation
+            return false;
+        }
+    }, true); // Utiliser capture phase pour intercepter plus tôt
     
     // Intercepter les erreurs non gérées de promesses
     window.addEventListener('unhandledrejection', function(event) {
