@@ -278,30 +278,40 @@ antiaddictv2/
 │   ├── index.html              # Point d'entrée principal
 │   ├── manifest.webmanifest    # Configuration PWA
 │   ├── core/
-│   │   ├── app.js              # Orchestration principale
-│   │   ├── router.js           # Navigation SPA
-│   │   ├── storage.js          # Gestion IndexedDB/localStorage + migrations
-│   │   ├── store.js            # API centralisée Store.update()
-│   │   ├── analytics.js        # AnalyticsService pour insights
-│   │   ├── security.js         # SecurityService (chiffrement, PIN)
-│   │   ├── lock.js             # Gestion verrouillage/déverrouillage
-│   │   ├── i18n.js             # Internationalisation
-│   │   ├── utils.js            # Utilitaires (dates, stats)
-│   │   ├── styles.css          # Styles globaux + thèmes
-│   │   ├── storage/            # Drivers de stockage (IndexedDB, localStorage)
+│   │   ├── app.js              # Orchestration principale (seul fichier à la racine)
+│   │   ├── Services/           # Services principaux
+│   │   │   ├── analytics.js    # AnalyticsService pour insights
+│   │   │   ├── security.js     # SecurityService (chiffrement, PIN)
+│   │   │   ├── storage.js      # Gestion IndexedDB/localStorage + migrations
+│   │   │   └── store.js        # API centralisée Store.update()
+│   │   ├── Navigation/         # Navigation et internationalisation
+│   │   │   ├── router.js       # Navigation SPA
+│   │   │   └── i18n.js         # Internationalisation
+│   │   ├── Utils/              # Utilitaires et helpers
+│   │   │   ├── utils.js        # Fonctions utilitaires (dates, stats)
+│   │   │   ├── debug.js        # Outils de debug
+│   │   │   ├── lock.js         # Gestion verrouillage/déverrouillage
+│   │   │   └── auto-lock.js    # Auto-lock
+│   │   ├── Assets/             # Assets (CSS, Service Worker)
+│   │   │   ├── styles.css      # Styles globaux + thèmes
+│   │   │   └── sw.js           # Service Worker
+│   │   ├── analytics/          # Services d'analytics
+│   │   ├── debug/              # Outils de debug
+│   │   ├── features/           # Features core (MVC)
+│   │   │   ├── Checkin/        # Check-in quotidien
+│   │   │   ├── Commitments/    # Mes engagements
+│   │   │   ├── Craving/        # Protocole 90 secondes
+│   │   │   ├── Dashboard/      # Vue d'ensemble
+│   │   │   ├── History/        # Historique
+│   │   │   ├── Home/           # Écran d'accueil
+│   │   │   ├── Init/          # Initialisation
+│   │   │   ├── Onboarding/     # Première configuration
+│   │   │   ├── Settings/       # Réglages
+│   │   │   ├── Tools/          # Menu outils
+│   │   │   └── UI/             # Composants UI
 │   │   ├── security/           # Services de sécurité
-│   │   └── features/           # Features core (MVC)
-│   │       ├── Checkin/        # Check-in quotidien
-│   │       ├── Commitments/    # Mes engagements
-│   │       ├── Craving/        # Protocole 90 secondes
-│   │       ├── Dashboard/      # Vue d'ensemble
-│   │       ├── History/        # Historique
-│   │       ├── Home/           # Écran d'accueil
-│   │       ├── Init/          # Initialisation
-│   │       ├── Onboarding/     # Première configuration
-│   │       ├── Settings/       # Réglages
-│   │       ├── Tools/          # Menu outils
-│   │       └── UI/             # Composants UI
+│   │   ├── storage/            # Drivers de stockage (IndexedDB, localStorage)
+│   │   └── store/              # Store et migrations
 │   ├── data/
 │   │   ├── addictions-config.js # Configuration des addictions
 │   │   ├── texts/              # Fichiers de traduction
@@ -501,20 +511,39 @@ Accédez au menu "🧰 Mes outils" depuis l'écran d'accueil pour :
 
 ### Architecture
 
-L'application suit une architecture **modulaire MVC** :
+L'application suit une architecture **modulaire MVC** avec organisation fonctionnelle du dossier `core/` :
 
-- **core/app.js** : Orchestration principale, rendu des écrans, filtre console
-- **core/router.js** : Navigation SPA basée sur hash avec protection des routes
-- **core/storage.js** : Abstraction stockage (IndexedDB/localStorage) + migrations
-- **core/store.js** : API centralisée Store.update() pour cohérence des données
-- **core/analytics.js** : AnalyticsService pour insights locaux et agrégations
-- **core/security.js** : SecurityService pour chiffrement et gestion PIN
-- **core/lock.js** : Gestion du verrouillage/déverrouillage de l'application
+**Fichiers principaux :**
+- **core/app.js** : Orchestration principale, rendu des écrans, filtre console (seul fichier à la racine de `core/`)
+
+**Services (core/Services/) :**
+- **analytics.js** : AnalyticsService pour insights locaux et agrégations
+- **security.js** : SecurityService pour chiffrement et gestion PIN
+- **storage.js** : Abstraction stockage (IndexedDB/localStorage) + migrations
+- **store.js** : API centralisée Store.update() pour cohérence des données
+
+**Navigation (core/Navigation/) :**
+- **router.js** : Navigation SPA basée sur hash avec protection des routes
+- **i18n.js** : Système de traduction centralisé
+
+**Utils (core/Utils/) :**
+- **utils.js** : Fonctions utilitaires (dates, stats)
+- **debug.js** : Outils de debug
+- **lock.js** : Gestion du verrouillage/déverrouillage de l'application
+- **auto-lock.js** : Auto-lock automatique
+
+**Assets (core/Assets/) :**
+- **styles.css** : Styles globaux + thèmes
+- **sw.js** : Service Worker pour cache offline
+
+**Sous-dossiers techniques :**
 - **core/features/** : Features core avec architecture MVC
-- **plugins/** : Plugins modulaires avec architecture MVC
-- **core/i18n.js** : Système de traduction centralisé
+- **core/plugins/** : Plugins modulaires avec architecture MVC
 - **core/storage/** : Drivers de stockage (IndexedDBDriver, LocalStorageDriver)
 - **core/security/** : Services de sécurité (chiffrement, dérivation de clés)
+- **core/analytics/** : Services d'analytics
+- **core/debug/** : Outils de debug avancés
+- **core/store/** : Store et migrations
 
 ### Créer un nouveau plugin
 

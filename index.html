@@ -22,7 +22,7 @@
     <link rel="apple-touch-icon" href="data/pictures/icon-192.png">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="core/styles.css">
+    <link rel="stylesheet" href="core/Assets/styles.css">
     
     <!-- Preconnect for fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,23 +148,28 @@
          ORDRE IMPORTANT:
          1. utils.js - Helpers (dates, stats, etc.)
          2. storage.js - Gestion du localStorage
-         3. i18n.js - Internationalisation
-         4. router.js - Navigation
-         5. features/*.js - Modules V2 (dans l'ordre)
-         6. app.js - Logique principale (doit être chargé en dernier)
+         3. store.js - API Store.update()
+         4. analytics.js - AnalyticsService
+         5. security.js - SecurityService
+         6. debug.js - Outils de debug
+         7. lock.js / auto-lock.js - Gestion verrouillage
+         8. i18n.js - Internationalisation
+         9. router.js - Navigation
+         10. features/*.js - Modules V2 (dans l'ordre)
+         11. app.js - Logique principale (doit être chargé en dernier)
     -->
-    <script src="core/utils.js"></script>
+    <script src="core/Utils/utils.js"></script>
     <script src="data/addictions-config.js"></script>
-    <script src="core/storage.js"></script>
-    <script type="module" src="core/store.js"></script>
-    <script type="module" src="core/analytics.js"></script>
-    <script type="module" src="core/security.js"></script>
-    <script type="module" src="core/debug.js"></script>
+    <script src="core/Services/storage.js"></script>
+    <script type="module" src="core/Services/store.js"></script>
+    <script type="module" src="core/Services/analytics.js"></script>
+    <script type="module" src="core/Services/security.js"></script>
+    <script type="module" src="core/Utils/debug.js"></script>
     <script type="module" src="core/debug/tests.js"></script>
-    <script src="core/lock.js"></script>
-    <script src="core/auto-lock.js"></script>
-    <script src="core/i18n.js"></script>
-    <script src="core/router.js"></script>
+    <script src="core/Utils/lock.js"></script>
+    <script src="core/Utils/auto-lock.js"></script>
+    <script src="core/Navigation/i18n.js"></script>
+    <script src="core/Navigation/router.js"></script>
     
     <!-- ============================================
          PLUGINS (MVC Architecture)
@@ -224,7 +229,7 @@
         // Enregistrement du Service Worker pour le mode offline (PWA)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('core/sw.js')
+                navigator.serviceWorker.register('core/Assets/sw.js')
                     .then(registration => {
                         console.log('[SW] Service Worker enregistré:', registration.scope);
                     })
