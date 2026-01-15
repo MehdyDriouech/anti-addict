@@ -30,6 +30,7 @@ export const Settings = {
     
     // Auto-lock Settings
     toggleAutoLock: async (state, enabled) => await settingsController.toggleAutoLock(state, enabled),
+    toggleAutoLockOnTabBlur: async (state, enabled) => await settingsController.toggleAutoLockOnTabBlur(state, enabled),
     openAutoLockDelayModal: (state) => settingsController.openAutoLockDelayModal(state)
 };
 
@@ -86,5 +87,9 @@ if (typeof window !== 'undefined') {
     window.openAutoLockDelayModal = () => {
         const state = typeof window !== 'undefined' ? window.state : null;
         if (state) Settings.openAutoLockDelayModal(state);
+    };
+    window.toggleAutoLockOnTabBlur = (enabled) => {
+        const state = typeof window !== 'undefined' ? window.state : null;
+        if (state) Settings.toggleAutoLockOnTabBlur(state, enabled);
     };
 }

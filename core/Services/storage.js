@@ -196,7 +196,8 @@ function getDefaultState() {
             theme: 'dark',  // Theme: 'dark' ou 'light'
             autoLock: {  // V4: Verrouillage automatique
                 enabled: false,
-                delay: 60000  // 1 minute par défaut (en millisecondes)
+                delay: 60000,  // 1 minute par défaut (en millisecondes)
+                autoLockOnTabBlur: false  // Verrouiller au changement d'onglet
             }
         },
         

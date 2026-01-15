@@ -98,6 +98,24 @@ export class PinSettingsView {
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                    ${state ? `
+                    <div class="settings-item">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon">🔒</div>
+                            <div class="settings-item-text">
+                                <span class="settings-item-title">${I18n.t('auto_lock_on_tab_blur')}</span>
+                                <span class="settings-item-value">${I18n.t('auto_lock_on_tab_blur_description')}</span>
+                            </div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" 
+                                   id="toggle-auto-lock-tab-blur" 
+                                   ${state.settings?.autoLock?.autoLockOnTabBlur ? 'checked' : ''} 
+                                   onchange="toggleAutoLockOnTabBlur(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    ` : ''}
                     ${state.settings?.autoLock?.enabled ? `
                     <div class="settings-item" onclick="openAutoLockDelayModal()">
                         <div class="settings-item-left">

@@ -5,6 +5,7 @@
 let inactivityTimer = null;
 let autoLockEnabled = false;
 let autoLockDelay = 60000; // 1 minute par défaut (en millisecondes)
+let autoLockOnTabBlur = false; // Verrouiller au changement d'onglet
 let isInitialized = false;
 let eventListenersAttached = false;
 
@@ -21,9 +22,10 @@ function initAutoLock(state) {
     }
 
     // Récupérer la configuration depuis le state
-    const autoLockConfig = state.settings.autoLock || { enabled: false, delay: 60000 };
+    const autoLockConfig = state.settings.autoLock || { enabled: false, delay: 60000, autoLockOnTabBlur: false };
     autoLockEnabled = autoLockConfig.enabled || false;
     autoLockDelay = autoLockConfig.delay || 60000;
+    autoLockOnTabBlur = autoLockConfig.autoLockOnTabBlur || false;
 
     // Vérifier que le PIN est activé avant de démarrer
     if (autoLockEnabled && typeof window.Security !== 'undefined' && window.Security.isEnabled) {
@@ -74,6 +76,44 @@ function handleVisibilityChange() {
     if (document.hidden) {
         // Onglet en arrière-plan : suspendre le timer
         stopTimer();
+        
+        // Si autoLockOnTabBlur est activé, verrouiller immédiatement
+        if (autoLockOnTabBlur) {
+            // Vérifier que le PIN est activé et que l'app n'est pas déjà verrouillée
+            if (window.Security && 
+                window.Security.isEnabled && 
+                window.Security.isEnabled() &&
+                window.Security.lock &&
+                window.Security.isLocked &&
+                !window.Security.isLocked()) {
+                
+                console.log('[AutoLock] Verrouillage automatique au changement d\'onglet');
+                window.Security.lock();
+                
+                // Mettre à jour l'UI
+                if (typeof updateLockIcon === 'function') {
+                    updateLockIcon();
+                }
+                if (typeof updateBottomNavVisibility === 'function') {
+                    updateBottomNavVisibility();
+                }
+                
+                // Toujours rediriger vers home pour afficher la vue verrouillée
+                if (typeof window.Router !== 'undefined' && window.Router.navigateTo) {
+                    window.Router.navigateTo('home', true); // force=true pour forcer le re-render
+                }
+                
+                // Afficher un toast informatif
+                if (typeof UI !== 'undefined' && typeof I18n !== 'undefined') {
+                    const state = window.state;
+                    const lang = state?.profile?.lang || 'fr';
+                    const msg = lang === 'fr' ? 'Application verrouillée (changement d\'onglet)' :
+                               lang === 'en' ? 'App locked (tab changed)' :
+                               'تم قفل التطبيق (تغيير علامة التبويب)';
+                    UI.showToast(msg, 'info');
+                }
+            }
+        }
     } else {
         // Onglet redevient visible : reprendre le timer
         if (autoLockEnabled) {
@@ -180,6 +220,11 @@ function stopTimer() {
 function updateConfig(enabled, delay) {
     autoLockEnabled = enabled;
     autoLockDelay = delay || 60000;
+    
+    // Mettre à jour autoLockOnTabBlur depuis le state si disponible
+    if (window.state && window.state.settings && window.state.settings.autoLock) {
+        autoLockOnTabBlur = window.state.settings.autoLock.autoLockOnTabBlur || false;
+    }
 
     // Arrêter le timer actuel
     stopTimer();

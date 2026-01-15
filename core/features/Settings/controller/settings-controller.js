@@ -864,6 +864,44 @@ export class SettingsController {
     }
 
     /**
+     * Active/désactive le verrouillage automatique au changement d'onglet
+     * @param {Object} state - State de l'application
+     * @param {boolean} enabled - Activé ou non
+     */
+    async toggleAutoLockOnTabBlur(state, enabled) {
+        const success = await this.model.toggleAutoLockOnTabBlur(state, enabled);
+        
+        if (!success && enabled) {
+            // Échec : probablement PIN non défini
+            const checkbox = document.getElementById('toggle-auto-lock-tab-blur');
+            if (checkbox) checkbox.checked = false;
+            
+            if (typeof UI !== 'undefined') {
+                const lang = state.profile.lang || 'fr';
+                const msg = lang === 'fr' ? 'Active d\'abord le verrouillage PIN dans les réglages' :
+                           lang === 'en' ? 'Enable PIN lock in settings first' :
+                           'قم بتفعيل قفل PIN في الإعدادات أولاً';
+                UI.showToast(msg, 'info');
+            }
+            return;
+        }
+        
+        this.render(state);
+        
+        if (typeof UI !== 'undefined') {
+            const lang = state.profile.lang || 'fr';
+            const msg = enabled 
+                ? (lang === 'fr' ? 'Verrouillage au changement d\'onglet activé' :
+                   lang === 'en' ? 'Lock on tab change enabled' :
+                   'تم تفعيل القفل عند تغيير علامة التبويب')
+                : (lang === 'fr' ? 'Verrouillage au changement d\'onglet désactivé' :
+                   lang === 'en' ? 'Lock on tab change disabled' :
+                   'تم تعطيل القفل عند تغيير علامة التبويب');
+            UI.showToast(msg, 'success');
+        }
+    }
+
+    /**
      * Ouvre le modal pour choisir le délai de verrouillage automatique
      * @param {Object} state - State de l'application
      */

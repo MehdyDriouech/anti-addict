@@ -220,4 +220,34 @@ export class SettingsModel {
             window.AutoLock.updateConfig(state.settings.autoLock.enabled, delay);
         }
     }
+
+    /**
+     * Active/désactive le verrouillage automatique au changement d'onglet
+     * @param {Object} state - State de l'application
+     * @param {boolean} enabled - Activé ou non
+     * @returns {Promise<boolean>} Succès
+     */
+    async toggleAutoLockOnTabBlur(state, enabled) {
+        // Vérifier que le PIN est activé si on active le verrouillage au changement d'onglet
+        if (enabled && typeof window.Security !== 'undefined' && window.Security.hasPin) {
+            const hasPin = await window.Security.hasPin();
+            if (!hasPin) {
+                return false; // PIN non défini
+            }
+        }
+
+        if (!state.settings.autoLock) {
+            state.settings.autoLock = { enabled: false, delay: 60000, autoLockOnTabBlur: false };
+        }
+        
+        state.settings.autoLock.autoLockOnTabBlur = enabled;
+        Storage.saveState(state);
+        
+        // Réinitialiser le module auto-lock pour appliquer le changement
+        if (typeof window.AutoLock !== 'undefined' && window.AutoLock.init) {
+            window.AutoLock.init(state);
+        }
+        
+        return true;
+    }
 }
