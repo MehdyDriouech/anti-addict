@@ -62,7 +62,7 @@ export const LABELS = {
     fr: {
         title: 'Intention du jour',
         engage: 'Je m\'y engage',
-        engaged: '✓ Engagé',
+        engaged: 'Engagé',
         remind: 'Rappeler ce soir',
         change: 'Changer',
         confirmNew: 'Tu as déjà une intention pour aujourd\'hui. En générer une nouvelle ?',
@@ -71,7 +71,7 @@ export const LABELS = {
     en: {
         title: 'Daily intention',
         engage: 'I commit to this',
-        engaged: '✓ Committed',
+        engaged: 'Committed',
         remind: 'Remind tonight',
         change: 'Change',
         confirmNew: 'You already have an intention for today. Generate a new one?',
@@ -80,7 +80,7 @@ export const LABELS = {
     ar: {
         title: 'نية اليوم',
         engage: 'ألتزم بهذا',
-        engaged: '✓ ملتزم',
+        engaged: 'ملتزم',
         remind: 'ذكرني الليلة',
         change: 'تغيير',
         confirmNew: 'لديك نية لهذا اليوم. هل تريد إنشاء واحدة جديدة؟',

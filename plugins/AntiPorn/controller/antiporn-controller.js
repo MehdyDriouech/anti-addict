@@ -63,7 +63,8 @@ export class AntiPornController {
                 'social_media': 'AntiSocialMedia',
                 'gaming': 'AntiGaming',
                 'food': 'AntiFood',
-                'shopping': 'AntiShopping'
+                'shopping': 'AntiShopping',
+                'gambling': 'AntiGambling'
             };
             const pluginName = pluginNames[normalizedAddictionId];
             if (pluginName && typeof window[pluginName] !== 'undefined' && window[pluginName].openSlopeModal) {
@@ -318,7 +319,8 @@ export class AntiPornController {
                 'social_media': 'AntiSocialMedia',
                 'gaming': 'AntiGaming',
                 'food': 'AntiFood',
-                'shopping': 'AntiShopping'
+                'shopping': 'AntiShopping',
+                'gambling': 'AntiGambling'
             };
             const pluginName = pluginNames[addictionId];
             if (pluginName && typeof window[pluginName] !== 'undefined' && window[pluginName].openConfigModal) {
@@ -381,7 +383,8 @@ export class AntiPornController {
             'social_media': 'AntiSocialMedia',
             'gaming': 'AntiGaming',
             'food': 'AntiFood',
-            'shopping': 'AntiShopping'
+            'shopping': 'AntiShopping',
+            'gambling': 'AntiGambling'
         };
         return names[addictionId] || null;
     }

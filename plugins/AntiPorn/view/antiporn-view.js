@@ -260,7 +260,8 @@ export class AntiPornView {
             'social_media': 'AntiSocialMedia',
             'gaming': 'AntiGaming',
             'food': 'AntiFood',
-            'shopping': 'AntiShopping'
+            'shopping': 'AntiShopping',
+            'gambling': 'AntiGambling'
         };
 
         const pluginName = pluginNames[addictionId];

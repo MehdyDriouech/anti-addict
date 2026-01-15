@@ -157,6 +157,23 @@ export const PREDEFINED_ADVICE = {
             { id: 'shopping_note_urge', messageKey: 'coaching.shopping.note_urge', suggestedAction: 'journaling' },
             { id: 'shopping_remember_goal', messageKey: 'coaching.shopping.remember_goal', suggestedAction: 'reflection' }
         ]
+    },
+    gambling: {
+        retrospective: [
+            { id: 'gambling_retro_evening', messageKey: 'coaching.gambling.retro.evening' },
+            { id: 'gambling_retro_financial_stress', messageKey: 'coaching.gambling.retro.financial_stress' },
+            { id: 'gambling_retro_you_showed_up', messageKey: 'coaching.gambling.retro.you_showed_up' }
+        ],
+        preventive: [
+            { id: 'gambling_prev_fatigue', messageKey: 'coaching.gambling.prev.fatigue' },
+            { id: 'gambling_prev_prepare_alt', messageKey: 'coaching.gambling.prev.prepare_alt' },
+            { id: 'gambling_prev_calm_evenings', messageKey: 'coaching.gambling.prev.calm_evenings' }
+        ],
+        prescriptive: [
+            { id: 'gambling_presc_pause_before_deciding', messageKey: 'coaching.gambling.presc.pause_before_deciding', suggestedAction: 'pause_breathing' },
+            { id: 'gambling_presc_step_away', messageKey: 'coaching.gambling.presc.step_away', suggestedAction: 'leave_place' },
+            { id: 'gambling_presc_prepare_action', messageKey: 'coaching.gambling.presc.prepare_action', suggestedAction: 'call_someone' }
+        ]
     }
 };
 

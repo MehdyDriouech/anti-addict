@@ -1,12 +1,12 @@
 /**
- * AntiShopping Controller - Orchestration pour l'addiction aux achats compulsifs
+ * AntiGambling Controller - Orchestration pour l'addiction au jeu d'argent
  */
 
-import { AntiShoppingModel } from '../model/antishopping-model.js';
-import { AntiShoppingView } from '../view/antishopping-view.js';
-import { SLOPE_STEPS } from '../data/antishopping-data.js';
+import { AntiGamblingModel } from '../model/antigambling-model.js';
+import { AntiGamblingView } from '../view/antigambling-view.js';
+import { SLOPE_STEPS } from '../data/antigambling-data.js';
 
-export class AntiShoppingController {
+export class AntiGamblingController {
     constructor(model, view) {
         this.model = model;
         this.view = view;
@@ -15,20 +15,20 @@ export class AntiShoppingController {
     }
 
     init() {
-        if (!document.getElementById('antishoppingModal')) {
+        if (!document.getElementById('antigamblingModal')) {
             const modal = document.createElement('div');
-            modal.id = 'antishoppingModal';
+            modal.id = 'antigamblingModal';
             modal.className = 'modal-overlay';
             document.body.appendChild(modal);
         }
-        if (!document.getElementById('antishoppingConfigModal')) {
+        if (!document.getElementById('antigamblingConfigModal')) {
             const modal = document.createElement('div');
-            modal.id = 'antishoppingConfigModal';
+            modal.id = 'antigamblingConfigModal';
             modal.className = 'modal-overlay';
             document.body.appendChild(modal);
         }
-        this.view.slopeModalEl = document.getElementById('antishoppingModal');
-        this.view.configModalEl = document.getElementById('antishoppingConfigModal');
+        this.view.slopeModalEl = document.getElementById('antigamblingModal');
+        this.view.configModalEl = document.getElementById('antigamblingConfigModal');
     }
 
     openSlopeModal(state, selectedAddictionId = null) {
@@ -37,7 +37,7 @@ export class AntiShoppingController {
         
         // Déterminer l'addiction sélectionnée
         if (!selectedAddictionId) {
-            selectedAddictionId = state.currentAddiction || state.addictions?.[0]?.id || state.addictions?.[0] || 'shopping';
+            selectedAddictionId = state.currentAddiction || state.addictions?.[0]?.id || state.addictions?.[0] || 'gambling';
         }
         this.currentSelectedAddiction = selectedAddictionId;
         
@@ -71,7 +71,7 @@ export class AntiShoppingController {
         this.currentState.currentAddiction = normalizedAddictionId;
         
         // Si l'addiction change vers une autre, ouvrir la modale du plugin correspondant
-        if (normalizedAddictionId !== 'shopping') {
+        if (normalizedAddictionId !== 'gambling') {
             const pluginNames = {
                 'porn': 'AntiPorn',
                 'cigarette': 'AntiSmoke',
@@ -80,7 +80,7 @@ export class AntiShoppingController {
                 'social_media': 'AntiSocialMedia',
                 'gaming': 'AntiGaming',
                 'food': 'AntiFood',
-                'gambling': 'AntiGambling'
+                'shopping': 'AntiShopping'
             };
             const pluginName = pluginNames[normalizedAddictionId];
             if (pluginName && typeof window[pluginName] !== 'undefined' && window[pluginName].openSlopeModal) {
@@ -97,9 +97,27 @@ export class AntiShoppingController {
         this.view.renderSlopeContent(lang, stoppedCount, tips, this.currentState, normalizedAddictionId);
     }
 
-    closeSlopeModal() { this.view.closeSlopeModal(); }
-    logWithSignal(signal) { if (this.currentState) this.model.logSlope(this.currentState, signal); }
-    completeStep(stepKey) { this.view.completeStep(stepKey, Object.keys(SLOPE_STEPS).length, () => {}); }
+    closeSlopeModal() { 
+        if (this.view.slopeModalEl) {
+            this.view.slopeModalEl.classList.remove('active');
+        }
+    }
+    
+    logWithSignal(signal) { 
+        if (this.currentState) {
+            this.model.logSlope(this.currentState, signal);
+        }
+    }
+    
+    completeStep(stepKey) { 
+        this.view.completeStep(stepKey, Object.keys(SLOPE_STEPS).length, () => {
+            // Callback après complétion de toutes les étapes
+            if (this.currentState) {
+                const count = this.model.incrementStoppedSlopes(this.currentState);
+                this.view.updateStoppedCount(count, this.currentState.profile?.lang || 'fr');
+            }
+        }); 
+    }
 
     confirmSlope() {
         if (this.currentState) {
@@ -112,9 +130,13 @@ export class AntiShoppingController {
             // Attendre un peu pour que l'utilisateur voie la mise à jour
             setTimeout(() => {
                 this.closeSlopeModal();
-                if (typeof showToast === 'function') {
-                    const messages = { fr: `Bravo ! ${count} achats évités. 💰`, en: `Well done! ${count} purchases avoided. 💰`, ar: `أحسنت! ${count} مشتريات تم تجنبها. 💰` };
-                    showToast(messages[lang] || messages.fr);
+                if (typeof UI !== 'undefined' && UI.showToast) {
+                    const messages = { 
+                        fr: `Bravo ! ${count} pentes stoppées. 💪`, 
+                        en: `Well done! ${count} slopes stopped. 💪`, 
+                        ar: `أحسنت! ${count} منحدرات متوقفة. 💪` 
+                    };
+                    UI.showToast(messages[lang] || messages.fr, 'success');
                 }
             }, 500);
         }
@@ -128,7 +150,11 @@ export class AntiShoppingController {
         this.view.renderConfigModal(lang, config.customTriggers || [], config.activeRules || []);
     }
 
-    closeConfigModal() { if (this.view.configModalEl) this.view.configModalEl.classList.remove('active'); }
+    closeConfigModal() { 
+        if (this.view.configModalEl) {
+            this.view.configModalEl.classList.remove('active');
+        }
+    }
 
     toggleTrigger(trigger) {
         if (this.currentState) {
@@ -145,13 +171,20 @@ export class AntiShoppingController {
             const activeRules = [];
             checkboxes.forEach(cb => { if (cb.checked) activeRules.push(cb.dataset.rule); });
             this.model.ensureAddictionConfig(this.currentState);
-            this.currentState.addictionConfigs.shopping.activeRules = activeRules;
+            this.currentState.addictionConfigs.gambling.activeRules = activeRules;
             Storage.saveState(this.currentState);
             this.closeConfigModal();
-            if (typeof showToast === 'function') showToast('Configuration sauvegardée');
+            if (typeof UI !== 'undefined' && UI.showToast) {
+                UI.showToast('Configuration sauvegardée', 'success');
+            }
         }
     }
 
-    getStats(state) { return this.model.getStats(state); }
-    getRecentSlopes(state, days = 7) { return this.model.getRecentSlopes(state, days); }
+    getStats(state) { 
+        return this.model.getStats(state); 
+    }
+    
+    getRecentSlopes(state, days = 7) { 
+        return this.model.getRecentSlopes(state, days); 
+    }
 }
