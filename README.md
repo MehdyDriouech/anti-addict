@@ -109,10 +109,13 @@ L'application supporte actuellement **9 addictions** réparties en 3 catégories
 - Actions personnalisées
 - Favoris et actions aléatoires
 
-#### Coaching local
-- Insights hebdomadaires automatiques
-- Identification des corrélations (ex: stress élevé = cravings x2)
-- Suggestions de règles basées sur vos patterns
+#### Coaching local (V2 - Architecture adaptative)
+- **Modes de coaching personnalisables** : Observer, Stabilité (par défaut), Guidé, Silencieux
+- **Insights adaptatifs** : Stabilisant, Habit (ancrages), Transition, Rétrospectif, Préventif, Prescriptif
+- **Ancrages et transitions** : Propositions d'ancres de routine et fermetures de moments à risque
+- **Identification des corrélations** : Détection automatique des liens instabilité ↔ urgences
+- **Suggestions de règles** : Basées sur vos patterns
+- **Réduction progressive** : Le coaching s'adapte et réduit sa fréquence selon votre progression
 
 #### Programmes guidés
 - Programme 14 jours : Les bases pour reprendre le contrôle
@@ -227,7 +230,7 @@ Les features core dans `app/core/features/` gèrent les fonctionnalités princip
 - **Home** : Écran d'accueil avec actions rapides et statistiques
 - **Init** : Initialisation de l'application et migration des données
 - **Onboarding** : Première configuration (sélection d'addictions, langue, préférences)
-- **Settings** : Réglages de l'application (thème, langue, notifications, etc.)
+- **Settings** : Réglages de l'application (thème, langue, notifications, mode de coaching, etc.)
 - **Tools** : Menu outils avec accès rapide à toutes les fonctionnalités
 - **UI** : Composants UI réutilisables (modales, toasts, etc.)
 
@@ -573,26 +576,41 @@ L'application suit une architecture **modulaire MVC** :
 
 ### Structure des données
 
-Le state de l'application est versionné et migré automatiquement. Structure actuelle (v3) :
+Le state de l'application est versionné et migré automatiquement. Structure actuelle (v6) :
 
 ```javascript
 {
-  schemaVersion: 3,
+  schemaVersion: 6,
   profile: { lang, religion, spiritualEnabled, rtl },
   settings: { discreetMode, notifications, lowTextMode, theme },
   addictions: [], // Liste des addictions actives
   addictionConfigs: {}, // Configuration par addiction
   checkins: [], // Check-ins quotidiens
   events: [], // Événements (cravings, episodes, wins, slopes)
+  coaching: {
+    mode: 'stability', // 'observer' | 'stability' | 'guided' | 'silent'
+    lastShownDate: null,
+    activeAnchor: null, // Ancrage actif (habitude en cours)
+    insights: [], // Historique des insights
+    feedback: { useful: 0, dismissed: 0 }
+  },
   // ... autres données spécifiques aux plugins
 }
 ```
 
 ## 📝 Version
 
-**Version actuelle** : 0.3.5
+**Version actuelle** : 0.3.6
 
 ### Historique des versions
+
+- **v0.3.6** :
+  - Coaching V2 - Architecture de stabilité adaptative
+  - Modes de coaching personnalisables (Observer, Stabilité, Guidé, Silencieux)
+  - Insights adaptatifs : Stabilisant, Habit, Transition, Rétrospectif, Préventif, Prescriptif
+  - Gestion des ancrages actifs (un seul à la fois)
+  - Réduction progressive de la fréquence du coaching
+  - Migration automatique v5→v6 pour le modèle coaching
 
 - **v0.3.5** : 
   - Migration vers IndexedDB pour stockage robuste
