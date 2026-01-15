@@ -100,6 +100,36 @@ const ADDICTIONS_CATALOG = {
         triggers: ['boredom', 'emotions', 'promo', 'stress'],
         slopeSignals: ['navigation_nocturne', 'panier', 'justification'],
         replacementActions: ['close_site', 'wait_24h', 'wishlist']
+    },
+    
+    gambling: {
+        id: 'gambling',
+        labelKey: 'addiction_gambling',
+        group: 'behavior',
+        riskLevel: 'high',
+        defaultGoal: 'abstinence',
+        triggers: [
+            'stress',
+            'boredom',
+            'loneliness',
+            'financial_stress',
+            'evening',
+            'dopamine_seek'
+        ],
+        slopeSignals: [
+            'just_one_bet',
+            'trying_to_recover_losses',
+            'losing_track_of_money',
+            'chasing_wins',
+            'hiding_activity'
+        ],
+        replacementActions: [
+            'pause_breathing',
+            'movement_short',
+            'leave_place',
+            'call_someone',
+            'cold_water'
+        ]
     }
 };
 
