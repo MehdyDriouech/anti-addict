@@ -5081,39 +5081,56 @@ body.low-text-mode .sos-action-btn {
     font-weight: 600;
 }
 
-.sos-screen .sos-actions {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-md);
+.sos-screen .sos-action-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: var(--space-xl);
+    padding: 0 var(--space-md);
 }
 
-.sos-screen .sos-action-btn {
+.sos-screen .sos-action-card {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: var(--space-lg);
+    padding: var(--space-xxl);
+    min-width: 280px;
+    max-width: 400px;
+    width: 100%;
     background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
     cursor: pointer;
     transition: all var(--transition-fast);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.sos-screen .sos-action-btn:hover {
+.sos-screen .sos-action-card:hover {
     border-color: var(--accent-primary);
-    transform: scale(1.02);
+    transform: scale(1.03);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-.sos-screen .sos-action-btn.executed {
+.sos-screen .sos-action-card.executed {
     background: var(--success-bg);
     border-color: var(--success);
 }
 
-.sos-screen .sos-action-btn .action-emoji {
-    font-size: 2rem;
-    margin-bottom: var(--space-sm);
+.sos-screen .sos-action-card .action-emoji {
+    font-size: 4rem;
+    margin-bottom: var(--space-md);
+}
+
+.sos-screen .sos-action-card.large .action-emoji {
+    font-size: 5rem;
+}
+
+.sos-screen .sos-action-card .action-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-primary);
 }
 
 .sos-screen .sos-action-btn .action-name {
@@ -5213,10 +5230,11 @@ body.low-text-mode .sos-action-btn {
     color: var(--accent-primary);
 }
 
-.breathing-container .btn {
+.breathing-overlay .breathing-close-btn {
     position: absolute;
     top: var(--space-lg);
     right: var(--space-lg);
+    z-index: 10001;
 }
 
 /* ============================================
@@ -5295,6 +5313,7 @@ body:has(.sos-screen-overlay.active) .sos-fab {
     border-radius: var(--radius-lg);
     padding: var(--space-md) var(--space-lg);
     text-align: center;
+    margin-top: var(--space-xl);
     margin-bottom: var(--space-md);
 }
 
