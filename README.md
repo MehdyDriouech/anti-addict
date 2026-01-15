@@ -27,19 +27,19 @@ Application web progressive (PWA) pour le suivi et la gestion des addictions, av
 L'application supporte actuellement **9 addictions** réparties en 3 catégories :
 
 ### Addictions numériques (Digital)
-- 🔞 **Contenu adulte** (porn) - Risque élevé
-- 📱 **Réseaux sociaux** (social_media) - Risque faible
-- 🎮 **Jeux vidéo** (gaming) - Risque faible
+- 🔞 **Contenu adulte**
+- 📱 **Réseaux sociaux**
+- 🎮 **Jeux vidéo**
 
 ### Addictions aux substances (Substance)
-- 🚬 **Cigarette** - Risque moyen
-- 🍷 **Alcool** - Risque moyen
-- 💊 **Substances** (drugs) - Risque élevé
+- 🚬 **Cigarette**
+- 🍷 **Alcool**
+- 💊 **Substances** (drugs)
 
 ### Addictions comportementales (Behavior)
-- 🍔 **Nourriture compulsive** (food) - Risque faible
-- 🛒 **Achats compulsifs** (shopping) - Risque faible
-- 🎰 **Jeu d'argent** (gambling) - Risque moyen/élevé
+- 🍔 **Nourriture compulsive**
+- 🛒 **Achats compulsifs**
+- 🎰 **Jeu d'argent**
 
 ### Fonctionnalités multi-addictions
 
@@ -683,4 +683,5 @@ Application développée avec une approche bienveillante et respectueuse de la v
 ---
 
 **Note importante** : Cette application ne remplace pas un suivi médical ou thérapeutique professionnel. En cas de besoin, consultez un professionnel de santé.
+
 
