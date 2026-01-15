@@ -29,6 +29,26 @@ export const PREDEFINED_ACTIONS = {
         category: 'movement',
         name: { fr: 'Quitter la pièce', en: 'Leave the room', ar: 'غادر الغرفة' }
     },
+    jump_jacks: { 
+        emoji: '⚡', 
+        category: 'movement',
+        name: { fr: 'Faire des sauts', en: 'Do jump jacks', ar: 'قفزات' }
+    },
+    run_spot: { 
+        emoji: '🏃', 
+        category: 'movement',
+        name: { fr: 'Courir sur place 1 minute', en: 'Run in place 1 minute', ar: 'الجري في المكان دقيقة' }
+    },
+    stairs: { 
+        emoji: '🪜', 
+        category: 'movement',
+        name: { fr: 'Monter/descendre les escaliers', en: 'Go up/down stairs', ar: 'صعود/نزول السلالم' }
+    },
+    dance: { 
+        emoji: '💃', 
+        category: 'movement',
+        name: { fr: 'Danser 2 minutes', en: 'Dance for 2 minutes', ar: 'الرقص دقيقتين' }
+    },
     
     // Respiration / Calme
     breathing_446: { 
@@ -51,6 +71,16 @@ export const PREDEFINED_ACTIONS = {
         category: 'calm',
         name: { fr: 'Prendre une douche', en: 'Take a shower', ar: 'الاستحمام' }
     },
+    wash_hands: { 
+        emoji: '🧼', 
+        category: 'calm',
+        name: { fr: 'Se laver les mains à l\'eau froide', en: 'Wash hands with cold water', ar: 'اغسل يديك بماء بارد' }
+    },
+    meditate_2min: { 
+        emoji: '🕉️', 
+        category: 'calm',
+        name: { fr: 'Méditer 2 minutes', en: 'Meditate for 2 minutes', ar: 'تأمل دقيقتين' }
+    },
     
     // Social
     call_friend: { 
@@ -67,6 +97,11 @@ export const PREDEFINED_ACTIONS = {
         emoji: '🏪', 
         category: 'social',
         name: { fr: 'Aller dans un lieu public', en: 'Go to a public place', ar: 'اذهب لمكان عام' }
+    },
+    talk_mirror: { 
+        emoji: '🪞', 
+        category: 'social',
+        name: { fr: 'Se parler dans le miroir', en: 'Talk to yourself in mirror', ar: 'تحدث مع نفسك في المرآة' }
     },
     
     // Diversion
