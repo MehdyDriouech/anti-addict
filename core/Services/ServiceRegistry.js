@@ -69,6 +69,53 @@ export async function registerServices() {
         const { default: DateService } = await import('../Utils/DateService.js');
         return DateService;
     }, { singleton: true });
+
+    // Console Error Filter Service
+    container.register('consoleErrorFilter', async () => {
+        const { default: ConsoleErrorFilterService } = await import('./ConsoleErrorFilterService.js');
+        return ConsoleErrorFilterService;
+    }, { singleton: true });
+
+    // UI Service
+    container.register('ui', async () => {
+        const { default: UIService } = await import('./UIService.js');
+        // Récupérer window.UI pour l'injecter
+        if (typeof window !== 'undefined' && window.UI) {
+            return new UIService(window.UI);
+        }
+        // Attendre que UI soit chargé
+        await import('../features/UI/ui.js');
+        return new UIService(window.UI);
+    }, { singleton: true });
+
+    // Message Service
+    container.register('message', async (container) => {
+        const { default: MessageService } = await import('./MessageService.js');
+        const i18n = await container.get('i18n');
+        return new MessageService(i18n);
+    }, { singleton: true });
+
+    // Form Service
+    container.register('form', async () => {
+        const { default: FormService } = await import('./FormService.js');
+        return FormService;
+    }, { singleton: true });
+
+    // Error Handler Service
+    container.register('errorHandler', async (container) => {
+        const { default: ErrorHandler } = await import('./ErrorHandler.js');
+        const uiService = await container.get('ui');
+        return new ErrorHandler(uiService);
+    }, { singleton: true });
+
+    // Modal Service
+    container.register('modal', async (container) => {
+        const { ModalService } = await import('./ModalService.js');
+        const uiService = await container.get('ui');
+        const i18n = await container.get('i18n');
+        const messageService = await container.get('message');
+        return new ModalService(uiService, i18n, messageService);
+    }, { singleton: true });
 }
 
 export default container;

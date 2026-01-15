@@ -426,6 +426,43 @@ export async function decrypt(encrypted) {
 }
 
 /**
+ * Déchiffre des données avec un PIN spécifique (pour import)
+ * Ne vérifie pas le hash stocké, dérive directement la clé depuis le PIN
+ * @param {{v: number, alg: string, ct: string}} encrypted - Données chiffrées
+ * @param {string} pin - PIN pour déchiffrer
+ * @returns {Promise<any>} Données déchiffrées
+ */
+export async function decryptWithPin(encrypted, pin) {
+    try {
+        // Dériver la clé temporaire depuis le PIN (même algorithme que deriveKey)
+        const tempKey = await deriveKey(pin);
+        
+        // Extraire IV et CT
+        const [ivBase64, ctBase64] = encrypted.ct.split(':');
+        const iv = base64ToArrayBuffer(ivBase64);
+        const ct = base64ToArrayBuffer(ctBase64);
+
+        // Déchiffrer avec la clé temporaire
+        const decrypted = await crypto.subtle.decrypt(
+            {
+                name: 'AES-GCM',
+                iv: iv
+            },
+            tempKey,
+            ct
+        );
+
+        // Convertir en JSON puis en objet
+        const decoder = new TextDecoder();
+        const json = decoder.decode(decrypted);
+        return JSON.parse(json);
+    } catch (error) {
+        console.error('[SecurityService] Erreur déchiffrement avec PIN:', error);
+        throw new Error('PIN incorrect ou données corrompues');
+    }
+}
+
+/**
  * Vérifie si un domaine est accessible (non verrouillé ou urgence)
  * @param {string} domainKey - Clé du domaine
  * @param {boolean} isEmergency - Si true, autorise l'accès même verrouillé
@@ -612,6 +649,7 @@ export default {
     hasPin,
     encrypt,
     decrypt,
+    decryptWithPin,
     getDomain,
     setDomain,
     init

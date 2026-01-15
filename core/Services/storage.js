@@ -1034,41 +1034,18 @@ function importState(file) {
  */
 async function decryptAndImport(encryptedData, pin) {
     try {
-        // Vérifier que Security est disponible
-        if (typeof Security === 'undefined' || !Security.decrypt) {
+        // Vérifier que Security est disponible avec decryptWithPin
+        if (typeof Security === 'undefined' || !Security.decryptWithPin) {
             return { valid: false, errors: ['Service de sécurité non disponible'], state: null };
-        }
-        
-        // Vérifier le PIN d'abord
-        if (!Security.verifyPin) {
-            return { valid: false, errors: ['Service de sécurité non disponible'], state: null };
-        }
-        
-        const isValidPin = await Security.verifyPin(pin);
-        if (!isValidPin) {
-            return { valid: false, errors: ['PIN incorrect'], state: null, needsPassword: true };
-        }
-        
-        // Déverrouiller temporairement pour pouvoir déchiffrer
-        const wasLocked = Security.isLockedMode && Security.isLockedMode();
-        if (wasLocked) {
-            const unlocked = await Security.unlock(pin);
-            if (!unlocked) {
-                return { valid: false, errors: ['Impossible de déverrouiller avec ce PIN'], state: null, needsPassword: true };
-            }
         }
         
         try {
-            // Déchiffrer les données
-            const decryptedData = await Security.decrypt(encryptedData);
+            // Déchiffrer directement avec le PIN (sans vérifier le hash stocké)
+            // decryptWithPin dérive la clé depuis le PIN et déchiffre directement
+            const decryptedData = await Security.decryptWithPin(encryptedData, pin);
             
-            // Parser le JSON déchiffré
-            let parsedData;
-            if (typeof decryptedData === 'string') {
-                parsedData = JSON.parse(decryptedData);
-            } else {
-                parsedData = decryptedData;
-            }
+            // Les données sont déjà parsées par decryptWithPin
+            let parsedData = decryptedData;
             
             // Valider les données déchiffrées
             const validation = validateImportedState(parsedData);
@@ -1076,7 +1053,16 @@ async function decryptAndImport(encryptedData, pin) {
             return validation;
         } catch (decryptError) {
             console.error('[Storage] Erreur lors du déchiffrement:', decryptError);
-            return { valid: false, errors: ['Erreur de déchiffrement. PIN incorrect ou données corrompues.'], state: null, needsPassword: true };
+            // Si l'erreur indique un PIN incorrect, retourner needsPassword: true
+            const errorMsg = decryptError.message || 'Erreur de déchiffrement';
+            return { 
+                valid: false, 
+                errors: [errorMsg.includes('PIN') || errorMsg.includes('incorrect') 
+                    ? 'PIN incorrect' 
+                    : 'Erreur de déchiffrement. PIN incorrect ou données corrompues.'], 
+                state: null, 
+                needsPassword: true 
+            };
         }
     } catch (error) {
         console.error('[Storage] Erreur lors du déchiffrement et import:', error);

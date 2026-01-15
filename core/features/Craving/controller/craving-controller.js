@@ -7,8 +7,19 @@ import { CravingView } from '../view/craving-view.js';
 import { getServices } from '../../../Utils/serviceHelper.js';
 
 export class CravingController {
-    constructor() {
-        this.model = new CravingModel();
+    constructor(services = {}) {
+        // Services injectés
+        this.storeService = services.store || null;
+        this.uiService = services.ui || null;
+        this.i18nService = services.i18n || null;
+        this.storageService = services.storage || null;
+        this.dateService = services.date || null;
+        
+        // Models et Views
+        this.model = new CravingModel({ 
+            storage: this.storageService, 
+            dateService: this.dateService 
+        });
         this.view = new CravingView();
         this.selectedAddictionId = null; // Addiction sélectionnée par l'utilisateur
         this.servicesInitialized = false;
@@ -23,10 +34,20 @@ export class CravingController {
         }
 
         try {
-            const { storage, date } = await getServices(['storage', 'date']);
+            const services = await getServices(['storage', 'date', 'store', 'ui', 'i18n']);
             
-            if (this.model && (!this.model.storage || !this.model.dateService)) {
-                this.model = new CravingModel({ storage, dateService: date });
+            this.storageService = services.storage || this.storageService;
+            this.dateService = services.date || this.dateService;
+            this.storeService = services.store || this.storeService;
+            this.uiService = services.ui || this.uiService;
+            this.i18nService = services.i18n || this.i18nService;
+            
+            // Réinitialiser le modèle avec les services injectés
+            if (this.storageService || this.dateService) {
+                this.model = new CravingModel({ 
+                    storage: this.storageService, 
+                    dateService: this.dateService 
+                });
             }
             
             this.servicesInitialized = true;
@@ -120,8 +141,8 @@ export class CravingController {
      */
     openRelapse(state) {
         this.model.stopAllTimers();
-        if (typeof Relapse !== 'undefined') {
-            Relapse.openRelapseMode(state);
+        if (typeof window !== 'undefined' && window.Relapse?.openRelapseMode) {
+            window.Relapse.openRelapseMode(state);
         }
     }
 
@@ -173,10 +194,13 @@ export class CravingController {
         ) : null;
         if (!existingCraving) {
             // Passer isEmergency pour permettre la sauvegarde même verrouillé
-            if (typeof window !== 'undefined' && window.Store && window.Store.update) {
-                window.Store.update((draft) => {
+            const store = this.storeService || (typeof window !== 'undefined' ? window.Store : null);
+            if (store?.update) {
+                await store.update((draft) => {
                     if (!draft.events) draft.events = [];
-                    const todayISO = this.model.dateService?.todayISO() || (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
+                    const todayISO = this.model.dateService?.todayISO() || 
+                                   (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : 
+                                    new Date().toISOString().split('T')[0]);
                     draft.events.push({
                         ts: Date.now(),
                         date: todayISO,
@@ -193,10 +217,13 @@ export class CravingController {
         const actionsDone = document.querySelectorAll('.action-chip.done').length;
         
         // Enregistrer une victoire avec l'intensité (en mode urgence)
-        if (typeof window !== 'undefined' && window.Store && window.Store.update) {
-            window.Store.update((draft) => {
+        const store = this.storeService || (typeof window !== 'undefined' ? window.Store : null);
+        if (store?.update) {
+            await store.update((draft) => {
                 if (!draft.events) draft.events = [];
-                const todayISO = this.model.dateService?.todayISO() || (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : (typeof Storage !== 'undefined' ? Storage.getDateISO() : new Date().toISOString().split('T')[0]));
+                const todayISO = this.model.dateService?.todayISO() || 
+                               (this.model.storage?.getDateISO ? this.model.storage.getDateISO() : 
+                                new Date().toISOString().split('T')[0]);
                 draft.events.push({
                     ts: Date.now(),
                     date: todayISO,
@@ -210,11 +237,11 @@ export class CravingController {
         }
         
         // Incrémenter les victoires invisibles (en mode urgence)
-        if (typeof Wins !== 'undefined') {
-            Wins.recordWin(state, actionsDone > 0);
-        } else if (typeof window !== 'undefined' && window.Store && window.Store.update) {
+        if (typeof window !== 'undefined' && window.Wins?.recordWin) {
+            window.Wins.recordWin(state, actionsDone > 0);
+        } else if (store?.update) {
             // Fallback si Wins n'est pas disponible
-            window.Store.update((draft) => {
+            await store.update((draft) => {
                 if (!draft.wins) {
                     draft.wins = { resistedCravings: 0, minutesSavedEstimate: 0, positiveActionsCount: 0 };
                 }
@@ -232,12 +259,17 @@ export class CravingController {
         }
         
         // Message de succès
-        if (typeof UI !== 'undefined') {
-            UI.showToast(I18n.t('protocol_complete'), 'success');
-        }
+        const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
+        const message = i18n?.t('protocol_complete') || 'Protocole terminé';
+        this.uiService?.showToast(message, 'success');
         
         // Retourner à l'accueil (reste verrouillé si l'app était verrouillée)
         // Forcer le re-render pour s'assurer que la vue se met à jour
-        Router.navigateTo('home', true);
+        const router = await getServices(['router']).then(s => s.router).catch(() => null);
+        if (router?.navigateTo) {
+            router.navigateTo('home', true);
+        } else if (typeof window !== 'undefined' && window.Router?.navigateTo) {
+            window.Router.navigateTo('home', true);
+        }
     }
 }

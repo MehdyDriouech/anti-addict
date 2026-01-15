@@ -3,9 +3,25 @@
  */
 
 import { CravingController } from './controller/craving-controller.js';
+import { getServices } from '../../Utils/serviceHelper.js';
 
 // Instance unique du controller
-const cravingController = new CravingController();
+let cravingController = new CravingController();
+
+// Initialiser les services de manière asynchrone
+async function initControllerServices() {
+    try {
+        const services = await getServices(['storage', 'date', 'store', 'ui', 'i18n']);
+        cravingController = new CravingController(services);
+        await cravingController.initServices();
+    } catch (error) {
+        console.warn('[Craving] Erreur lors de l\'initialisation des services, utilisation des fallbacks:', error);
+        // Le controller utilisera les fallbacks window.*
+    }
+}
+
+// Initialiser immédiatement si possible
+initControllerServices();
 
 // API publique
 export const Craving = {

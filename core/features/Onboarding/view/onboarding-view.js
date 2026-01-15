@@ -28,11 +28,17 @@ export class OnboardingView {
      * @param {Object} state - State de l'application
      * @param {Function} onLangChange - Callback pour changement de langue
      * @param {Function} onReligionChange - Callback pour changement de religion
-     * @param {string} step - Étape actuelle ('main' ou 'pin')
+     * @param {string} step - Étape actuelle ('mode', 'main', 'pin', ou 'import')
      */
-    renderContent(state, onLangChange, onReligionChange, step = 'main') {
+    renderContent(state, onLangChange, onReligionChange, step = 'mode') {
+        if (step === 'mode') {
+            return this.renderModeSelection(state);
+        }
         if (step === 'pin') {
             return this.renderPinStep(state);
+        }
+        if (step === 'import') {
+            return this.renderImportMode(state);
         }
         const container = document.getElementById('onboarding-content');
         if (!container) return;
@@ -185,6 +191,102 @@ export class OnboardingView {
         `;
         
         return '';
+    }
+
+    /**
+     * Rend l'écran de sélection de mode
+     * @param {Object} state - State de l'application
+     */
+    renderModeSelection(state) {
+        const lang = state.profile.lang || 'fr';
+        const container = document.getElementById('onboarding-content');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="onboarding-icon">🌟</div>
+            <h1 class="onboarding-title">${I18n.t('onboarding_mode_selection') || 'Choisissez un mode'}</h1>
+            <p class="onboarding-desc">${I18n.t('onboarding_desc') || 'Configure ton espace personnel. Toutes tes données restent sur ton appareil.'}</p>
+            
+            <div class="onboarding-form" style="margin-top: var(--space-lg);">
+                <button class="btn btn-primary btn-lg btn-block" onclick="Onboarding.selectMode('new')" style="margin-bottom: var(--space-md);">
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; margin-bottom: var(--space-xs);">${I18n.t('onboarding_mode_new_user') || 'Nouvel utilisateur'}</div>
+                        <div style="font-size: 0.9em; opacity: 0.8;">${I18n.t('onboarding_mode_new_user_desc') || 'Créer un nouveau profil'}</div>
+                    </div>
+                </button>
+                
+                <button class="btn btn-secondary btn-lg btn-block" onclick="Onboarding.selectMode('import')">
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; margin-bottom: var(--space-xs);">${I18n.t('onboarding_mode_import') || 'Importer des données'}</div>
+                        <div style="font-size: 0.9em; opacity: 0.8;">${I18n.t('onboarding_mode_import_desc') || 'Restaurer depuis un fichier d\'export'}</div>
+                    </div>
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * Rend l'écran d'import de données
+     * @param {Object} state - State de l'application
+     */
+    renderImportMode(state) {
+        const lang = state.profile.lang || 'fr';
+        const container = document.getElementById('onboarding-content');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="onboarding-icon">📥</div>
+            <h1 class="onboarding-title">${I18n.t('onboarding_mode_import') || 'Importer des données'}</h1>
+            <p class="onboarding-desc">${I18n.t('onboarding_mode_import_desc') || 'Restaurer depuis un fichier d\'export'}</p>
+            
+            <div class="onboarding-form">
+                <div class="form-group">
+                    <label class="form-label">${I18n.t('onboarding_import_file_label') || 'Fichier d\'import'}</label>
+                    <input type="file" 
+                           id="onboard-import-file" 
+                           class="form-input" 
+                           accept=".json"
+                           style="padding: var(--space-sm);">
+                    <small style="display: block; margin-top: var(--space-xs); color: var(--text-secondary);">
+                        ${I18n.t('select_file') || 'Sélectionner un fichier'}
+                    </small>
+                </div>
+                
+                <div class="form-group" id="onboard-import-pin-group" style="display: none;">
+                    <label class="form-label">${I18n.t('onboarding_import_pin_label') || 'Code PIN du fichier'}</label>
+                    <input type="password" 
+                           id="onboard-import-pin-input" 
+                           class="form-input" 
+                           inputmode="numeric" 
+                           pattern="[0-9]*"
+                           maxlength="10"
+                           placeholder="1234">
+                    <small style="display: block; margin-top: var(--space-xs); color: var(--text-secondary);">
+                        ${I18n.t('onboarding_import_pin_desc') || 'Entrez le code PIN utilisé lors de l\'export'}
+                    </small>
+                </div>
+                
+                <div id="onboard-import-error" class="error-message" style="display: none;"></div>
+            </div>
+            
+            <button class="btn btn-primary btn-lg btn-block" onclick="Onboarding.handleImportMode()">
+                ${I18n.t('onboarding_import_button') || 'Importer'}
+            </button>
+            <button class="btn btn-ghost btn-block mt-sm" onclick="Onboarding.selectMode('new')">
+                ${I18n.t('back') || 'Retour'}
+            </button>
+        `;
+        
+        // Écouter le changement de fichier pour détecter si un PIN est nécessaire
+        const fileInput = document.getElementById('onboard-import-file');
+        if (fileInput) {
+            fileInput.addEventListener('change', async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    // Le controller vérifiera si un PIN est nécessaire
+                    await Onboarding.checkImportFile(e.target.files[0]);
+                }
+            });
+        }
     }
 
     /**

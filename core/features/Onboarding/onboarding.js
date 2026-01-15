@@ -15,6 +15,9 @@ export const Onboarding = {
     nextStep: () => onboardingController.nextStep(),
     completeWithPin: () => onboardingController.completeWithPin(),
     skipPin: () => onboardingController.skipPin(),
+    selectMode: (mode) => onboardingController.selectMode(mode),
+    checkImportFile: (file) => onboardingController.checkImportFile(file),
+    handleImportMode: () => onboardingController.handleImportMode(),
     showDisclaimerModal: (addictionsWithDisclaimer) => onboardingController.showDisclaimerModal(addictionsWithDisclaimer)
 };
 

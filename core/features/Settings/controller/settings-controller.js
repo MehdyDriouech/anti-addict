@@ -7,13 +7,34 @@ import { SettingsView } from '../view/settings-view.js';
 import { PinSettingsModel } from '../model/pin-settings-model.js';
 import { PinSettingsView } from '../view/pin-settings-view.js';
 import { getServices } from '../../../Utils/serviceHelper.js';
+import { ROUTE_SETTINGS, MODAL_ID_DYNAMIC, MODAL_DELAY_MS } from '../../../Constants/AppConstants.js';
+import { FormService } from '../../../Services/FormService.js';
+import { MessageService } from '../../../Services/MessageService.js';
 
 export class SettingsController {
-    constructor() {
-        this.model = new SettingsModel();
+    constructor(services = {}) {
+        // Services injectés
+        this.uiService = services.ui || null;
+        this.i18nService = services.i18n || null;
+        this.messageService = services.message || null;
+        this.modalService = services.modal || null;
+        this.formService = services.form || null;
+        this.errorHandler = services.errorHandler || null;
+        this.storageService = services.storage || null;
+        this.securityService = services.security || null;
+        
+        // Models et Views - créer avec fallbacks si services non disponibles
+        // Les services seront réinjectés dans initServices()
+        this.model = new SettingsModel({ 
+            storage: this.storageService || (typeof window !== 'undefined' ? window.Storage : null), 
+            i18n: this.i18nService || (typeof window !== 'undefined' ? window.I18n : null)
+        });
         this.view = new SettingsView();
-        this.pinModel = new PinSettingsModel();
+        this.pinModel = new PinSettingsModel({ 
+            security: this.securityService || (typeof window !== 'undefined' ? window.Security : null)
+        });
         this.pinView = new PinSettingsView();
+        
         this.servicesInitialized = false;
     }
 
@@ -26,20 +47,99 @@ export class SettingsController {
         }
 
         try {
-            const { storage, security, i18n } = await getServices(['storage', 'security', 'i18n']);
+            const services = await getServices([
+                'storage', 'security', 'i18n', 'ui', 'message', 
+                'modal', 'form', 'errorHandler'
+            ]);
             
-            if (this.model && (!this.model.storage || !this.model.i18n)) {
-                this.model = new SettingsModel({ storage, i18n });
+            // Injecter les services
+            this.storageService = services.storage || this.storageService;
+            this.securityService = services.security || this.securityService;
+            this.i18nService = services.i18n || this.i18nService;
+            this.uiService = services.ui || this.uiService;
+            this.messageService = services.message || this.messageService;
+            this.modalService = services.modal || this.modalService;
+            this.formService = services.form || this.formService;
+            this.errorHandler = services.errorHandler || this.errorHandler;
+            
+            // Réinitialiser les modèles avec les services injectés
+            if (this.storageService || this.i18nService) {
+                this.model = new SettingsModel({ 
+                    storage: this.storageService, 
+                    i18n: this.i18nService 
+                });
             }
             
-            if (this.pinModel && !this.pinModel.security) {
-                this.pinModel = new PinSettingsModel({ security });
+            if (this.securityService) {
+                this.pinModel = new PinSettingsModel({ 
+                    security: this.securityService 
+                });
             }
             
             this.servicesInitialized = true;
         } catch (error) {
-            console.warn('[SettingsController] Erreur lors de l\'initialisation des services:', error);
+            if (this.errorHandler) {
+                this.errorHandler.handleSilently(error, 'SettingsController');
+            } else {
+                console.warn('[SettingsController] Erreur lors de l\'initialisation des services:', error);
+            }
         }
+    }
+
+    /**
+     * Obtient le service UI avec fallback vers window.UI
+     * @private
+     * @returns {Object|null} Service UI ou null si aucun disponible
+     */
+    _getUIService() {
+        if (this.uiService) {
+            return this.uiService;
+        }
+        // Fallback vers window.UI
+        if (typeof window !== 'undefined' && window.UI) {
+            return window.UI;
+        }
+        return null;
+    }
+
+    /**
+     * Obtient le service FormService avec fallback vers instance locale
+     * @private
+     * @returns {FormService} Service FormService (toujours disponible car stateless)
+     */
+    _getFormService() {
+        if (this.formService) {
+            return this.formService;
+        }
+        // FormService est stateless, créer une instance locale si nécessaire
+        // Utiliser un cache pour éviter de créer plusieurs instances
+        if (!this._formServiceFallback) {
+            this._formServiceFallback = new FormService();
+        }
+        return this._formServiceFallback;
+    }
+
+    /**
+     * Obtient le service MessageService avec fallback
+     * @private
+     * @returns {MessageService|null} Service MessageService ou null si i18n non disponible
+     */
+    _getMessageService() {
+        if (this.messageService) {
+            return this.messageService;
+        }
+        // MessageService nécessite i18n, créer avec fallback
+        const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
+        if (i18n) {
+            // Utiliser un cache pour éviter de créer plusieurs instances
+            if (!this._messageServiceFallback) {
+                this._messageServiceFallback = new MessageService(i18n);
+            }
+            return this._messageServiceFallback;
+        }
+        // Si i18n n'est pas disponible, retourner null
+        // Les méthodes devront utiliser des messages en dur comme fallback
+        return null;
     }
 
     /**
@@ -65,10 +165,16 @@ export class SettingsController {
      * Bascule le thème
      * @param {Object} state - State de l'application
      */
-    toggleTheme(state) {
+    async toggleTheme(state) {
         const newTheme = this.model.toggleTheme(state);
-        if (Router.getCurrentRoute() === 'settings') {
-            this.render(state);
+        // Vérifier la route actuelle via le router service ou window.Router
+        const router = await getServices(['router']).then(s => s.router).catch(() => null);
+        const currentRoute = router?.getCurrentRoute?.() || 
+                           (typeof window !== 'undefined' && window.Router?.getCurrentRoute?.()) || 
+                           null;
+        
+        if (currentRoute === ROUTE_SETTINGS) {
+            await this.render(state);
         }
     }
 
@@ -77,38 +183,21 @@ export class SettingsController {
      * @param {Object} state - State de l'application
      */
     async openLanguageModal(state) {
-        const html = `
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <label class="checkbox-item">
-                        <input type="radio" name="lang" value="fr" ${state.profile.lang === 'fr' ? 'checked' : ''}>
-                        <span>🇫🇷 Français</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="radio" name="lang" value="en" ${state.profile.lang === 'en' ? 'checked' : ''}>
-                        <span>🇬🇧 English</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="radio" name="lang" value="ar" ${state.profile.lang === 'ar' ? 'checked' : ''}>
-                        <span>🇸🇦 العربية</span>
-                    </label>
-                </div>
-            </div>
-        `;
-        
-        if (typeof UI !== 'undefined') {
-            UI.showModal(I18n.t('language'), html, async () => {
-                const selected = document.querySelector('input[name="lang"]:checked');
-                if (selected) {
-                    await this.model.updateLanguage(state, selected.value);
-                    if (typeof Init !== 'undefined' && Init.applyTranslations) {
-                        Init.applyTranslations();
-                    }
-                    this.render(state);
-                    UI.closeModal('dynamic-modal');
-                }
-            });
+        if (!this.modalService) {
+            await this.initServices();
         }
+        
+        this.modalService.showLanguageModal(state, async (selectedLang) => {
+            await this.model.updateLanguage(state, selectedLang);
+            
+            // Appliquer les traductions si Init est disponible
+            if (typeof window !== 'undefined' && window.Init?.applyTranslations) {
+                window.Init.applyTranslations();
+            }
+            
+            await this.render(state);
+            this.modalService.closeDynamicModal();
+        });
     }
 
     /**
@@ -116,13 +205,19 @@ export class SettingsController {
      * @param {Object} state - State de l'application
      */
     async openCoachingModeModal(state) {
+        if (!this.modalService) {
+            await this.initServices();
+        }
+        
         // Importer COACHING_MODES dynamiquement
         let COACHING_MODES = null;
         try {
             const coachingData = await import('../../plugins/Coaching/data/coaching-data.js');
             COACHING_MODES = coachingData.COACHING_MODES;
         } catch (error) {
-            console.warn('[Settings] Impossible de charger COACHING_MODES:', error);
+            if (this.errorHandler) {
+                this.errorHandler.handleSilently(error, 'SettingsController');
+            }
         }
         
         if (!COACHING_MODES) {
@@ -151,59 +246,28 @@ export class SettingsController {
             };
         }
         
-        const currentMode = state.coaching?.mode || 'stability';
-        const lang = state.profile.lang || 'fr';
-        
-        const modes = ['observer', 'stability', 'guided', 'silent'];
-        const html = `
-            <div class="form-group">
-                <div class="checkbox-group">
-                    ${modes.map(mode => {
-                        const modeData = COACHING_MODES[mode]?.[lang] || COACHING_MODES[mode]?.fr;
-                        const isSelected = mode === currentMode;
-                        return `
-                            <label class="checkbox-item">
-                                <input type="radio" name="coaching-mode" value="${mode}" ${isSelected ? 'checked' : ''}>
-                                <div>
-                                    <div style="font-weight: 500;">${modeData?.name || mode}</div>
-                                    <div style="font-size: 0.9em; color: var(--text-secondary); margin-top: 0.25em;">
-                                        ${modeData?.description || ''}
-                                    </div>
-                                </div>
-                            </label>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-        
-        if (typeof UI !== 'undefined') {
-            UI.showModal(I18n.t('coaching.mode.title') || 'Mode de coaching', html, async () => {
-                const selected = document.querySelector('input[name="coaching-mode"]:checked');
-                if (selected) {
-                    const newMode = selected.value;
-                    if (typeof Coaching !== 'undefined' && Coaching.changeCoachingMode) {
-                        await Coaching.changeCoachingMode(state, newMode);
-                        // Mettre à jour l'affichage dans Settings
-                        const modeValueEl = document.getElementById('coaching-mode-value');
-                        if (modeValueEl) {
-                            const modeData = COACHING_MODES[newMode]?.[lang] || COACHING_MODES[newMode]?.fr;
-                            modeValueEl.textContent = modeData?.name || newMode;
-                        }
-                        this.render(state);
-                        UI.closeModal('dynamic-modal');
-                        
-                        const lang = state.profile.lang || 'fr';
-                        const messages = {
-                            fr: 'Mode de coaching modifié',
-                            en: 'Coaching mode changed',
-                            ar: 'تم تغيير وضع التدريب'
-                        };
-                        UI.showToast(messages[lang] || messages.fr, 'success');
-                    }
+        this.modalService.showCoachingModeModal(state, COACHING_MODES, async (newMode) => {
+            if (typeof window !== 'undefined' && window.Coaching?.changeCoachingMode) {
+                await window.Coaching.changeCoachingMode(state, newMode);
+                
+                // Mettre à jour l'affichage dans Settings
+                const modeValueEl = document.getElementById('coaching-mode-value');
+                if (modeValueEl) {
+                    const lang = state.profile.lang || 'fr';
+                    const modeData = COACHING_MODES[newMode]?.[lang] || COACHING_MODES[newMode]?.fr;
+                    modeValueEl.textContent = modeData?.name || newMode;
                 }
-            });
-        }
+                
+                await this.render(state);
+                this.modalService.closeDynamicModal();
+                
+                const lang = state.profile.lang || 'fr';
+                const message = this.messageService?.getToastMessage(lang, 'coachingModeChanged') || 
+                               (lang === 'fr' ? 'Mode de coaching modifié' : 
+                                lang === 'en' ? 'Coaching mode changed' : 'تم تغيير وضع التدريب');
+                this.uiService?.showToast(message, 'success');
+            }
+        });
     }
 
     /**
@@ -211,43 +275,15 @@ export class SettingsController {
      * @param {Object} state - State de l'application
      */
     async openReligionModal(state) {
-        const html = `
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <label class="checkbox-item">
-                        <input type="radio" name="religion" value="none" ${state.profile.religion === 'none' ? 'checked' : ''}>
-                        <span>${I18n.t('religion_none')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="radio" name="religion" value="islam" ${state.profile.religion === 'islam' ? 'checked' : ''}>
-                        <span>☪️ ${I18n.t('religion_islam')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="radio" name="religion" value="christianity" ${state.profile.religion === 'christianity' ? 'checked' : ''}>
-                        <span>✝️ ${I18n.t('religion_christianity')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="radio" name="religion" value="judaism" ${state.profile.religion === 'judaism' ? 'checked' : ''}>
-                        <span>✡️ ${I18n.t('religion_judaism')}</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="radio" name="religion" value="buddhism" ${state.profile.religion === 'buddhism' ? 'checked' : ''}>
-                        <span>☸️ ${I18n.t('religion_buddhism')}</span>
-                    </label>
-                </div>
-            </div>
-        `;
-        
-        if (typeof UI !== 'undefined') {
-            UI.showModal(I18n.t('religion'), html, async () => {
-                const selected = document.querySelector('input[name="religion"]:checked');
-                if (selected) {
-                    await this.model.updateReligion(state, selected.value);
-                    this.render(state);
-                    UI.closeModal('dynamic-modal');
-                }
-            });
+        if (!this.modalService) {
+            await this.initServices();
         }
+        
+        this.modalService.showReligionModal(state, async (selectedReligion) => {
+            await this.model.updateReligion(state, selectedReligion);
+            await this.render(state);
+            this.modalService.closeDynamicModal();
+        });
     }
 
     /**
@@ -265,18 +301,16 @@ export class SettingsController {
             return;
         }
         
-        this.render(state);
+        await this.render(state);
         
         const lang = state.profile.lang || 'fr';
-        const messages = {
-            fr: enabled ? 'Addiction activée' : 'Addiction désactivée',
-            en: enabled ? 'Addiction enabled' : 'Addiction disabled',
-            ar: enabled ? 'تم تفعيل الإدمان' : 'تم تعطيل الإدمان'
-        };
+        const messageKey = enabled ? 'addictionEnabled' : 'addictionDisabled';
+        const message = this.messageService?.getToastMessage(lang, messageKey) || 
+                       (enabled ? 
+                        (lang === 'fr' ? 'Addiction activée' : lang === 'en' ? 'Addiction enabled' : 'تم تفعيل الإدمان') :
+                        (lang === 'fr' ? 'Addiction désactivée' : lang === 'en' ? 'Addiction disabled' : 'تم تعطيل الإدمان'));
         
-        if (typeof UI !== 'undefined') {
-            UI.showToast(messages[lang] || messages.fr);
-        }
+        this.uiService?.showToast(message);
     }
 
     /**
@@ -289,7 +323,10 @@ export class SettingsController {
         this.model.storage?.saveState(state);
         
         if (enabled && state.profile.religion !== 'none') {
-            await I18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
+            const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
+            if (i18n?.loadSpiritualCards) {
+                await i18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
+            }
         }
     }
 
@@ -300,13 +337,18 @@ export class SettingsController {
     async exportData(state) {
         try {
             await this.model.exportData(state);
-            if (typeof UI !== 'undefined') {
-                UI.showToast(I18n.t('export_success'), 'success');
-            }
+            const lang = state.profile.lang || 'fr';
+            const message = this.i18nService?.t('export_success') || 
+                           (lang === 'fr' ? 'Export réussi' : lang === 'en' ? 'Export successful' : 'تم التصدير بنجاح');
+            this.uiService?.showToast(message, 'success');
         } catch (error) {
-            console.error('[SettingsController] Erreur export:', error);
-            if (typeof UI !== 'undefined') {
-                UI.showToast(I18n.t('import_error'), 'error');
+            if (this.errorHandler) {
+                const lang = state.profile.lang || 'fr';
+                const userMessage = this.i18nService?.t('import_error') || 
+                                   (lang === 'fr' ? 'Erreur lors de l\'export' : lang === 'en' ? 'Export error' : 'خطأ في التصدير');
+                this.errorHandler.handleWithUserMessage(error, 'SettingsController', userMessage);
+            } else {
+                console.error('[SettingsController] Erreur export:', error);
             }
         }
     }
@@ -341,22 +383,40 @@ export class SettingsController {
             if (typeof window !== 'undefined') {
                 window.state = result.state;
             }
-            Storage.saveState(result.state);
-            await (this.model.i18n?.initI18n || (typeof I18n !== 'undefined' ? I18n.initI18n : () => {}))(result.state.profile.lang, result.state.profile.religion);
-            if (typeof Init !== 'undefined' && Init.applyTranslations) {
-                Init.applyTranslations();
+            
+            // Utiliser le service storage ou window.Storage
+            const storage = this.storageService || (typeof window !== 'undefined' ? window.Storage : null);
+            if (storage?.saveState) {
+                storage.saveState(result.state);
             }
-            if (typeof UI !== 'undefined') {
-                UI.showToast(I18n.t('import_success'), 'success');
+            
+            // Initialiser i18n
+            const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
+            if (i18n?.initI18n) {
+                await i18n.initI18n(result.state.profile.lang, result.state.profile.religion);
             }
-            this.render(result.state);
-            if (typeof Home !== 'undefined' && Home.render) {
-                Home.render(result.state);
+            
+            // Appliquer les traductions
+            if (typeof window !== 'undefined' && window.Init?.applyTranslations) {
+                window.Init.applyTranslations();
+            }
+            
+            const lang = result.state.profile.lang || 'fr';
+            const message = i18n?.t('import_success') || 
+                           (lang === 'fr' ? 'Import réussi' : lang === 'en' ? 'Import successful' : 'تم الاستيراد بنجاح');
+            this.uiService?.showToast(message, 'success');
+            
+            await this.render(result.state);
+            
+            if (typeof window !== 'undefined' && window.Home?.render) {
+                window.Home.render(result.state);
             }
         } else {
-            if (typeof UI !== 'undefined') {
-                UI.showToast(`${I18n.t('import_error')}: ${result.errors.join(', ')}`, 'error');
-            }
+            const lang = state.profile.lang || 'fr';
+            const errorMessage = i18n?.t('import_error') || 
+                                (lang === 'fr' ? 'Erreur lors de l\'import' : lang === 'en' ? 'Import error' : 'خطأ في الاستيراد');
+            const fullMessage = `${errorMessage}: ${result.errors.join(', ')}`;
+            this.uiService?.showToast(fullMessage, 'error');
         }
         
         // Reset l'input
@@ -370,14 +430,25 @@ export class SettingsController {
      * @param {HTMLInputElement} input - Input file (pour reset après import)
      */
     async showPasswordModal(encryptedData, state, input) {
+        if (!this.uiService) {
+            await this.initServices();
+        }
+        
+        const ui = this._getUIService();
+        if (!ui) {
+            console.error('[SettingsController] UI service not available');
+            return;
+        }
+        
         const lang = state.profile.lang || 'fr';
+        const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
         
         const html = `
             <p style="text-align: center; color: var(--text-secondary); margin-bottom: var(--space-md);">
-                ${I18n.t('import_password_prompt')}
+                ${i18n?.t('import_password_prompt') || 'Entrez votre code PIN pour déchiffrer les données'}
             </p>
             <div class="form-group">
-                <label class="form-label">${I18n.t('import_password_placeholder')}</label>
+                <label class="form-label">${i18n?.t('import_password_placeholder') || 'Code PIN'}</label>
                 <input type="password" 
                        id="import-pin-input" 
                        class="form-input" 
@@ -390,95 +461,128 @@ export class SettingsController {
             <div id="import-pin-error" class="error-message" style="display: none;"></div>
         `;
         
-        const labels = {
-            fr: { title: I18n.t('import_password_required'), validate: 'Valider', cancel: 'Annuler' },
-            en: { title: I18n.t('import_password_required'), validate: 'Validate', cancel: 'Cancel' },
-            ar: { title: I18n.t('import_password_required'), validate: 'التحقق', cancel: 'إلغاء' }
-        };
-        const l = labels[lang] || labels.fr;
+        const title = i18n?.t('import_password_required') || 
+                     (lang === 'fr' ? 'Code PIN requis' : lang === 'en' ? 'PIN required' : 'رمز PIN مطلوب');
+        const validateLabel = lang === 'fr' ? 'Valider' : lang === 'en' ? 'Validate' : 'التحقق';
         
-        if (typeof UI !== 'undefined') {
-            UI.showModal(l.title, html, async () => {
-                const pinInput = document.getElementById('import-pin-input');
-                const errorEl = document.getElementById('import-pin-error');
-                
-                if (!pinInput) return;
-                
-                const pin = pinInput.value.trim();
-                
-                // Masquer l'erreur précédente
-                if (errorEl) {
-                    errorEl.style.display = 'none';
-                }
-                
-                if (!pin) {
-                    if (errorEl) {
-                        errorEl.textContent = I18n.t('import_password_placeholder') + ' requis';
-                        errorEl.style.display = 'block';
+        ui.showModal(title, html, async () => {
+            await this.handlePasswordModalSubmit(encryptedData, state, input, lang);
+        }, true, MODAL_ID_DYNAMIC, validateLabel);
+        
+        // Focus sur l'input après ouverture de la modale
+        setTimeout(() => {
+            const pinInput = document.getElementById('import-pin-input');
+            if (pinInput) {
+                pinInput.focus();
+                pinInput.addEventListener('keypress', async (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        await this.handlePasswordModalSubmit(encryptedData, state, input, lang);
                     }
-                    return;
-                }
-                
-                // Déchiffrer et importer
-                const decryptResult = await this.model.decryptAndImportData(encryptedData, pin);
-                
-                if (decryptResult.valid) {
-                    // Succès : fermer la modale et importer
-                    UI.closeModal('dynamic-modal');
-                    
-                    // Mettre à jour le state global
-                    if (typeof window !== 'undefined') {
-                        window.state = decryptResult.state;
-                    }
-                    Storage.saveState(decryptResult.state);
-                    await I18n.initI18n(decryptResult.state.profile.lang, decryptResult.state.profile.religion);
-                    if (typeof Init !== 'undefined' && Init.applyTranslations) {
-                        Init.applyTranslations();
-                    }
-                    if (typeof UI !== 'undefined') {
-                        UI.showToast(I18n.t('import_success'), 'success');
-                    }
-                    this.render(decryptResult.state);
-                    if (typeof Home !== 'undefined' && Home.render) {
-                        Home.render(decryptResult.state);
-                    }
-                    
-                    // Reset l'input
-                    if (input) input.value = '';
-                } else {
-                    // Erreur : afficher le message
-                    if (errorEl) {
-                        const errorMsg = decryptResult.errors && decryptResult.errors.length > 0 
-                            ? decryptResult.errors[0] 
-                            : I18n.t('import_password_incorrect');
-                        errorEl.textContent = errorMsg;
-                        errorEl.style.display = 'block';
-                    }
-                    
-                    // Si c'est une erreur de PIN, permettre une nouvelle tentative
-                    if (decryptResult.needsPassword) {
-                        // Garder la modale ouverte, vider le champ
-                        pinInput.value = '';
-                        pinInput.focus();
-                    }
-                }
-            }, true, 'dynamic-modal', l.validate);
-            
-            // Focus sur l'input après ouverture de la modale
-            setTimeout(() => {
-                const pinInput = document.getElementById('import-pin-input');
-                if (pinInput) {
-                    pinInput.focus();
-                    // Permettre Enter pour valider
-                    pinInput.addEventListener('keypress', async (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const validateBtn = document.querySelector('.modal-footer .btn-primary');
-                            if (validateBtn) validateBtn.click();
-                        }
-                    });
-                }
-            }, 100);
+                });
+            }
+        }, MODAL_DELAY_MS);
+    }
+
+    /**
+     * Gère la soumission du formulaire de PIN pour l'import
+     * @private
+     */
+    async handlePasswordModalSubmit(encryptedData, state, input, lang) {
+        const pinInput = document.getElementById('import-pin-input');
+        const errorEl = document.getElementById('import-pin-error');
+        
+        if (!pinInput) return;
+        
+        const pin = pinInput.value.trim();
+        const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
+        
+        // Masquer l'erreur précédente
+        if (errorEl) {
+            errorEl.style.display = 'none';
+        }
+        
+        if (!pin) {
+            if (errorEl) {
+                const placeholder = i18n?.t('import_password_placeholder') || 'Code PIN';
+                errorEl.textContent = `${placeholder} requis`;
+                errorEl.style.display = 'block';
+            }
+            return;
+        }
+        
+        // Déchiffrer et importer
+        const decryptResult = await this.model.decryptAndImportData(encryptedData, pin);
+        
+        if (decryptResult.valid) {
+            await this.handleSuccessfulImport(decryptResult.state, input);
+        } else {
+            this.handleFailedImport(decryptResult, pinInput, errorEl, i18n);
+        }
+    }
+
+    /**
+     * Gère un import réussi
+     * @private
+     */
+    async handleSuccessfulImport(newState, input) {
+        // Mettre à jour le state global
+        if (typeof window !== 'undefined') {
+            window.state = newState;
+        }
+        
+        // Sauvegarder
+        const storage = this.storageService || (typeof window !== 'undefined' ? window.Storage : null);
+        if (storage?.saveState) {
+            storage.saveState(newState);
+        }
+        
+        // Initialiser i18n
+        const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
+        if (i18n?.initI18n) {
+            await i18n.initI18n(newState.profile.lang, newState.profile.religion);
+        }
+        
+        // Appliquer les traductions
+        if (typeof window !== 'undefined' && window.Init?.applyTranslations) {
+            window.Init.applyTranslations();
+        }
+        
+        // Afficher message de succès
+        const lang = newState.profile.lang || 'fr';
+        const message = i18n?.t('import_success') || 
+                       (lang === 'fr' ? 'Import réussi' : lang === 'en' ? 'Import successful' : 'تم الاستيراد بنجاح');
+        this.uiService?.showToast(message, 'success');
+        
+        // Fermer modal et re-render
+        this.uiService?.closeModal(MODAL_ID_DYNAMIC);
+        await this.render(newState);
+        
+        if (typeof window !== 'undefined' && window.Home?.render) {
+            window.Home.render(newState);
+        }
+        
+        // Reset l'input
+        if (input) input.value = '';
+    }
+
+    /**
+     * Gère un import échoué
+     * @private
+     */
+    handleFailedImport(decryptResult, pinInput, errorEl, i18n) {
+        if (errorEl) {
+            const errorMsg = decryptResult.errors && decryptResult.errors.length > 0 
+                ? decryptResult.errors[0] 
+                : (i18n?.t('import_password_incorrect') || 'Code PIN incorrect');
+            errorEl.textContent = errorMsg;
+            errorEl.style.display = 'block';
+        }
+        
+        // Si c'est une erreur de PIN, permettre une nouvelle tentative
+        if (decryptResult.needsPassword) {
+            pinInput.value = '';
+            pinInput.focus();
         }
     }
 
@@ -487,7 +591,7 @@ export class SettingsController {
      * @param {boolean} enabled - Activé ou non
      */
     async togglePinLock(enabled) {
-        const state = window.state;
+        const state = typeof window !== 'undefined' ? window.state : null;
         if (!state) return;
 
         if (enabled) {
@@ -521,38 +625,45 @@ export class SettingsController {
      * Ouvre le modal pour définir un PIN
      */
     async openSetPinModal() {
-        const state = window.state;
+        if (!this.uiService) {
+            await this.initServices();
+        }
+        
+        const ui = this._getUIService();
+        if (!ui) {
+            console.error('[SettingsController] UI service not available');
+            return;
+        }
+        
+        const state = typeof window !== 'undefined' ? window.state : null;
         if (!state) return;
 
         const lang = state.profile.lang || 'fr';
         const html = this.pinView.renderSetPinModal(lang);
 
         const labels = {
-            fr: { title: 'Définir un code PIN', set: 'Définir', cancel: 'Annuler' },
-            en: { title: 'Set PIN code', set: 'Set', cancel: 'Cancel' },
-            ar: { title: 'تعيين رمز PIN', set: 'تعيين', cancel: 'إلغاء' }
+            fr: { title: 'Définir un code PIN', set: 'Définir' },
+            en: { title: 'Set PIN code', set: 'Set' },
+            ar: { title: 'تعيين رمز PIN', set: 'تعيين' }
         };
         const l = labels[lang] || labels.fr;
 
-        if (typeof UI !== 'undefined') {
-            UI.showModal(l.title, html, async () => {
-                await this.handleSetPin(lang, state);
-            }, false, 'dynamic-modal', l.set);
-            
-            // Ajouter listener sur Enter pour fermer automatiquement
-            setTimeout(() => {
-                const pinInput = document.getElementById('pin-input');
-                const pinConfirmInput = document.getElementById('pin-confirm-input');
-                if (pinConfirmInput) {
-                    pinConfirmInput.addEventListener('keypress', async (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            await this.handleSetPin(lang, state);
-                        }
-                    });
-                }
-            }, 100);
-        }
+        ui.showModal(l.title, html, async () => {
+            await this.handleSetPin(lang, state);
+        }, false, MODAL_ID_DYNAMIC, l.set);
+        
+        // Ajouter listener sur Enter
+        setTimeout(() => {
+            const pinConfirmInput = document.getElementById('pin-confirm-input');
+            if (pinConfirmInput) {
+                pinConfirmInput.addEventListener('keypress', async (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        await this.handleSetPin(lang, state);
+                    }
+                });
+            }
+        }, MODAL_DELAY_MS);
     }
 
     /**
@@ -560,48 +671,59 @@ export class SettingsController {
      * @private
      */
     async handleSetPin(lang, state) {
-        const pinInput = document.getElementById('pin-input');
-        const pinConfirmInput = document.getElementById('pin-confirm-input');
+        if (!this.formService) {
+            await this.initServices();
+        }
         
-        if (!pinInput || !pinConfirmInput) return;
-
-        const pin = pinInput.value.trim();
-        const pinConfirm = pinConfirmInput.value.trim();
+        // Obtenir le service avec fallback
+        const formService = this._getFormService();
+        const messageService = this._getMessageService();
+        
+        const formData = formService.extractPinFormData({
+            pinId: 'pin-input',
+            pinConfirmId: 'pin-confirm-input'
+        });
+        
+        if (!formData.elements.pinInput || !formData.elements.pinConfirmInput) {
+            return;
+        }
 
         this.pinView.hideError();
 
         // Validation
-        const validation = this.pinModel.validatePin(pin);
+        const validation = this.pinModel.validatePin(formData.pin);
         if (!validation.valid) {
             this.pinView.showError(validation.error);
             return;
         }
 
-        if (pin !== pinConfirm) {
-            const errorMsg = lang === 'fr' ? 'Les codes PIN ne correspondent pas' :
+        if (formData.pin !== formData.pinConfirm) {
+            const errorMsg = messageService?.getPinMessage(lang, 'set', 'mismatch') ||
+                           (lang === 'fr' ? 'Les codes PIN ne correspondent pas' :
                             lang === 'en' ? 'PIN codes do not match' :
-                            'رموز PIN غير متطابقة';
+                            'رموز PIN غير متطابقة');
             this.pinView.showError(errorMsg);
             return;
         }
 
         // Définir le PIN
-        const success = await this.pinModel.setPin(pin);
+        const success = await this.pinModel.setPin(formData.pin);
         if (success) {
-            if (typeof UI !== 'undefined') {
-                UI.closeModal('dynamic-modal');
+            const ui = this._getUIService();
+            if (ui) {
+                ui.closeModal(MODAL_ID_DYNAMIC);
+                const successMsg = messageService?.getPinMessage(lang, 'set', 'success') ||
+                                 (lang === 'fr' ? 'Code PIN défini avec succès' :
+                                  lang === 'en' ? 'PIN code set successfully' :
+                                  'تم تعيين رمز PIN بنجاح');
+                ui.showToast(successMsg, 'success');
             }
-            const successMsg = lang === 'fr' ? 'Code PIN défini avec succès' :
-                             lang === 'en' ? 'PIN code set successfully' :
-                             'تم تعيين رمز PIN بنجاح';
-            if (typeof UI !== 'undefined') {
-                UI.showToast(successMsg, 'success');
-            }
-            this.render(state);
+            await this.render(state);
         } else {
-            const errorMsg = lang === 'fr' ? 'Erreur lors de la définition du PIN' :
+            const errorMsg = messageService?.getPinMessage(lang, 'set', 'error') ||
+                           (lang === 'fr' ? 'Erreur lors de la définition du PIN' :
                             lang === 'en' ? 'Error setting PIN' :
-                            'خطأ في تعيين رمز PIN';
+                            'خطأ في تعيين رمز PIN');
             this.pinView.showError(errorMsg);
         }
     }
@@ -610,78 +732,45 @@ export class SettingsController {
      * Ouvre le modal pour modifier le PIN
      */
     async openChangePinModal() {
-        const state = window.state;
+        if (!this.uiService) {
+            await this.initServices();
+        }
+        
+        const ui = this._getUIService();
+        if (!ui) {
+            console.error('[SettingsController] UI service not available');
+            return;
+        }
+        
+        const state = typeof window !== 'undefined' ? window.state : null;
         if (!state) return;
 
         const lang = state.profile.lang || 'fr';
         const html = this.pinView.renderChangePinModal(lang);
 
         const labels = {
-            fr: { title: 'Modifier le code PIN', change: 'Modifier', cancel: 'Annuler' },
-            en: { title: 'Change PIN code', change: 'Change', cancel: 'Cancel' },
-            ar: { title: 'تغيير رمز PIN', change: 'تغيير', cancel: 'إلغاء' }
+            fr: { title: 'Modifier le code PIN', change: 'Modifier' },
+            en: { title: 'Change PIN code', change: 'Change' },
+            ar: { title: 'تغيير رمز PIN', change: 'تغيير' }
         };
         const l = labels[lang] || labels.fr;
 
-        if (typeof UI !== 'undefined') {
-            UI.showModal(l.title, html, async () => {
-                const oldPinInput = document.getElementById('pin-old-input');
-                const newPinInput = document.getElementById('pin-new-input');
-                const newPinConfirmInput = document.getElementById('pin-new-confirm-input');
-                
-                if (!oldPinInput || !newPinInput || !newPinConfirmInput) return;
-
-                const oldPin = oldPinInput.value.trim();
-                const newPin = newPinInput.value.trim();
-                const newPinConfirm = newPinConfirmInput.value.trim();
-
-                this.pinView.hideError();
-
-                // Validation
-                const validation = this.pinModel.validatePin(newPin);
-                if (!validation.valid) {
-                    this.pinView.showError(validation.error);
-                    return;
-                }
-
-                if (newPin !== newPinConfirm) {
-                    const errorMsg = lang === 'fr' ? 'Les nouveaux codes PIN ne correspondent pas' :
-                                    lang === 'en' ? 'New PIN codes do not match' :
-                                    'رموز PIN الجديدة غير متطابقة';
-                    this.pinView.showError(errorMsg);
-                    return;
-                }
-
-                // Changer le PIN
-                const success = await this.pinModel.changePin(oldPin, newPin);
-                if (success) {
-                    UI.closeModal('dynamic-modal');
-                    const successMsg = lang === 'fr' ? 'Code PIN modifié avec succès' :
-                                     lang === 'en' ? 'PIN code changed successfully' :
-                                     'تم تغيير رمز PIN بنجاح';
-                    UI.showToast(successMsg, 'success');
-                    this.render(state);
-                } else {
-                    const errorMsg = lang === 'fr' ? 'Ancien code PIN incorrect' :
-                                    lang === 'en' ? 'Wrong old PIN code' :
-                                    'رمز PIN القديم غير صحيح';
-                    this.pinView.showError(errorMsg);
-                }
-            }, false, 'dynamic-modal', l.change);
-            
-            // Ajouter listener sur Enter pour fermer automatiquement
-            setTimeout(() => {
-                const newPinConfirmInput = document.getElementById('pin-new-confirm-input');
-                if (newPinConfirmInput) {
-                    newPinConfirmInput.addEventListener('keypress', async (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            await this.handleChangePin(lang, state);
-                        }
-                    });
-                }
-            }, 100);
-        }
+        ui.showModal(l.title, html, async () => {
+            await this.handleChangePin(lang, state);
+        }, false, MODAL_ID_DYNAMIC, l.change);
+        
+        // Ajouter listener sur Enter
+        setTimeout(() => {
+            const newPinConfirmInput = document.getElementById('pin-new-confirm-input');
+            if (newPinConfirmInput) {
+                newPinConfirmInput.addEventListener('keypress', async (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        await this.handleChangePin(lang, state);
+                    }
+                });
+            }
+        }, MODAL_DELAY_MS);
     }
 
     /**
@@ -689,50 +778,60 @@ export class SettingsController {
      * @private
      */
     async handleChangePin(lang, state) {
-        const oldPinInput = document.getElementById('pin-old-input');
-        const newPinInput = document.getElementById('pin-new-input');
-        const newPinConfirmInput = document.getElementById('pin-new-confirm-input');
+        if (!this.formService) {
+            await this.initServices();
+        }
         
-        if (!oldPinInput || !newPinInput || !newPinConfirmInput) return;
-
-        const oldPin = oldPinInput.value.trim();
-        const newPin = newPinInput.value.trim();
-        const newPinConfirm = newPinConfirmInput.value.trim();
+        // Obtenir les services avec fallback
+        const formService = this._getFormService();
+        const messageService = this._getMessageService();
+        
+        const formData = formService.extractPinFormData({
+            oldPinId: 'pin-old-input',
+            newPinId: 'pin-new-input',
+            newPinConfirmId: 'pin-new-confirm-input'
+        });
+        
+        if (!formData.elements.oldPinInput || !formData.elements.newPinInput || !formData.elements.newPinConfirmInput) {
+            return;
+        }
 
         this.pinView.hideError();
 
         // Validation
-        const validation = this.pinModel.validatePin(newPin);
+        const validation = this.pinModel.validatePin(formData.newPin);
         if (!validation.valid) {
             this.pinView.showError(validation.error);
             return;
         }
 
-        if (newPin !== newPinConfirm) {
-            const errorMsg = lang === 'fr' ? 'Les nouveaux codes PIN ne correspondent pas' :
+        if (formData.newPin !== formData.newPinConfirm) {
+            const errorMsg = messageService?.getPinMessage(lang, 'change', 'mismatchNew') ||
+                           (lang === 'fr' ? 'Les nouveaux codes PIN ne correspondent pas' :
                             lang === 'en' ? 'New PIN codes do not match' :
-                            'رموز PIN الجديدة غير متطابقة';
+                            'رموز PIN الجديدة غير متطابقة');
             this.pinView.showError(errorMsg);
             return;
         }
 
         // Changer le PIN
-        const success = await this.pinModel.changePin(oldPin, newPin);
+        const success = await this.pinModel.changePin(formData.oldPin, formData.newPin);
         if (success) {
-            if (typeof UI !== 'undefined') {
-                UI.closeModal('dynamic-modal');
+            const ui = this._getUIService();
+            if (ui) {
+                ui.closeModal(MODAL_ID_DYNAMIC);
+                const successMsg = messageService?.getPinMessage(lang, 'change', 'success') ||
+                                 (lang === 'fr' ? 'Code PIN modifié avec succès' :
+                                  lang === 'en' ? 'PIN code changed successfully' :
+                                  'تم تغيير رمز PIN بنجاح');
+                ui.showToast(successMsg, 'success');
             }
-            const successMsg = lang === 'fr' ? 'Code PIN modifié avec succès' :
-                             lang === 'en' ? 'PIN code changed successfully' :
-                             'تم تغيير رمز PIN بنجاح';
-            if (typeof UI !== 'undefined') {
-                UI.showToast(successMsg, 'success');
-            }
-            this.render(state);
+            await this.render(state);
         } else {
-            const errorMsg = lang === 'fr' ? 'Ancien code PIN incorrect' :
+            const errorMsg = messageService?.getPinMessage(lang, 'change', 'error') ||
+                           (lang === 'fr' ? 'Ancien code PIN incorrect' :
                             lang === 'en' ? 'Wrong old PIN code' :
-                            'رمز PIN القديم غير صحيح';
+                            'رمز PIN القديم غير صحيح');
             this.pinView.showError(errorMsg);
         }
     }
@@ -741,7 +840,17 @@ export class SettingsController {
      * Ouvre le modal pour désactiver le PIN
      */
     async openDisablePinModal() {
-        const state = window.state;
+        if (!this.uiService) {
+            await this.initServices();
+        }
+        
+        const ui = this._getUIService();
+        if (!ui) {
+            console.error('[SettingsController] UI service not available');
+            return;
+        }
+        
+        const state = typeof window !== 'undefined' ? window.state : null;
         if (!state) return;
 
         const lang = state.profile.lang || 'fr';
@@ -751,25 +860,19 @@ export class SettingsController {
                 title: 'Désactiver le verrouillage',
                 message: 'Pour désactiver le verrouillage, entre ton code PIN actuel',
                 pinLabel: 'Code PIN',
-                disable: 'Désactiver',
-                cancel: 'Annuler',
-                wrongPin: 'Code PIN incorrect'
+                disable: 'Désactiver'
             },
             en: {
                 title: 'Disable lock',
                 message: 'To disable the lock, enter your current PIN code',
                 pinLabel: 'PIN code',
-                disable: 'Disable',
-                cancel: 'Cancel',
-                wrongPin: 'Wrong PIN code'
+                disable: 'Disable'
             },
             ar: {
                 title: 'تعطيل القفل',
                 message: 'لتعطيل القفل، أدخل رمز PIN الحالي',
                 pinLabel: 'رمز PIN',
-                disable: 'تعطيل',
-                cancel: 'إلغاء',
-                wrongPin: 'رمز PIN غير صحيح'
+                disable: 'تعطيل'
             }
         };
         const l = labels[lang] || labels.fr;
@@ -791,30 +894,47 @@ export class SettingsController {
             <div id="pin-error" class="error-message" style="display: none;"></div>
         `;
 
-        if (typeof UI !== 'undefined') {
-            UI.showModal(l.title, html, async () => {
-                const pinInput = document.getElementById('pin-disable-input');
-                if (!pinInput) return;
+        ui.showModal(l.title, html, async () => {
+            await this.handleDisablePin(lang, state);
+        }, true, MODAL_ID_DYNAMIC, l.disable);
+    }
 
-                const pin = pinInput.value.trim();
-                const errorEl = document.getElementById('pin-error');
+    /**
+     * Gère la désactivation du PIN
+     * @private
+     */
+    async handleDisablePin(lang, state) {
+        const pinInput = document.getElementById('pin-disable-input');
+        if (!pinInput) return;
 
-                // Désactiver le PIN
-                const success = await this.pinModel.disablePin(pin);
-                if (success) {
-                    UI.closeModal('dynamic-modal');
-                    const successMsg = lang === 'fr' ? 'Verrouillage désactivé' :
-                                     lang === 'en' ? 'Lock disabled' :
-                                     'تم تعطيل القفل';
-                    UI.showToast(successMsg, 'success');
-                    this.render(state);
-                } else {
-                    if (errorEl) {
-                        errorEl.textContent = l.wrongPin;
-                        errorEl.style.display = 'block';
-                    }
-                }
-            }, true, l.cancel);
+        const pin = pinInput.value.trim();
+        const errorEl = document.getElementById('pin-error');
+
+        // Obtenir les services avec fallback
+        const messageService = this._getMessageService();
+        const ui = this._getUIService();
+
+        // Désactiver le PIN
+        const success = await this.pinModel.disablePin(pin);
+        if (success) {
+            if (ui) {
+                ui.closeModal(MODAL_ID_DYNAMIC);
+                const successMsg = messageService?.getPinMessage(lang, 'disable', 'success') ||
+                                 (lang === 'fr' ? 'Verrouillage désactivé' :
+                                  lang === 'en' ? 'Lock disabled' :
+                                  'تم تعطيل القفل');
+                ui.showToast(successMsg, 'success');
+            }
+            await this.render(state);
+        } else {
+            if (errorEl) {
+                const wrongPinMsg = messageService?.getPinMessage(lang, 'disable', 'error') ||
+                                  (lang === 'fr' ? 'Code PIN incorrect' :
+                                   lang === 'en' ? 'Wrong PIN code' :
+                                   'رمز PIN غير صحيح');
+                errorEl.textContent = wrongPinMsg;
+                errorEl.style.display = 'block';
+            }
         }
     }
 
@@ -830,26 +950,48 @@ export class SettingsController {
      * Demande confirmation avant d'effacer les données
      * @param {Object} state - State de l'application
      */
-    confirmClearData(state) {
+    async confirmClearData(state) {
+        if (!this.uiService) {
+            await this.initServices();
+        }
+        
+        const ui = this._getUIService();
+        if (!ui) {
+            console.error('[SettingsController] UI service not available');
+            return;
+        }
+        
+        const i18n = this.i18nService || (typeof window !== 'undefined' ? window.I18n : null);
         const html = `
             <p style="text-align: center; color: var(--text-secondary);">
-                ${I18n.t('clear_confirm')}
+                ${i18n?.t('clear_confirm') || 'Êtes-vous sûr de vouloir effacer toutes les données ?'}
             </p>
         `;
         
-        if (typeof UI !== 'undefined') {
-            UI.showModal(I18n.t('clear_data'), html, () => {
+        ui.showModal(
+            i18n?.t('clear_data') || 'Effacer les données',
+            html,
+            async () => {
                 const newState = this.model.clearData();
                 if (typeof window !== 'undefined') {
                     window.state = newState;
                 }
-                UI.closeModal('dynamic-modal');
-                UI.showToast(I18n.t('reset_complete'), 'success');
-                if (typeof Onboarding !== 'undefined' && Onboarding.show) {
-                    Onboarding.show();
+                ui.closeModal(MODAL_ID_DYNAMIC);
+                
+                const lang = newState.profile.lang || 'fr';
+                const message = i18n?.t('reset_complete') || 
+                               (lang === 'fr' ? 'Réinitialisation terminée' :
+                                lang === 'en' ? 'Reset complete' : 'اكتملت إعادة التعيين');
+                ui.showToast(message, 'success');
+                
+                // Rediriger vers l'onboarding avec le nouveau state
+                if (typeof window !== 'undefined' && window.Onboarding?.show) {
+                    window.Onboarding.show(newState);
                 }
-            }, true);
-        }
+            },
+            true,
+            MODAL_ID_DYNAMIC
+        );
     }
 
     /**
@@ -858,36 +1000,39 @@ export class SettingsController {
      * @param {boolean} enabled - Activé ou non
      */
     async toggleAutoLock(state, enabled) {
-        const success = await this.model.toggleAutoLock(state, enabled);
+        if (!this.uiService || !this.messageService) {
+            await this.initServices();
+        }
+        
+        const success = await this.model.toggleAutoLock(state, enabled, this.securityService);
         
         if (!success && enabled) {
             // Échec : probablement PIN non défini
             const checkbox = document.getElementById('toggle-auto-lock');
             if (checkbox) checkbox.checked = false;
             
-            if (typeof UI !== 'undefined') {
-                const lang = state.profile.lang || 'fr';
-                const msg = lang === 'fr' ? 'Active d\'abord le verrouillage PIN dans les réglages' :
-                           lang === 'en' ? 'Enable PIN lock in settings first' :
-                           'قم بتفعيل قفل PIN في الإعدادات أولاً';
-                UI.showToast(msg, 'info');
-            }
+            const lang = state.profile.lang || 'fr';
+            const msg = this.messageService?.getToastMessage(lang, 'autoLockPinRequired') ||
+                       (lang === 'fr' ? 'Active d\'abord le verrouillage PIN dans les réglages' :
+                        lang === 'en' ? 'Enable PIN lock in settings first' :
+                        'قم بتفعيل قفل PIN في الإعدادات أولاً');
+            this.uiService?.showToast(msg, 'info');
             return;
         }
         
-        this.render(state);
+        await this.render(state);
         
-        if (typeof UI !== 'undefined') {
-            const lang = state.profile.lang || 'fr';
-            const msg = enabled 
-                ? (lang === 'fr' ? 'Verrouillage automatique activé' :
-                   lang === 'en' ? 'Auto-lock enabled' :
-                   'تم تفعيل القفل التلقائي')
-                : (lang === 'fr' ? 'Verrouillage automatique désactivé' :
-                   lang === 'en' ? 'Auto-lock disabled' :
-                   'تم تعطيل القفل التلقائي');
-            UI.showToast(msg, 'success');
-        }
+        const lang = state.profile.lang || 'fr';
+        const messageKey = enabled ? 'autoLockEnabled' : 'autoLockDisabled';
+        const msg = this.messageService?.getToastMessage(lang, messageKey) ||
+                   (enabled ? 
+                    (lang === 'fr' ? 'Verrouillage automatique activé' :
+                     lang === 'en' ? 'Auto-lock enabled' :
+                     'تم تفعيل القفل التلقائي') :
+                    (lang === 'fr' ? 'Verrouillage automatique désactivé' :
+                     lang === 'en' ? 'Auto-lock disabled' :
+                     'تم تعطيل القفل التلقائي'));
+        this.uiService?.showToast(msg, 'success');
     }
 
     /**
@@ -896,89 +1041,72 @@ export class SettingsController {
      * @param {boolean} enabled - Activé ou non
      */
     async toggleAutoLockOnTabBlur(state, enabled) {
-        const success = await this.model.toggleAutoLockOnTabBlur(state, enabled);
+        if (!this.uiService || !this.messageService) {
+            await this.initServices();
+        }
+        
+        const success = await this.model.toggleAutoLockOnTabBlur(state, enabled, this.securityService);
         
         if (!success && enabled) {
             // Échec : probablement PIN non défini
             const checkbox = document.getElementById('toggle-auto-lock-tab-blur');
             if (checkbox) checkbox.checked = false;
             
-            if (typeof UI !== 'undefined') {
-                const lang = state.profile.lang || 'fr';
-                const msg = lang === 'fr' ? 'Active d\'abord le verrouillage PIN dans les réglages' :
-                           lang === 'en' ? 'Enable PIN lock in settings first' :
-                           'قم بتفعيل قفل PIN في الإعدادات أولاً';
-                UI.showToast(msg, 'info');
-            }
+            const lang = state.profile.lang || 'fr';
+            const msg = this.messageService?.getToastMessage(lang, 'autoLockPinRequired') ||
+                       (lang === 'fr' ? 'Active d\'abord le verrouillage PIN dans les réglages' :
+                        lang === 'en' ? 'Enable PIN lock in settings first' :
+                        'قم بتفعيل قفل PIN في الإعدادات أولاً');
+            this.uiService?.showToast(msg, 'info');
             return;
         }
         
-        this.render(state);
+        await this.render(state);
         
-        if (typeof UI !== 'undefined') {
-            const lang = state.profile.lang || 'fr';
-            const msg = enabled 
-                ? (lang === 'fr' ? 'Verrouillage au changement d\'onglet activé' :
-                   lang === 'en' ? 'Lock on tab change enabled' :
-                   'تم تفعيل القفل عند تغيير علامة التبويب')
-                : (lang === 'fr' ? 'Verrouillage au changement d\'onglet désactivé' :
-                   lang === 'en' ? 'Lock on tab change disabled' :
-                   'تم تعطيل القفل عند تغيير علامة التبويب');
-            UI.showToast(msg, 'success');
-        }
+        const lang = state.profile.lang || 'fr';
+        const messageKey = enabled ? 'autoLockTabBlurEnabled' : 'autoLockTabBlurDisabled';
+        const msg = this.messageService?.getToastMessage(lang, messageKey) ||
+                   (enabled ? 
+                    (lang === 'fr' ? 'Verrouillage au changement d\'onglet activé' :
+                     lang === 'en' ? 'Lock on tab change enabled' :
+                     'تم تفعيل القفل عند تغيير علامة التبويب') :
+                    (lang === 'fr' ? 'Verrouillage au changement d\'onglet désactivé' :
+                     lang === 'en' ? 'Lock on tab change disabled' :
+                     'تم تعطيل القفل عند تغيير علامة التبويب'));
+        this.uiService?.showToast(msg, 'success');
     }
 
     /**
      * Ouvre le modal pour choisir le délai de verrouillage automatique
      * @param {Object} state - State de l'application
      */
-    openAutoLockDelayModal(state) {
-        const lang = state.profile.lang || 'fr';
-        const currentDelay = state.settings?.autoLock?.delay || 60000;
-        
-        const delayOptions = [
-            { value: 30000, label: I18n.t('auto_lock_delay_30s') },
-            { value: 60000, label: I18n.t('auto_lock_delay_1min') },
-            { value: 120000, label: I18n.t('auto_lock_delay_2min') },
-            { value: 300000, label: I18n.t('auto_lock_delay_5min') },
-            { value: 600000, label: I18n.t('auto_lock_delay_10min') }
-        ];
-        
-        const html = `
-            <div class="form-group">
-                <div class="checkbox-group">
-                    ${delayOptions.map(option => `
-                        <label class="checkbox-item">
-                            <input type="radio" name="auto-lock-delay" value="${option.value}" ${currentDelay === option.value ? 'checked' : ''}>
-                            <span>${option.label}</span>
-                        </label>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-        
-        const labels = {
-            fr: { title: I18n.t('auto_lock_delay'), save: 'Enregistrer', cancel: 'Annuler' },
-            en: { title: I18n.t('auto_lock_delay'), save: 'Save', cancel: 'Cancel' },
-            ar: { title: I18n.t('auto_lock_delay'), save: 'حفظ', cancel: 'إلغاء' }
-        };
-        const l = labels[lang] || labels.fr;
-        
-        if (typeof UI !== 'undefined') {
-            UI.showModal(l.title, html, async () => {
-                const selected = document.querySelector('input[name="auto-lock-delay"]:checked');
-                if (selected) {
-                    const delay = parseInt(selected.value, 10);
-                    await this.model.updateAutoLockDelay(state, delay);
-                    UI.closeModal('dynamic-modal');
-                    this.render(state);
-                    
-                    const successMsg = lang === 'fr' ? 'Délai mis à jour' :
-                                     lang === 'en' ? 'Delay updated' :
-                                     'تم تحديث التأخير';
-                    UI.showToast(successMsg, 'success');
-                }
-            }, true, 'dynamic-modal', l.save);
+    async openAutoLockDelayModal(state) {
+        if (!this.modalService || !this.messageService) {
+            await this.initServices();
         }
+        
+        const modalService = this.modalService;
+        if (!modalService) {
+            console.error('[SettingsController] ModalService not available');
+            return;
+        }
+        
+        const messageService = this._getMessageService();
+        const ui = this._getUIService();
+        
+        modalService.showAutoLockDelayModal(state, async (delay) => {
+            await this.model.updateAutoLockDelay(state, delay);
+            modalService.closeDynamicModal();
+            await this.render(state);
+            
+            const lang = state.profile.lang || 'fr';
+            const successMsg = messageService?.getToastMessage(lang, 'delayUpdated') ||
+                             (lang === 'fr' ? 'Délai mis à jour' :
+                              lang === 'en' ? 'Delay updated' :
+                              'تم تحديث التأخير');
+            if (ui) {
+                ui.showToast(successMsg, 'success');
+            }
+        });
     }
 }

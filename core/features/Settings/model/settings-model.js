@@ -3,11 +3,21 @@
  */
 
 import { ADDICTION_ICONS } from '../data/settings-data.js';
+import { DEFAULT_AUTO_LOCK_DELAY_MS } from '../../../Constants/AppConstants.js';
 
 export class SettingsModel {
     constructor(services = {}) {
+        // Utiliser les services injectés ou fallback vers window.* pour compatibilité
         this.storage = services.storage || (typeof window !== 'undefined' ? window.Storage : null);
         this.i18n = services.i18n || (typeof window !== 'undefined' ? window.I18n : null);
+        
+        // Lever une erreur seulement si aucun service n'est disponible
+        if (!this.storage) {
+            throw new Error('SettingsModel requires storage service (injected or window.Storage)');
+        }
+        if (!this.i18n) {
+            throw new Error('SettingsModel requires i18n service (injected or window.I18n)');
+        }
     }
 
     /**
@@ -57,8 +67,10 @@ export class SettingsModel {
     async updateLanguage(state, lang) {
         state.profile.lang = lang;
         state.profile.rtl = lang === 'ar';
-        this.storage?.saveState(state);
-        await (this.i18n?.initI18n || (typeof I18n !== 'undefined' ? I18n.initI18n : () => {}))(state.profile.lang, state.profile.religion);
+        this.storage.saveState(state);
+        if (this.i18n?.initI18n) {
+            await this.i18n.initI18n(state.profile.lang, state.profile.religion);
+        }
     }
 
     /**
@@ -70,8 +82,10 @@ export class SettingsModel {
     async updateReligion(state, religion) {
         state.profile.religion = religion;
         state.profile.spiritualEnabled = religion !== 'none';
-        this.storage?.saveState(state);
-        await (this.i18n?.loadSpiritualCards || (typeof I18n !== 'undefined' ? I18n.loadSpiritualCards : () => {}))(state.profile.lang, state.profile.religion);
+        this.storage.saveState(state);
+        if (this.i18n?.loadSpiritualCards) {
+            await this.i18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
+        }
     }
 
     /**
@@ -117,8 +131,9 @@ export class SettingsModel {
      */
     async showDisclaimerModal(addictionsWithDisclaimer) {
         // Cette fonction sera implémentée dans Onboarding
-        if (typeof Onboarding !== 'undefined' && Onboarding.showDisclaimerModal) {
-            return await Onboarding.showDisclaimerModal(addictionsWithDisclaimer);
+        // Utiliser window.Onboarding en fallback pour compatibilité
+        if (typeof window !== 'undefined' && window.Onboarding?.showDisclaimerModal) {
+            return await window.Onboarding.showDisclaimerModal(addictionsWithDisclaimer);
         }
         return true;
     }
@@ -131,7 +146,17 @@ export class SettingsModel {
      */
     async exportData(state, options = {}) {
         try {
-            await Storage.exportState(state, options);
+            if (this.storage?.exportState) {
+                await this.storage.exportState(state, options);
+            } else {
+                // Fallback pour compatibilité
+                const Storage = typeof window !== 'undefined' ? window.Storage : null;
+                if (Storage?.exportState) {
+                    await Storage.exportState(state, options);
+                } else {
+                    throw new Error('Storage service not available');
+                }
+            }
         } catch (error) {
             console.error('[SettingsModel] Erreur lors de l\'export:', error);
             throw error;
@@ -145,7 +170,17 @@ export class SettingsModel {
      */
     async importData(file) {
         try {
-            return await Storage.importState(file);
+            if (this.storage?.importState) {
+                return await this.storage.importState(file);
+            } else {
+                // Fallback pour compatibilité
+                const Storage = typeof window !== 'undefined' ? window.Storage : null;
+                if (Storage?.importState) {
+                    return await Storage.importState(file);
+                } else {
+                    throw new Error('Storage service not available');
+                }
+            }
         } catch (error) {
             console.error('[SettingsModel] Erreur lors de l\'import:', error);
             return { valid: false, errors: ['Erreur lors de la lecture du fichier'], state: null };
@@ -160,7 +195,17 @@ export class SettingsModel {
      */
     async decryptAndImportData(encryptedData, pin) {
         try {
-            return await Storage.decryptAndImport(encryptedData, pin);
+            if (this.storage?.decryptAndImport) {
+                return await this.storage.decryptAndImport(encryptedData, pin);
+            } else {
+                // Fallback pour compatibilité
+                const Storage = typeof window !== 'undefined' ? window.Storage : null;
+                if (Storage?.decryptAndImport) {
+                    return await Storage.decryptAndImport(encryptedData, pin);
+                } else {
+                    throw new Error('Storage service not available');
+                }
+            }
         } catch (error) {
             console.error('[SettingsModel] Erreur lors du déchiffrement:', error);
             return { valid: false, errors: ['Erreur lors du déchiffrement'], state: null };
@@ -172,8 +217,19 @@ export class SettingsModel {
      * @returns {Object} Nouveau state par défaut
      */
     clearData() {
-        Storage.clearAllData();
-        return Storage.getDefaultState();
+        if (this.storage?.clearAllData && this.storage?.getDefaultState) {
+            this.storage.clearAllData();
+            return this.storage.getDefaultState();
+        } else {
+            // Fallback pour compatibilité
+            const Storage = typeof window !== 'undefined' ? window.Storage : null;
+            if (Storage?.clearAllData && Storage?.getDefaultState) {
+                Storage.clearAllData();
+                return Storage.getDefaultState();
+            } else {
+                throw new Error('Storage service not available');
+            }
+        }
     }
 
     /**
@@ -182,24 +238,27 @@ export class SettingsModel {
      * @param {boolean} enabled - Activé ou non
      * @returns {Promise<boolean>} Succès
      */
-    async toggleAutoLock(state, enabled) {
+    async toggleAutoLock(state, enabled, securityService = null) {
         // Vérifier que le PIN est activé si on active le verrouillage automatique
-        if (enabled && typeof window.Security !== 'undefined' && window.Security.hasPin) {
-            const hasPin = await window.Security.hasPin();
-            if (!hasPin) {
-                return false; // PIN non défini
+        if (enabled) {
+            const security = securityService || (typeof window !== 'undefined' ? window.Security : null);
+            if (security?.hasPin) {
+                const hasPin = await security.hasPin();
+                if (!hasPin) {
+                    return false; // PIN non défini
+                }
             }
         }
 
         if (!state.settings.autoLock) {
-            state.settings.autoLock = { enabled: false, delay: 60000 };
+            state.settings.autoLock = { enabled: false, delay: DEFAULT_AUTO_LOCK_DELAY_MS };
         }
         
         state.settings.autoLock.enabled = enabled;
-        this.storage?.saveState(state);
+        this.storage.saveState(state);
         
         // Mettre à jour le module auto-lock
-        if (typeof window.AutoLock !== 'undefined' && window.AutoLock.updateConfig) {
+        if (typeof window !== 'undefined' && window.AutoLock?.updateConfig) {
             window.AutoLock.updateConfig(enabled, state.settings.autoLock.delay);
         }
         
@@ -214,14 +273,14 @@ export class SettingsModel {
      */
     async updateAutoLockDelay(state, delay) {
         if (!state.settings.autoLock) {
-            state.settings.autoLock = { enabled: false, delay: 60000 };
+            state.settings.autoLock = { enabled: false, delay: DEFAULT_AUTO_LOCK_DELAY_MS };
         }
         
         state.settings.autoLock.delay = delay;
-        this.storage?.saveState(state);
+        this.storage.saveState(state);
         
         // Mettre à jour le module auto-lock
-        if (typeof window.AutoLock !== 'undefined' && window.AutoLock.updateConfig) {
+        if (typeof window !== 'undefined' && window.AutoLock?.updateConfig) {
             window.AutoLock.updateConfig(state.settings.autoLock.enabled, delay);
         }
     }
@@ -232,24 +291,27 @@ export class SettingsModel {
      * @param {boolean} enabled - Activé ou non
      * @returns {Promise<boolean>} Succès
      */
-    async toggleAutoLockOnTabBlur(state, enabled) {
+    async toggleAutoLockOnTabBlur(state, enabled, securityService = null) {
         // Vérifier que le PIN est activé si on active le verrouillage au changement d'onglet
-        if (enabled && typeof window.Security !== 'undefined' && window.Security.hasPin) {
-            const hasPin = await window.Security.hasPin();
-            if (!hasPin) {
-                return false; // PIN non défini
+        if (enabled) {
+            const security = securityService || (typeof window !== 'undefined' ? window.Security : null);
+            if (security?.hasPin) {
+                const hasPin = await security.hasPin();
+                if (!hasPin) {
+                    return false; // PIN non défini
+                }
             }
         }
 
         if (!state.settings.autoLock) {
-            state.settings.autoLock = { enabled: false, delay: 60000, autoLockOnTabBlur: false };
+            state.settings.autoLock = { enabled: false, delay: DEFAULT_AUTO_LOCK_DELAY_MS, autoLockOnTabBlur: false };
         }
         
         state.settings.autoLock.autoLockOnTabBlur = enabled;
-        this.storage?.saveState(state);
+        this.storage.saveState(state);
         
         // Réinitialiser le module auto-lock pour appliquer le changement
-        if (typeof window.AutoLock !== 'undefined' && window.AutoLock.init) {
+        if (typeof window !== 'undefined' && window.AutoLock?.init) {
             window.AutoLock.init(state);
         }
         

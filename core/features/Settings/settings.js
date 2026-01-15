@@ -3,9 +3,28 @@
  */
 
 import { SettingsController } from './controller/settings-controller.js';
+import { getServices } from '../../Utils/serviceHelper.js';
 
 // Instance unique du controller
-const settingsController = new SettingsController();
+let settingsController = new SettingsController();
+
+// Initialiser les services de manière asynchrone
+async function initControllerServices() {
+    try {
+        const services = await getServices([
+            'storage', 'security', 'i18n', 'ui', 'message', 
+            'modal', 'form', 'errorHandler'
+        ]);
+        settingsController = new SettingsController(services);
+        await settingsController.initServices();
+    } catch (error) {
+        console.warn('[Settings] Erreur lors de l\'initialisation des services, utilisation des fallbacks:', error);
+        // Le controller utilisera les fallbacks window.*
+    }
+}
+
+// Initialiser immédiatement si possible
+initControllerServices();
 
 // API publique
 export const Settings = {

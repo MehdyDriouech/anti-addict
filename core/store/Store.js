@@ -20,14 +20,28 @@ let hooks = {
     security: null
 };
 
-// Initialiser les hooks si disponibles
+// SecurityService pour le hook security
+let securityService = null;
+
+/**
+ * Initialise le hook security avec le SecurityService
+ * @param {Object} service - SecurityService instance
+ */
+export function initSecurityHook(service) {
+    securityService = service;
+    registerHook('security', sealSensitiveDomains);
+}
+
+// Initialiser les hooks si disponibles (fallback pour compatibilité)
 if (typeof window !== 'undefined') {
     // Attendre que les services soient chargés
     setTimeout(() => {
         if (window.Analytics && window.Analytics.updateAnalytics) {
             registerHook('analytics', window.Analytics.updateAnalytics);
         }
-        if (window.Security) {
+        // Fallback pour window.Security (sera remplacé par initSecurityHook)
+        if (window.Security && !securityService) {
+            securityService = window.Security;
             registerHook('security', sealSensitiveDomains);
         }
     }, 100);
@@ -38,12 +52,15 @@ if (typeof window !== 'undefined') {
  * @private
  */
 async function sealSensitiveDomains(draft, options) {
-    if (!window.Security || !window.Security.isEnabled()) {
+    // Utiliser le service injecté ou window.Security en fallback
+    const security = securityService || (typeof window !== 'undefined' ? window.Security : null);
+    
+    if (!security || !security.isEnabled()) {
         return; // Chiffrement non activé
     }
 
     const isEmergency = options.reason === 'emergency_used' || options.isEmergency === true;
-    const isLocked = window.Security.isLocked();
+    const isLocked = security.isLocked();
 
     if (isLocked && !isEmergency) {
         // En mode verrouillé (sans urgence), ne pas sauvegarder les domaines sensibles
@@ -99,7 +116,10 @@ async function sealSensitiveDomains(draft, options) {
             
             if (value !== undefined && value !== null) {
                 try {
-                    await window.Security.setDomain(domainKey, value);
+                    const security = securityService || (typeof window !== 'undefined' ? window.Security : null);
+                    if (security && typeof security.setDomain === 'function') {
+                        await security.setDomain(domainKey, value);
+                    }
                     
                     // Retirer du draft pour éviter double stockage
                     if (domainConfig.subKey && domainKey === 'calendar') {
@@ -298,5 +318,6 @@ function deepClone(obj) {
  */
 export default {
     update,
-    registerHook
+    registerHook,
+    initSecurityHook
 };

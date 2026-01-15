@@ -4,14 +4,18 @@
 
 import { OnboardingModel } from '../model/onboarding-model.js';
 import { OnboardingView } from '../view/onboarding-view.js';
+import { SettingsModel } from '../../Settings/model/settings-model.js';
 import { getServices } from '../../../Utils/serviceHelper.js';
 
 export class OnboardingController {
     constructor() {
         this.model = new OnboardingModel();
         this.view = new OnboardingView();
-        this.currentStep = 'main'; // 'main' ou 'pin'
+        this.currentStep = 'mode'; // 'mode', 'main', 'pin', ou 'import'
         this.servicesInitialized = false;
+        this.settingsModel = null;
+        this.importFile = null;
+        this.importNeedsPassword = false;
     }
 
     /**
@@ -29,6 +33,11 @@ export class OnboardingController {
                 this.model = new OnboardingModel({ storage, i18n });
             }
             
+            // Initialiser SettingsModel pour l'import
+            if (!this.settingsModel) {
+                this.settingsModel = new SettingsModel({ storage, i18n });
+            }
+            
             this.servicesInitialized = true;
         } catch (error) {
             console.warn('[OnboardingController] Erreur lors de l\'initialisation des services:', error);
@@ -40,26 +49,43 @@ export class OnboardingController {
      * @param {Object} state - State de l'application
      */
     show(state) {
-        this.currentStep = 'main';
+        this.currentStep = 'mode';
         this.view.show();
-        this.view.renderContent(
-            state,
-            async (e) => {
-                state.profile.lang = e.target.value;
-                state.profile.rtl = e.target.value === 'ar';
-                await I18n.initI18n(state.profile.lang, state.profile.religion);
-                if (typeof Init !== 'undefined' && Init.applyTranslations) {
-                    Init.applyTranslations();
-                }
-                this.view.renderContent(state, this.onLangChange.bind(this), this.onReligionChange.bind(this), this.currentStep);
-            },
-            async (e) => {
-                state.profile.religion = e.target.value;
-                state.profile.spiritualEnabled = e.target.value !== 'none';
-                await I18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
-            },
-            this.currentStep
-        );
+        this.view.renderContent(state, null, null, this.currentStep);
+    }
+
+    /**
+     * Sélectionne un mode (nouvel utilisateur ou import)
+     * @param {string} mode - 'new' ou 'import'
+     */
+    selectMode(mode) {
+        const state = typeof window !== 'undefined' ? window.state : null;
+        if (!state) return;
+
+        if (mode === 'new') {
+            this.currentStep = 'main';
+            this.view.renderContent(
+                state,
+                async (e) => {
+                    state.profile.lang = e.target.value;
+                    state.profile.rtl = e.target.value === 'ar';
+                    await I18n.initI18n(state.profile.lang, state.profile.religion);
+                    if (typeof Init !== 'undefined' && Init.applyTranslations) {
+                        Init.applyTranslations();
+                    }
+                    this.view.renderContent(state, this.onLangChange.bind(this), this.onReligionChange.bind(this), this.currentStep);
+                },
+                async (e) => {
+                    state.profile.religion = e.target.value;
+                    state.profile.spiritualEnabled = e.target.value !== 'none';
+                    await I18n.loadSpiritualCards(state.profile.lang, state.profile.religion);
+                },
+                this.currentStep
+            );
+        } else if (mode === 'import') {
+            this.currentStep = 'import';
+            this.view.renderContent(state, null, null, this.currentStep);
+        }
     }
 
     /**
@@ -351,5 +377,178 @@ export class OnboardingController {
         const state = typeof window !== 'undefined' ? window.state : null;
         const lang = state ? state.profile.lang : 'fr';
         return await this.view.showDisclaimerModal(addictionsWithDisclaimer, lang);
+    }
+
+    /**
+     * Vérifie si le fichier d'import nécessite un PIN
+     * @param {File} file - Fichier à vérifier
+     */
+    async checkImportFile(file) {
+        if (!this.settingsModel) {
+            await this.initServices();
+        }
+
+        try {
+            const result = await this.settingsModel.importData(file);
+            this.importFile = file;
+            this.importNeedsPassword = result.needsPassword || false;
+
+            // Afficher/masquer le champ PIN
+            const pinGroup = document.getElementById('onboard-import-pin-group');
+            if (pinGroup) {
+                pinGroup.style.display = this.importNeedsPassword ? 'block' : 'none';
+            }
+        } catch (error) {
+            console.error('[OnboardingController] Erreur lors de la vérification du fichier:', error);
+        }
+    }
+
+    /**
+     * Gère l'import de données dans le mode import
+     */
+    async handleImportMode() {
+        const state = typeof window !== 'undefined' ? window.state : null;
+        if (!state) return;
+
+        if (!this.settingsModel) {
+            await this.initServices();
+        }
+
+        const fileInput = document.getElementById('onboard-import-file');
+        const pinInput = document.getElementById('onboard-import-pin-input');
+        const errorEl = document.getElementById('onboard-import-error');
+        const lang = state.profile.lang || 'fr';
+
+        // Masquer l'erreur précédente
+        if (errorEl) {
+            errorEl.style.display = 'none';
+        }
+
+        // Vérifier qu'un fichier est sélectionné
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+            const errorMsg = I18n.t('onboarding_import_error') || 
+                           (lang === 'fr' ? 'Veuillez sélectionner un fichier' :
+                            lang === 'en' ? 'Please select a file' :
+                            'يرجى اختيار ملف');
+            if (errorEl) {
+                errorEl.textContent = errorMsg;
+                errorEl.style.display = 'block';
+            }
+            return;
+        }
+
+        const file = fileInput.files[0];
+
+        try {
+            // Vérifier si le fichier nécessite un PIN
+            const result = await this.settingsModel.importData(file);
+            
+            if (result.needsPassword) {
+                // Demander le PIN
+                const pin = pinInput ? pinInput.value.trim() : '';
+                
+                if (!pin) {
+                    const errorMsg = I18n.t('onboarding_import_pin_required') || 
+                                   (lang === 'fr' ? 'Code PIN requis' :
+                                    lang === 'en' ? 'PIN required' :
+                                    'رمز PIN مطلوب');
+                    if (errorEl) {
+                        errorEl.textContent = errorMsg;
+                        errorEl.style.display = 'block';
+                    }
+                    return;
+                }
+
+                // Déchiffrer et importer
+                const decryptResult = await this.settingsModel.decryptAndImportData(result.encryptedData, pin);
+                
+                if (decryptResult.valid) {
+                    await this.handleSuccessfulImport(decryptResult.state);
+                } else {
+                    const errorMsg = decryptResult.errors && decryptResult.errors.length > 0
+                        ? decryptResult.errors[0]
+                        : (I18n.t('onboarding_import_error') || 
+                           (lang === 'fr' ? 'Code PIN incorrect ou fichier invalide' :
+                            lang === 'en' ? 'Incorrect PIN or invalid file' :
+                            'رمز PIN غير صحيح أو ملف غير صالح'));
+                    if (errorEl) {
+                        errorEl.textContent = errorMsg;
+                        errorEl.style.display = 'block';
+                    }
+                    if (pinInput) {
+                        pinInput.value = '';
+                        pinInput.focus();
+                    }
+                }
+            } else {
+                // Import sans PIN
+                if (result.valid) {
+                    await this.handleSuccessfulImport(result.state);
+                } else {
+                    const errorMsg = result.errors && result.errors.length > 0
+                        ? result.errors.join(', ')
+                        : (I18n.t('onboarding_import_error') || 
+                           (lang === 'fr' ? 'Erreur lors de l\'import' :
+                            lang === 'en' ? 'Import error' :
+                            'خطأ في الاستيراد'));
+                    if (errorEl) {
+                        errorEl.textContent = errorMsg;
+                        errorEl.style.display = 'block';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[OnboardingController] Erreur lors de l\'import:', error);
+            const errorMsg = I18n.t('onboarding_import_error') || 
+                           (lang === 'fr' ? 'Erreur lors de l\'import' :
+                            lang === 'en' ? 'Import error' :
+                            'خطأ في الاستيراد');
+            if (errorEl) {
+                errorEl.textContent = errorMsg;
+                errorEl.style.display = 'block';
+            }
+        }
+    }
+
+    /**
+     * Gère un import réussi
+     * @private
+     */
+    async handleSuccessfulImport(newState) {
+        // Mettre à jour le state global
+        if (typeof window !== 'undefined') {
+            window.state = newState;
+        }
+
+        // Sauvegarder
+        const storage = this.model.storage || (typeof window !== 'undefined' ? window.Storage : null);
+        if (storage?.saveState) {
+            storage.saveState(newState);
+        }
+
+        // Initialiser i18n
+        const i18n = this.model.i18n || (typeof window !== 'undefined' ? window.I18n : null);
+        if (i18n?.initI18n) {
+            await i18n.initI18n(newState.profile.lang, newState.profile.religion);
+        }
+
+        // Appliquer les traductions
+        if (typeof window !== 'undefined' && window.Init?.applyTranslations) {
+            window.Init.applyTranslations();
+        }
+
+        // Afficher message de succès
+        const lang = newState.profile.lang || 'fr';
+        const message = i18n?.t('onboarding_import_success') || 
+                       (lang === 'fr' ? 'Import réussi ! Redirection...' :
+                        lang === 'en' ? 'Import successful! Redirecting...' :
+                        'تم الاستيراد بنجاح! إعادة التوجيه...');
+        
+        if (typeof UI !== 'undefined') {
+            UI.showToast(message, 'success');
+        }
+
+        // Finaliser l'onboarding (sans passer par les étapes normales)
+        await this.finalizeOnboarding(newState);
     }
 }
