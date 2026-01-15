@@ -674,7 +674,7 @@ Ce projet est open source. Les contributions sont les bienvenues !
 
 ## 📄 Licence
 
-[À définir selon votre préférence]
+[CC BY-NC 4.0]
 
 ## 🙏 Remerciements
 
@@ -683,5 +683,6 @@ Application développée avec une approche bienveillante et respectueuse de la v
 ---
 
 **Note importante** : Cette application ne remplace pas un suivi médical ou thérapeutique professionnel. En cas de besoin, consultez un professionnel de santé.
+
 
 
